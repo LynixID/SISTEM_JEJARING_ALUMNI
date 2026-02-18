@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  nim           String?   @unique
+  nama          String
+  prodi         String?
+  angkatan      Int?
+  domisili      String?
+  whatsapp      String?
+  role          Role      @default(ALUMNI)
+  verified      Boolean   @default(false)
+  emailVerified Boolean   @default(false)
+  otp           String?
+  otpExpiry     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  profile       Profile?
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]
+  sentMessages  Message[] @relation("SenderMessages")
+  receivedMessages Message[] @relation("ReceiverMessages")
+  connections   Connection[] @relation("UserConnections")
+  connectedTo   Connection[] @relation("ConnectedToUser")
+  eventParticipants EventParticipant[]
+  notifications Notification[]
+
+  @@index([email])
+  @@index([nim])
+  @@index([angkatan])
+  @@index([domisili])
+  @@map("users")
+}
+
+model Profile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  fotoProfil    String?
+  coverPhoto    String?
+  profesi       String?
+  perusahaan    String?
+  jabatan       String?
+  skill         String?
+  sosialMedia   Json?
+  portfolio     Json?
+  experience    Json?
+  education     Json?
+  certifications Json?
+  languages     Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Post {
+  id        String    @id @default(uuid())
+  content   String    @db.Text
+  media     String?
+  authorId  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  likes     Like[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  postId    String
+  authorId  String
+  parentId  String?  // ID komentar parent (null untuk top-level comment)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@map("likes")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  senderId  String
+  receiverId String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  sender    User     @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver  User     @relation("ReceiverMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@map("messages")
+}
+
+model Connection {
+  id          String         @id @default(uuid())
+  userId      String
+  connectedUserId String
+  status      ConnectionStatus @default(PENDING)
+  message     String?        @db.Text  // Pesan saat request koneksi
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user        User           @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
+  connectedTo User           @relation("ConnectedToUser", fields: [connectedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, connectedUserId])
+  @@index([userId])
+  @@index([status])
+  @@map("connections")
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String   @unique
+  content   String   @db.Text
+  category  String
+  image     String?
+  published Boolean  @default(false)
+  views     Int      @default(0)
+  authorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published])
+  @@index([category])
+  @@index([slug])
+  @@map("announcements")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  poster      String?
+  tanggal     DateTime
+  lokasi      String?
+  category    String?
+  linkDaftar  String?
+  published   Boolean  @default(false)
+  authorId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  participants EventParticipant[]
+
+  @@index([published])
+  @@index([tanggal])
+  @@map("events")
+}
+
+model EventParticipant {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@map("event_participants")
+}
+
+enum Role {
+  ADMIN
+  PENGURUS
+  ALUMNI
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String   // Penerima notifikasi
+  triggeredBy String?  // User ID yang trigger notifikasi (untuk like/comment)
+  type        String   // LIKE, COMMENT, REPLY, ANNOUNCEMENT, EVENT
+  message     String
+  relatedId   String?  // ID dari post/event/announcement
+  relatedType String?  // post/event/announcement
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([triggeredBy])
+  @@index([read])
+  @@index([createdAt])
+  @@index([relatedId, relatedType, triggeredBy]) // Composite index untuk cek duplicate like
+  @@map("notifications")
+}
+
+model AdminNotification {
+  id        String   @id @default(uuid())
+  type      String
+  message   String
+  userId    String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([read])
+  @@index([createdAt])
+  @@map("admin_notifications")
+}
+
+model Setting {
+  id          String      @id @default(uuid())
+  key         String      @unique
+  category    String
+  value       String      @db.Text
+  type        SettingType @default(STRING)
+  label       String
+  description String?     @db.Text
+  isPublic    Boolean     @default(false)
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([category])
+  @@index([key])
+  @@map("settings")
+}
+
+enum SettingType {
+  STRING
+  JSON
+  NUMBER
+  BOOLEAN
+}
