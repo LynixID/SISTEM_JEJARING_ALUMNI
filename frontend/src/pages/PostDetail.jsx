@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2 } from 'lucide-react'
+import { ArrowLeft, Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2, Globe, Lock, User } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPostById, toggleLike, deletePost } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
@@ -298,7 +298,20 @@ const PostDetail = () => {
                         <p className="font-semibold text-gray-900 hover:text-blue-600 text-lg">
                           {post.author?.nama}
                         </p>
-                        <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+                          {/* Visibility badge di samping waktu */}
+                          {post.visibility && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+                              post.visibility === 'PUBLIC' 
+                                ? 'bg-blue-50 text-blue-600' 
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {post.visibility === 'PUBLIC' ? <Globe size={12} /> : <Lock size={12} />}
+                              {post.visibility === 'PUBLIC' ? 'Publik' : 'Hanya Koneksi'}
+                            </span>
+                          )}
+                        </div>
                       </button>
                     </div>
                   </div>
@@ -339,6 +352,28 @@ const PostDetail = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Mentions */}
+                {post.mentions && Array.isArray(post.mentions) && post.mentions.length > 0 && (
+                  <div className="mb-4 flex items-center gap-2 flex-wrap text-base text-gray-600">
+                    <User size={16} className="text-gray-400 flex-shrink-0" />
+                    <span>bersama dengan</span>
+                    {post.mentions.map((mention, index) => (
+                      <span key={mention.id}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/profil/${mention.id}`)
+                          }}
+                          className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                        >
+                          {mention.nama || mention.user?.nama || 'Seseorang'}
+                        </button>
+                        {index < post.mentions.length - 1 && <span>,</span>}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* Post content text */}
                 <div className="mb-4">

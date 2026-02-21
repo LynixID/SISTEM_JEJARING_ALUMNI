@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Calendar, MapPin, Clock, Users, ArrowLeft, CheckCircle, XCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import api from '../services/api'
+import api, { markEventAsRead } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
 import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
@@ -47,6 +47,16 @@ const EventDetail = () => {
       setEvent(eventData)
       setIsRegistered(eventData.isRegistered || false)
       setParticipantsCount(eventData.participantsCount || 0)
+
+      // Mark as read jika user authenticated dan event published
+      if (isAuthenticated && eventData?.published) {
+        try {
+          await markEventAsRead(eventData.id)
+        } catch (error) {
+          console.error('Error marking event as read:', error)
+          // Jangan tampilkan error ke user, ini opsional
+        }
+      }
     } catch (err) {
       console.error('Error fetching event:', err)
       setError(err.response?.data?.error || 'Gagal memuat event')
@@ -171,10 +181,10 @@ const EventDetail = () => {
 
             <Card className="overflow-hidden">
               {/* Image */}
-              {event.poster && (
+              {event.image && (
                 <div className="w-full h-96 bg-gray-200 overflow-hidden">
                   <img
-                    src={getImageUrl(event.poster, 'events')}
+                    src={getImageUrl(event.image, 'events')}
                     alt={event.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {

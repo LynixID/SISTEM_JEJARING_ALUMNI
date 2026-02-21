@@ -9,6 +9,8 @@ import Sidebar from '../../components/layout/Sidebar'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import Input from '../../components/common/Input'
+import ImageLightbox from '../../components/common/ImageLightbox'
+import { getImageUrl } from '../../utils/imageUtils'
 
 const ManageAnnouncements = () => {
   const { user } = useAuth()
@@ -17,7 +19,6 @@ const ManageAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
   const [publishedFilter, setPublishedFilter] = useState('')
   const [pagination, setPagination] = useState({
     page: 1,
@@ -27,19 +28,17 @@ const ManageAnnouncements = () => {
   })
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [lightboxImage, setLightboxImage] = useState({ isOpen: false, url: '', alt: '' })
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: 'Berita Umum',
     image: '',
     published: false
   })
 
-  const categories = ['Berita Umum', 'Agenda', 'Program DPW', 'Peluang Kerjasama']
-
   useEffect(() => {
     fetchAnnouncements()
-  }, [pagination.page, search, categoryFilter, publishedFilter])
+  }, [pagination.page, search, publishedFilter])
 
   const fetchAnnouncements = async () => {
     try {
@@ -48,7 +47,6 @@ const ManageAnnouncements = () => {
         page: pagination.page,
         limit: pagination.limit,
         ...(search && { search }),
-        ...(categoryFilter && { category: categoryFilter }),
         ...(publishedFilter !== '' && { published: publishedFilter })
       })
 
@@ -82,7 +80,6 @@ const ManageAnnouncements = () => {
         setFormData({
           title: fullAnnouncement.title || announcement.title,
           content: fullAnnouncement.content || '',
-          category: fullAnnouncement.category || announcement.category,
           image: fullAnnouncement.image || '',
           published: fullAnnouncement.published !== undefined ? fullAnnouncement.published : announcement.published
         })
@@ -92,7 +89,6 @@ const ManageAnnouncements = () => {
         setFormData({
           title: announcement.title,
           content: '',
-          category: announcement.category,
           image: announcement.image || '',
           published: announcement.published
         })
@@ -101,7 +97,6 @@ const ManageAnnouncements = () => {
       setFormData({
         title: announcement.title,
         content: announcement.content || '',
-        category: announcement.category,
         image: announcement.image || '',
         published: announcement.published
       })
@@ -147,19 +142,6 @@ const ManageAnnouncements = () => {
     }
   }
 
-  const getCategoryBadge = (category) => {
-    const colors = {
-      'Berita Umum': 'bg-blue-100 text-blue-800',
-      'Agenda': 'bg-green-100 text-green-800',
-      'Program DPW': 'bg-purple-100 text-purple-800',
-      'Peluang Kerjasama': 'bg-yellow-100 text-yellow-800'
-    }
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[category] || 'bg-gray-100 text-gray-800'}`}>
-        {category}
-      </span>
-    )
-  }
 
   const renderContent = () => (
     <div className="p-6">
@@ -185,16 +167,6 @@ const ManageAnnouncements = () => {
             />
           </div>
           <div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Semua Kategori</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
           </div>
           <div>
             <select
@@ -208,12 +180,11 @@ const ManageAnnouncements = () => {
             </select>
           </div>
           <div className="flex gap-2">
-            {(search || categoryFilter || publishedFilter) && (
+            {(search || publishedFilter) && (
               <Button
                 variant="outline"
                 onClick={() => {
                   setSearch('')
-                  setCategoryFilter('')
                   setPublishedFilter('')
                 }}
                 className="flex items-center gap-2"
@@ -232,8 +203,8 @@ const ManageAnnouncements = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gambar</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pembuat</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
@@ -244,13 +215,13 @@ const ManageAnnouncements = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading && announcements.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
                     Memuat data...
                   </td>
                 </tr>
               ) : announcements.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
                     Tidak ada berita
                   </td>
                 </tr>
@@ -258,10 +229,33 @@ const ManageAnnouncements = () => {
                 announcements.map((announcement) => (
                   <tr key={announcement.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{announcement.title}</div>
+                      {announcement.image ? (
+                        <div 
+                          className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+                          onClick={() => setLightboxImage({ 
+                            isOpen: true, 
+                            url: getImageUrl(announcement.image, 'announcements'), 
+                            alt: announcement.title 
+                          })}
+                        >
+                          <img
+                            src={getImageUrl(announcement.image, 'announcements')}
+                            alt={announcement.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                              e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">No Image</div>'
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                          No Image
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
-                      {getCategoryBadge(announcement.category)}
+                      <div className="text-sm font-medium text-gray-900">{announcement.title}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-700">
@@ -386,6 +380,14 @@ const ManageAnnouncements = () => {
         </div>
       )}
 
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxImage.isOpen}
+        onClose={() => setLightboxImage({ isOpen: false, url: '', alt: '' })}
+        imageUrl={lightboxImage.url}
+        alt={lightboxImage.alt}
+      />
+
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -417,22 +419,6 @@ const ManageAnnouncements = () => {
                     maxLength={200}
                     placeholder="Masukkan judul berita"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Kategori *
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  >
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
                 </div>
 
                 <div>

@@ -5,6 +5,7 @@ import { verifyToken } from '../../middleware/auth.js'
 const router = express.Router()
 
 // Upload gambar - perlu autentikasi
+// Kompresi ditangani di controller setelah file disimpan ke folder yang benar
 router.post('/image', verifyToken, upload.single('image'), uploadImage)
 
 // Hapus gambar - perlu autentikasi

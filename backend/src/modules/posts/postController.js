@@ -2,6 +2,7 @@ import prisma from '../../config/database.js'
 import { validationResult } from 'express-validator'
 import { getIO } from '../../config/socket.js'
 import { getImagePath, extractFilename } from '../../utils/fileUtils.js'
+import { createNotification } from '../../services/notificationService.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -32,10 +33,80 @@ export const getAllPosts = async (req, res) => {
     const { page = 1, limit = 10, userId } = req.query
     const skip = (parseInt(page) - 1) * parseInt(limit)
     const take = parseInt(limit)
+    const currentUserId = req.user?.userId
 
     const where = {}
     if (userId) {
       where.authorId = userId
+      
+      // Filter visibility berdasarkan status koneksi
+      if (currentUserId) {
+        if (currentUserId === userId) {
+          // Jika melihat post sendiri, tampilkan semua
+          // Tidak perlu filter visibility
+        } else {
+          // Jika melihat post user lain, cek apakah user sudah terkoneksi
+          const connection = await prisma.connection.findFirst({
+            where: {
+              OR: [
+                { userId: currentUserId, connectedUserId: userId, status: 'ACCEPTED' },
+                { userId: userId, connectedUserId: currentUserId, status: 'ACCEPTED' }
+              ]
+            }
+          })
+          
+          const isConnected = !!connection
+          
+          // Jika tidak terkoneksi, hanya tampilkan post PUBLIC
+          if (!isConnected) {
+            where.visibility = 'PUBLIC'
+          }
+          // Jika terkoneksi, tampilkan semua (PUBLIC dan CONNECTIONS)
+        }
+      } else {
+        // Jika tidak login, hanya tampilkan post PUBLIC
+        where.visibility = 'PUBLIC'
+      }
+    } else {
+      // Feed umum: filter berdasarkan visibility
+      if (currentUserId) {
+        // Untuk feed umum, kita perlu filter berdasarkan koneksi
+        // Ambil semua post PUBLIC atau CONNECTIONS dimana user terkoneksi dengan author
+        const userConnections = await prisma.connection.findMany({
+          where: {
+            OR: [
+              { userId: currentUserId, status: 'ACCEPTED' },
+              { connectedUserId: currentUserId, status: 'ACCEPTED' }
+            ]
+          },
+          select: {
+            userId: true,
+            connectedUserId: true
+          }
+        })
+        
+        const connectedUserIds = new Set()
+        userConnections.forEach(conn => {
+          if (conn.userId === currentUserId) {
+            connectedUserIds.add(conn.connectedUserId)
+          } else {
+            connectedUserIds.add(conn.userId)
+          }
+        })
+        
+        // Filter: PUBLIC atau (CONNECTIONS dan author terkoneksi) atau post milik sendiri
+        where.OR = [
+          { visibility: 'PUBLIC' },
+          { 
+            visibility: 'CONNECTIONS',
+            authorId: { in: Array.from(connectedUserIds) }
+          },
+          { authorId: currentUserId }
+        ]
+      } else {
+        // Jika tidak login, hanya tampilkan PUBLIC
+        where.visibility = 'PUBLIC'
+      }
     }
 
     const [posts, total] = await Promise.all([
@@ -67,8 +138,7 @@ export const getAllPosts = async (req, res) => {
       prisma.post.count({ where })
     ])
 
-    // Check if current user liked each post
-    const currentUserId = req.user?.userId
+    // Check if current user liked each post and get mentions
     const postsWithLikes = await Promise.all(
       posts.map(async (post) => {
         let isLiked = false
@@ -84,12 +154,36 @@ export const getAllPosts = async (req, res) => {
           isLiked = !!like
         }
 
+        // Get mentions for this post
+        const mentions = await prisma.postMention.findMany({
+          where: { postId: post.id },
+          include: {
+            user: {
+              select: {
+                id: true,
+                nama: true,
+                profile: {
+                  select: {
+                    fotoProfil: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
         return {
           ...post,
           media: post.media ? getImagePath(post.media, 'posts') : null,
           likesCount: post._count.likes,
           commentsCount: post._count.comments,
           isLiked,
+          visibility: post.visibility,
+          mentions: mentions.map(m => ({
+            id: m.user.id,
+            nama: m.user.nama,
+            fotoProfil: m.user.profile?.fotoProfil ? getImagePath(m.user.profile.fotoProfil, 'profiles') : null
+          })),
           author: {
             id: post.author.id,
             nama: post.author.nama,
@@ -161,6 +255,24 @@ export const getPostById = async (req, res) => {
       isLiked = !!like
     }
 
+    // Get mentions for this post
+    const mentions = await prisma.postMention.findMany({
+      where: { postId: post.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nama: true,
+            profile: {
+              select: {
+                fotoProfil: true
+              }
+            }
+          }
+        }
+      }
+    })
+
     res.json({
       post: {
         ...post,
@@ -168,6 +280,12 @@ export const getPostById = async (req, res) => {
         likesCount: post._count.likes,
         commentsCount: post._count.comments,
         isLiked,
+        visibility: post.visibility,
+        mentions: mentions.map(m => ({
+          id: m.user.id,
+          nama: m.user.nama,
+          fotoProfil: m.user.profile?.fotoProfil ? getImagePath(m.user.profile.fotoProfil, 'profiles') : null
+        })),
         author: {
           id: post.author.id,
           nama: post.author.nama,
@@ -179,6 +297,60 @@ export const getPostById = async (req, res) => {
     console.error('Get post by ID error:', error)
     res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data post' })
   }
+}
+
+// Helper function untuk parse mentions dari content atau dari request body
+const parseMentions = async (content, mentionsFromBody) => {
+  const mentionedUserIds = new Set()
+
+  // Jika mentions dikirim sebagai array dari frontend (user IDs)
+  if (mentionsFromBody) {
+    try {
+      const mentions = typeof mentionsFromBody === 'string' 
+        ? JSON.parse(mentionsFromBody) 
+        : mentionsFromBody
+      
+      if (Array.isArray(mentions)) {
+        mentions.forEach(id => {
+          if (id && typeof id === 'string') {
+            mentionedUserIds.add(id)
+          }
+        })
+      }
+    } catch (err) {
+      console.error('Error parsing mentions from body:', err)
+    }
+  }
+
+  // Parse @mentions dari content text (format: @nama atau @email)
+  if (content) {
+    const mentionRegex = /@(\w+)/g
+    const matches = content.matchAll(mentionRegex)
+    
+    for (const match of matches) {
+      const mentionText = match[1].trim()
+      if (mentionText) {
+        // Cari user berdasarkan nama atau email
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { nama: { contains: mentionText } },
+              { email: { contains: mentionText } },
+              { nim: { contains: mentionText } }
+            ],
+            verified: true // Hanya user yang sudah verified
+          },
+          select: { id: true }
+        })
+        
+        if (user) {
+          mentionedUserIds.add(user.id)
+        }
+      }
+    }
+  }
+
+  return Array.from(mentionedUserIds)
 }
 
 // Create post
@@ -193,7 +365,7 @@ export const createPost = async (req, res) => {
       })
     }
 
-    const { content } = req.body
+    const { content, mentions: mentionsFromBody, visibility } = req.body
     
     if (!content || !content.trim()) {
       return res.status(400).json({ 
@@ -203,12 +375,16 @@ export const createPost = async (req, res) => {
     const authorId = req.user.userId
     // Simpan hanya filename di database
     const media = req.file ? req.file.filename : null
+    
+    // Validasi visibility
+    const postVisibility = visibility === 'CONNECTIONS' ? 'CONNECTIONS' : 'PUBLIC'
 
     const post = await prisma.post.create({
       data: {
         content,
         media,
-        authorId
+        authorId,
+        visibility: postVisibility
       },
       include: {
         author: {
@@ -230,6 +406,83 @@ export const createPost = async (req, res) => {
         }
       }
     })
+
+    // Parse dan proses mentions
+    try {
+      const mentionedUserIds = await parseMentions(content, mentionsFromBody)
+      
+      // Hapus author dari mentions (tidak perlu mention diri sendiri)
+      let filteredMentions = mentionedUserIds.filter(userId => userId !== authorId)
+
+      // Validasi: hanya mention user yang sudah terkoneksi
+      if (filteredMentions.length > 0) {
+        const connections = await prisma.connection.findMany({
+          where: {
+            OR: [
+              { userId: authorId, connectedUserId: { in: filteredMentions }, status: 'ACCEPTED' },
+              { userId: { in: filteredMentions }, connectedUserId: authorId, status: 'ACCEPTED' }
+            ]
+          },
+          select: {
+            userId: true,
+            connectedUserId: true
+          }
+        })
+
+        // Filter hanya user yang benar-benar terkoneksi
+        const connectedUserIds = new Set()
+        connections.forEach(conn => {
+          if (conn.userId === authorId) {
+            connectedUserIds.add(conn.connectedUserId)
+          } else {
+            connectedUserIds.add(conn.userId)
+          }
+        })
+
+        filteredMentions = filteredMentions.filter(userId => connectedUserIds.has(userId))
+      }
+
+      if (filteredMentions.length > 0) {
+        // Get author info untuk notifikasi
+        const author = await prisma.user.findUnique({
+          where: { id: authorId },
+          select: { nama: true }
+        })
+
+        // Create PostMention records dan notifications
+        const mentionPromises = filteredMentions.map(async (userId) => {
+          try {
+            // Create PostMention
+            await prisma.postMention.create({
+              data: {
+                postId: post.id,
+                userId
+              }
+            })
+
+            // Create notification untuk user yang disebutkan
+            await createNotification({
+              userId,
+              triggeredBy: authorId,
+              type: 'MENTION',
+              message: `${author?.nama || 'Seseorang'} menyebutkan Anda dalam postingan`,
+              relatedId: post.id,
+              relatedType: 'post'
+            })
+          } catch (mentionError) {
+            // Ignore duplicate mention errors (unique constraint)
+            if (mentionError.code !== 'P2002') {
+              console.error('Error creating mention:', mentionError)
+            }
+          }
+        })
+
+        await Promise.all(mentionPromises)
+      }
+    } catch (mentionError) {
+      console.error('Error processing mentions:', mentionError)
+      // Jangan gagalkan post creation jika mention error
+    }
 
     // Emit Socket.io event untuk real-time update
     try {
@@ -291,7 +544,7 @@ export const updatePost = async (req, res) => {
     }
 
     const { id } = req.params
-    const { content } = req.body
+    const { content, mentions: mentionsFromBody } = req.body
     const userId = req.user.userId
 
     // Cek apakah post ada dan user adalah author
@@ -354,6 +607,63 @@ export const updatePost = async (req, res) => {
       }
     })
 
+    // Handle mentions update jika content berubah
+    if (content && content !== existingPost.content) {
+      try {
+        // Hapus mentions lama
+        await prisma.postMention.deleteMany({
+          where: { postId: id }
+        })
+
+        // Parse dan proses mentions baru
+        const mentionedUserIds = await parseMentions(content, mentionsFromBody)
+        
+        // Hapus author dari mentions (tidak perlu mention diri sendiri)
+        const filteredMentions = mentionedUserIds.filter(mentionedUserId => mentionedUserId !== userId)
+
+        if (filteredMentions.length > 0) {
+          // Get author info untuk notifikasi
+          const author = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { nama: true }
+          })
+
+          // Create PostMention records dan notifications
+          const mentionPromises = filteredMentions.map(async (mentionedUserId) => {
+            try {
+              // Create PostMention
+              await prisma.postMention.create({
+                data: {
+                  postId: id,
+                  userId: mentionedUserId
+                }
+              })
+
+              // Create notification untuk user yang disebutkan
+              await createNotification({
+                userId: mentionedUserId,
+                triggeredBy: userId,
+                type: 'MENTION',
+                message: `${author?.nama || 'Seseorang'} menyebutkan Anda dalam postingan`,
+                relatedId: id,
+                relatedType: 'post'
+              })
+            } catch (mentionError) {
+              // Ignore duplicate mention errors (unique constraint)
+              if (mentionError.code !== 'P2002') {
+                console.error('Error creating mention:', mentionError)
+              }
+            }
+          })
+
+          await Promise.all(mentionPromises)
+        }
+      } catch (mentionError) {
+        console.error('Error processing mentions on update:', mentionError)
+        // Jangan gagalkan post update jika mention error
+      }
+    }
+
     res.json({
       message: 'Post berhasil diupdate',
       post: {
@@ -408,4 +718,5 @@ export const deletePost = async (req, res) => {
     res.status(500).json({ error: 'Terjadi kesalahan saat menghapus post' })
   }
 }
+
 

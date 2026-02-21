@@ -10,6 +10,7 @@ import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import Input from '../../components/common/Input'
 import RichTextEditor from '../../components/common/RichTextEditor'
+import AlertModal from '../../components/common/AlertModal'
 
 const CreateEvent = () => {
   const { user } = useAuth()
@@ -21,8 +22,7 @@ const CreateEvent = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: '',
-    poster: '',
+    image: '',
     tanggal: '',
     lokasi: '',
     linkDaftar: '',
@@ -32,9 +32,8 @@ const CreateEvent = () => {
   const [saving, setSaving] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
-  const [uploading, setUploading] = useState(false)
-
-  const categories = ['Webinar', 'Workshop', 'Seminar', 'Reuni', 'Networking', 'Lainnya']
+  const [successModal, setSuccessModal] = useState({ isOpen: false, message: '' })
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' })
 
   useEffect(() => {
     if (isEdit && id) {
@@ -61,29 +60,32 @@ const CreateEvent = () => {
       setFormData({
         title: event.title || '',
         description: event.description || '',
-        category: event.category || '',
-        poster: event.poster || '',
+        image: event.image || '',
         tanggal: tanggalFormatted,
         lokasi: event.lokasi || '',
         linkDaftar: event.linkDaftar || '',
         published: event.published !== undefined ? event.published : false
       })
-      // Set preview untuk poster yang sudah ada
-      if (event.poster) {
-        setImagePreview(event.poster)
+      // Set preview untuk image yang sudah ada
+      if (event.image) {
+        setImagePreview(event.image)
       }
       
       console.log('Loaded event data for edit:', {
         title: event.title,
         description: event.description?.substring(0, 50) + '...',
-        category: event.category,
         tanggal: event.tanggal,
         published: event.published
       })
     } catch (error) {
       console.error('Error fetching event:', error)
-      alert(error.response?.data?.error || 'Gagal mengambil data event')
-      navigate(isAdmin ? '/admin/events' : '/pengurus/events')
+      setErrorModal({ 
+        isOpen: true, 
+        message: error.response?.data?.error || 'Gagal mengambil data event' 
+      })
+      setTimeout(() => {
+        navigate(isAdmin ? '/admin/events' : '/pengurus/events')
+      }, 2000)
     } finally {
       setLoading(false)
     }
@@ -99,7 +101,10 @@ const CreateEvent = () => {
     // Validasi tipe file
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
     if (!allowedTypes.includes(file.type)) {
-      alert('File type tidak didukung. Hanya file gambar (JPG, PNG, WebP, GIF) yang diperbolehkan.')
+      setErrorModal({ 
+        isOpen: true, 
+        message: 'File type tidak didukung. Hanya file gambar (JPG, PNG, WebP, GIF) yang diperbolehkan.' 
+      })
       e.target.value = ''
       return
     }
@@ -107,7 +112,10 @@ const CreateEvent = () => {
     // Validasi ukuran file (maks 5MB)
     const maxSize = 5 * 1024 * 1024 // 5MB
     if (file.size > maxSize) {
-      alert('Ukuran file terlalu besar. Maksimal 5MB.')
+      setErrorModal({ 
+        isOpen: true, 
+        message: 'Ukuran file terlalu besar. Maksimal 5MB.' 
+      })
       e.target.value = ''
       return
     }
@@ -122,96 +130,119 @@ const CreateEvent = () => {
     reader.readAsDataURL(file)
   }
 
-  const handleUploadImage = async () => {
-    if (!selectedFile) {
-      return
+  // Fungsi untuk upload image (dipanggil langsung saat submit)
+  const uploadImageFile = async (file) => {
+    const formData = new FormData()
+    formData.append('image', file)
+    formData.append('category', 'events')
+
+    const response = await api.post('/upload/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+
+    if (!response.data.filename) {
+      throw new Error('Filename tidak ditemukan dalam response')
     }
 
-    try {
-      setUploading(true)
-      
-      const formData = new FormData()
-      formData.append('image', selectedFile)
-      formData.append('category', 'events')
-
-      const response = await api.post('/upload/image', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
-
-      // Simpan hanya filename di formData (untuk database)
-      setFormData(prev => ({
-        ...prev,
-        poster: response.data.filename
-      }))
-
-      // Update preview dengan full URL dari server
-      setImagePreview(response.data.url)
-      
-      // Hapus pilihan file
-      setSelectedFile(null)
-      
-      alert('Poster berhasil diupload')
-    } catch (error) {
-      console.error('Error uploading poster:', error)
-      alert(error.response?.data?.error || 'Gagal mengupload poster')
-    } finally {
-      setUploading(false)
-    }
+    return response.data.filename
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    // Upload gambar terlebih dahulu jika ada file baru yang dipilih
-    if (selectedFile) {
-      await handleUploadImage()
-      // Tunggu sedikit untuk memastikan poster sudah di-set ke formData
-      await new Promise(resolve => setTimeout(resolve, 500))
-    }
-    
+    // Validasi form terlebih dahulu
     if (!formData.title.trim()) {
-      alert('Judul harus diisi')
+      setErrorModal({ 
+        isOpen: true, 
+        message: 'Judul harus diisi' 
+      })
       return
     }
 
     if (!formData.description.trim() || formData.description.replace(/<[^>]*>/g, '').trim().length < 10) {
-      alert('Deskripsi minimal 10 karakter')
+      setErrorModal({ 
+        isOpen: true, 
+        message: 'Deskripsi minimal 10 karakter' 
+      })
       return
     }
 
     if (!formData.tanggal) {
-      alert('Tanggal event harus diisi')
+      setErrorModal({ 
+        isOpen: true, 
+        message: 'Tanggal event harus diisi' 
+      })
       return
     }
 
+    let uploadedFilename = null
+    
+    // Upload gambar terlebih dahulu jika ada file baru yang dipilih
+    if (selectedFile) {
+      try {
+        setSaving(true) // Set loading state untuk menunjukkan proses upload
+        uploadedFilename = await uploadImageFile(selectedFile)
+        console.log('Image uploaded, filename:', uploadedFilename)
+        
+        // Update preview dengan URL dari server
+        setImagePreview(`/uploads/images/events/${uploadedFilename}`)
+        // Update formData dengan filename yang baru
+        setFormData(prev => ({
+          ...prev,
+          image: uploadedFilename
+        }))
+        setSelectedFile(null) // Clear selected file setelah upload
+      } catch (error) {
+        console.error('Error uploading image:', error)
+        setErrorModal({ 
+          isOpen: true, 
+          message: error.response?.data?.error || 'Gagal mengupload image' 
+        })
+        setSaving(false)
+        return // Jangan lanjutkan submit jika upload gagal
+      }
+    }
+    
     try {
-      setSaving(true)
+      // setSaving sudah di-set di atas jika ada selectedFile
+      if (!selectedFile) {
+        setSaving(true)
+      }
       
       // Ubah tanggal ke ISO string dan tangani string kosong untuk field opsional
+      // Gunakan uploadedFilename jika baru diupload, atau formData.image jika sudah ada
+      const imageValue = uploadedFilename || (formData.image && formData.image.trim() ? formData.image.trim() : null)
+      
       const eventData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
         tanggal: new Date(formData.tanggal).toISOString(),
         lokasi: formData.lokasi?.trim() || null,
-        category: formData.category?.trim() || null,
-        poster: formData.poster?.trim() || null,
+        image: imageValue,
         linkDaftar: formData.linkDaftar?.trim() || null,
         published: formData.published || false
       }
       
+      console.log('Current formData:', formData)
+      console.log('Uploaded filename:', uploadedFilename)
+      console.log('Image value to send:', imageValue)
       console.log('Sending event data:', eventData)
       
       if (isEdit) {
         await api.put(`/events/${id}`, eventData)
-        alert('Event berhasil diperbarui')
+        setSuccessModal({ 
+          isOpen: true, 
+          message: 'Event berhasil diperbarui' 
+        })
       } else {
         await api.post('/events', eventData)
-        alert('Event berhasil dibuat')
+        setSuccessModal({ 
+          isOpen: true, 
+          message: 'Event berhasil dibuat' 
+        })
       }
-      
-      navigate(isAdmin ? '/admin/events' : '/pengurus/events')
     } catch (error) {
       console.error('Error saving event:', error)
       console.error('Error response:', error.response?.data)
@@ -224,7 +255,10 @@ const CreateEvent = () => {
         errorMessage = error.response.data.error
       }
       
-      alert(errorMessage)
+      setErrorModal({ 
+        isOpen: true, 
+        message: errorMessage 
+      })
     } finally {
       setSaving(false)
     }
@@ -390,22 +424,6 @@ const CreateEvent = () => {
                           />
                         </div>
 
-                        {/* Kategori */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Kategori (opsional)
-                          </label>
-                          <select
-                            value={formData.category}
-                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          >
-                            <option value="">Pilih Kategori</option>
-                            {categories.map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                          </select>
-                        </div>
                       </div>
                     </Card>
 
@@ -414,11 +432,11 @@ const CreateEvent = () => {
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Media & Link</h3>
                       
                       <div className="space-y-4">
-                        {/* Upload Poster */}
+                        {/* Upload Image */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             <ImageIcon size={16} className="inline mr-1" />
-                            Poster (opsional)
+                            Image (opsional)
                           </label>
                           <input
                             type="file"
@@ -430,30 +448,23 @@ const CreateEvent = () => {
                             Format: JPG, PNG, WebP, GIF. Maksimal 5MB
                           </p>
                           
-                          {/* Preview atau Upload Button */}
+                          {/* Preview untuk file yang dipilih */}
                           {selectedFile && (
-                            <div className="mt-3 space-y-2">
-                              <Button
-                                type="button"
-                                onClick={handleUploadImage}
-                                disabled={uploading}
-                                className="w-full text-sm"
-                              >
-                                {uploading ? 'Mengupload...' : 'Upload Poster'}
-                              </Button>
-                              {imagePreview && (
-                                <div className="rounded-lg overflow-hidden border border-gray-200">
-                                  <img
-                                    src={imagePreview}
-                                    alt="Preview"
-                                    className="w-full h-48 object-cover"
-                                  />
-                                </div>
-                              )}
+                            <div className="mt-3">
+                              <div className="rounded-lg overflow-hidden border border-gray-200">
+                                <img
+                                  src={imagePreview}
+                                  alt="Preview"
+                                  className="w-full h-48 object-cover"
+                                />
+                              </div>
+                              <p className="mt-2 text-xs text-gray-500">
+                                Gambar akan diupload otomatis saat menyimpan event
+                              </p>
                             </div>
                           )}
                           
-                          {/* Preview untuk poster yang sudah ada atau sudah diupload */}
+                          {/* Preview untuk image yang sudah ada atau sudah diupload */}
                           {!selectedFile && imagePreview && (
                             <div className="mt-3 rounded-lg overflow-hidden border border-gray-200">
                               <img
@@ -467,17 +478,17 @@ const CreateEvent = () => {
                                 }}
                               />
                               <div className="hidden p-4 bg-gray-100 text-center text-sm text-gray-500">
-                                Poster tidak dapat dimuat
+                                Image tidak dapat dimuat
                               </div>
                               <button
                                 type="button"
                                 onClick={() => {
                                   setImagePreview(null)
-                                  setFormData(prev => ({ ...prev, poster: '' }))
+                                  setFormData(prev => ({ ...prev, image: '' }))
                                 }}
                                 className="w-full mt-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200"
                               >
-                                Hapus Poster
+                                Hapus Image
                               </button>
                             </div>
                           )}
@@ -678,21 +689,6 @@ const CreateEvent = () => {
                               className="w-full"
                             />
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Kategori
-                            </label>
-                            <select
-                              value={formData.category}
-                              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                            >
-                              <option value="">Pilih Kategori</option>
-                              {categories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                              ))}
-                            </select>
-                          </div>
                         </div>
                       </Card>
 
@@ -702,7 +698,7 @@ const CreateEvent = () => {
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               <ImageIcon size={16} className="inline mr-1" />
-                              Poster (opsional)
+                              Image (opsional)
                             </label>
                             <input
                               type="file"
@@ -715,24 +711,17 @@ const CreateEvent = () => {
                             </p>
                             
                             {selectedFile && (
-                              <div className="mt-3 space-y-2">
-                                <Button
-                                  type="button"
-                                  onClick={handleUploadImage}
-                                  disabled={uploading}
-                                  className="w-full text-sm"
-                                >
-                                  {uploading ? 'Mengupload...' : 'Upload Poster'}
-                                </Button>
-                                {imagePreview && (
-                                  <div className="rounded-lg overflow-hidden border border-gray-200">
-                                    <img
-                                      src={imagePreview}
-                                      alt="Preview"
-                                      className="w-full h-48 object-cover"
-                                    />
-                                  </div>
-                                )}
+                              <div className="mt-3">
+                                <div className="rounded-lg overflow-hidden border border-gray-200">
+                                  <img
+                                    src={imagePreview}
+                                    alt="Preview"
+                                    className="w-full h-48 object-cover"
+                                  />
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">
+                                  Gambar akan diupload otomatis saat menyimpan event
+                                </p>
                               </div>
                             )}
                             
@@ -747,11 +736,11 @@ const CreateEvent = () => {
                                   type="button"
                                   onClick={() => {
                                     setImagePreview(null)
-                                    setFormData(prev => ({ ...prev, poster: '' }))
+                                    setFormData(prev => ({ ...prev, image: '' }))
                                   }}
                                   className="w-full mt-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200"
                                 >
-                                  Hapus Poster
+                                  Hapus Image
                                 </button>
                               </div>
                             )}
@@ -816,6 +805,29 @@ const CreateEvent = () => {
           </div>
         </div>
       )}
+
+      {/* Success Modal */}
+      <AlertModal
+        isOpen={successModal.isOpen}
+        onClose={() => {
+          setSuccessModal({ isOpen: false, message: '' })
+          navigate(isAdmin ? '/admin/events' : '/pengurus/events')
+        }}
+        title="Berhasil"
+        message={successModal.message}
+        variant="success"
+        buttonText="OK"
+      />
+
+      {/* Error Modal */}
+      <AlertModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="Error"
+        message={errorModal.message}
+        variant="error"
+        buttonText="OK"
+      />
     </>
   )
 }

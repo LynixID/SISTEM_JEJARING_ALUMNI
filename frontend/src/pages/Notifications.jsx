@@ -7,7 +7,7 @@ import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Bell, Search, Filter, Check, CheckCheck, Trash2, Heart, MessageCircle, Reply, Megaphone, Calendar, X } from 'lucide-react'
+import { Bell, Search, Filter, Check, CheckCheck, Trash2, Heart, MessageCircle, Reply, Megaphone, Calendar, X, UserPlus } from 'lucide-react'
 
 const Notifications = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -192,7 +192,9 @@ const Notifications = () => {
     }
 
     // Navigate berdasarkan type
-    if (notification.relatedType === 'post' && notification.relatedId) {
+    if (notification.type === 'CONNECTION_REQUEST' || notification.type === 'CONNECTION_ACCEPTED') {
+      navigate('/koneksi')
+    } else if (notification.relatedType === 'post' && notification.relatedId) {
       navigate(`/posts/${notification.relatedId}`)
     } else if (notification.relatedType === 'announcement' && notification.relatedId) {
       navigate(`/berita/${notification.relatedId}`)
@@ -223,7 +225,15 @@ const Notifications = () => {
   }
 
   const getCategoryInfo = (type) => {
-    return categories.find(c => c.value === type) || categories[0]
+    const found = categories.find(c => c.value === type)
+    if (found) return found
+    
+    // Handle connection notification types
+    if (type === 'CONNECTION_REQUEST' || type === 'CONNECTION_ACCEPTED') {
+      return { value: type, label: 'Koneksi', icon: UserPlus, color: 'indigo' }
+    }
+    
+    return categories[0]
   }
 
   if (authLoading || loading) {
@@ -399,6 +409,7 @@ const Notifications = () => {
                               notification.type === 'REPLY' ? 'bg-green-100 text-green-600' :
                               notification.type === 'ANNOUNCEMENT' ? 'bg-purple-100 text-purple-600' :
                               notification.type === 'EVENT' ? 'bg-orange-100 text-orange-600' :
+                              notification.type === 'CONNECTION_REQUEST' || notification.type === 'CONNECTION_ACCEPTED' ? 'bg-indigo-100 text-indigo-600' :
                               'bg-gray-100 text-gray-600'
                             }`}>
                               <Icon size={20} />

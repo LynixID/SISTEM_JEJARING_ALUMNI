@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, User as UserIcon, Eye, Search, Filter, MapPin } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import api from '../services/api'
+import api, { getReadStatus, markAnnouncementAsRead, markEventAsRead } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
 import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
@@ -18,7 +18,7 @@ const Berita = () => {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
+  const [readStatus, setReadStatus] = useState({ announcements: {}, events: {} })
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 12,
@@ -40,7 +40,7 @@ const Berita = () => {
         fetchEvents()
       }
     }
-  }, [pagination.page, categoryFilter, isAuthenticated, activeTab])
+  }, [pagination.page, isAuthenticated, activeTab])
 
   const fetchAnnouncements = async () => {
     try {
@@ -49,13 +49,26 @@ const Berita = () => {
         page: pagination.page,
         limit: pagination.limit,
         published: 'true',
-        ...(search && { search }),
-        ...(categoryFilter && { category: categoryFilter })
+        ...(search && { search })
       })
 
       const response = await api.get(`/announcements?${params}`)
       setAnnouncements(response.data.announcements)
       setPagination(response.data.pagination)
+
+      // Fetch read status untuk semua announcements
+      if (response.data.announcements.length > 0 && isAuthenticated) {
+        const announcementIds = response.data.announcements.map(a => a.id)
+        try {
+          const readStatusResponse = await getReadStatus(announcementIds, [])
+          setReadStatus(prev => ({
+            ...prev,
+            announcements: { ...prev.announcements, ...readStatusResponse.data.announcements }
+          }))
+        } catch (error) {
+          console.error('Error fetching read status:', error)
+        }
+      }
     } catch (error) {
       console.error('Error fetching announcements:', error)
     } finally {
@@ -76,13 +89,26 @@ const Berita = () => {
         page: pagination.page,
         limit: pagination.limit,
         published: 'true',
-        ...(search && { search }),
-        ...(categoryFilter && { category: categoryFilter })
+        ...(search && { search })
       })
 
       const response = await api.get(`/events?${params}`)
       setEvents(response.data.events || [])
       setPagination(response.data.pagination || { ...pagination, total: 0, totalPages: 0 })
+
+      // Fetch read status untuk semua events
+      if (response.data.events && response.data.events.length > 0 && isAuthenticated) {
+        const eventIds = response.data.events.map(e => e.id)
+        try {
+          const readStatusResponse = await getReadStatus([], eventIds)
+          setReadStatus(prev => ({
+            ...prev,
+            events: { ...prev.events, ...readStatusResponse.data.events }
+          }))
+        } catch (error) {
+          console.error('Error fetching read status:', error)
+        }
+      }
     } catch (error) {
       console.error('Error fetching events:', error)
     } finally {
@@ -90,19 +116,6 @@ const Berita = () => {
     }
   }
 
-  const getCategoryBadge = (category) => {
-    const colors = {
-      'Berita Umum': 'bg-blue-100 text-blue-800',
-      'Agenda': 'bg-green-100 text-green-800',
-      'Program DPW': 'bg-purple-100 text-purple-800',
-      'Peluang Kerjasama': 'bg-yellow-100 text-yellow-800'
-    }
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[category] || 'bg-gray-100 text-gray-800'}`}>
-        {category}
-      </span>
-    )
-  }
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
@@ -187,33 +200,6 @@ const Berita = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => {
-                      setCategoryFilter(e.target.value)
-                      setPagination({ ...pagination, page: 1 })
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Semua Kategori</option>
-                    {activeTab === 'pengumuman' ? (
-                      <>
-                        <option value="Berita Umum">Berita Umum</option>
-                        <option value="Agenda">Agenda</option>
-                        <option value="Program DPW">Program DPW</option>
-                        <option value="Peluang Kerjasama">Peluang Kerjasama</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="Webinar">Webinar</option>
-                        <option value="Workshop">Workshop</option>
-                        <option value="Seminar">Seminar</option>
-                        <option value="Reuni">Reuni</option>
-                        <option value="Networking">Networking</option>
-                        <option value="Lainnya">Lainnya</option>
-                      </>
-                    )}
-                  </select>
                   <Button type="submit" variant="primary">
                     Cari
                   </Button>
@@ -232,14 +218,38 @@ const Berita = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                    {announcements.map((announcement) => (
+                    {announcements.map((announcement) => {
+                      const isUnread = !readStatus.announcements[announcement.id]
+                      return (
                       <div
                         key={announcement.id}
-                        className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow transition-all cursor-pointer group"
-                        onClick={() => navigate(`/berita/${announcement.slug || announcement.id}`)}
+                        className={`bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow transition-all cursor-pointer group relative ${
+                          isUnread 
+                            ? 'shadow-lg shadow-blue-200 ring-2 ring-blue-400' 
+                            : 'shadow-sm'
+                        }`}
+                        onClick={async () => {
+                          // Mark as read jika belum dibaca
+                          if (isUnread && isAuthenticated) {
+                            try {
+                              await markAnnouncementAsRead(announcement.id)
+                              setReadStatus(prev => ({
+                                ...prev,
+                                announcements: { ...prev.announcements, [announcement.id]: true }
+                              }))
+                            } catch (error) {
+                              console.error('Error marking announcement as read:', error)
+                            }
+                          }
+                          navigate(`/berita/${announcement.slug || announcement.id}`)
+                        }}
                       >
+                        {/* Badge merah untuk item yang belum dibaca */}
+                        {isUnread && (
+                          <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full z-10 shadow-sm"></div>
+                        )}
                         {announcement.image && (
-                          <div className="h-48 bg-gray-200 overflow-hidden">
+                          <div className="h-48 bg-gray-200 overflow-hidden relative">
                             <img
                               src={getImageUrl(announcement.image)}
                               alt={announcement.title}
@@ -251,8 +261,7 @@ const Berita = () => {
                           </div>
                         )}
                         <div className="p-5">
-                          <div className="flex items-center justify-between mb-3">
-                            {getCategoryBadge(announcement.category)}
+                          <div className="flex items-center justify-end mb-3">
                             <div className="flex items-center gap-1 text-xs text-gray-500">
                               <Eye size={14} />
                               {announcement.views || 0}
@@ -283,7 +292,8 @@ const Berita = () => {
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </>
@@ -297,16 +307,40 @@ const Berita = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                    {events.map((event) => (
+                    {events.map((event) => {
+                      const isUnread = !readStatus.events[event.id]
+                      return (
                       <div
                         key={event.id}
-                        className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow transition-all cursor-pointer group"
-                        onClick={() => navigate(`/events/${event.id}`)}
+                        className={`bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow transition-all cursor-pointer group relative ${
+                          isUnread 
+                            ? 'shadow-lg shadow-blue-200/50 ring-2 ring-blue-100' 
+                            : 'shadow-sm'
+                        }`}
+                        onClick={async () => {
+                          // Mark as read jika belum dibaca
+                          if (isUnread && isAuthenticated) {
+                            try {
+                              await markEventAsRead(event.id)
+                              setReadStatus(prev => ({
+                                ...prev,
+                                events: { ...prev.events, [event.id]: true }
+                              }))
+                            } catch (error) {
+                              console.error('Error marking event as read:', error)
+                            }
+                          }
+                          navigate(`/events/${event.id}`)
+                        }}
                       >
-                        {event.poster && (
-                          <div className="h-48 bg-gray-200 overflow-hidden">
+                        {/* Badge merah untuk item yang belum dibaca */}
+                        {isUnread && (
+                          <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full z-10 shadow-sm"></div>
+                        )}
+                        {event.image && (
+                          <div className="h-48 bg-gray-200 overflow-hidden relative">
                             <img
-                              src={getImageUrl(event.poster)}
+                              src={getImageUrl(event.image, 'events')}
                               alt={event.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                               onError={(e) => {
@@ -316,8 +350,7 @@ const Berita = () => {
                           </div>
                         )}
                         <div className="p-5">
-                          <div className="flex items-center justify-between mb-3">
-                            {event.category && getCategoryBadge(event.category)}
+                          <div className="flex items-center justify-end mb-3">
                             <div className={`text-xs px-3 py-1 rounded-full font-medium ${
                               new Date(event.tanggal) > new Date() 
                                 ? 'bg-green-100 text-green-800' 
@@ -359,7 +392,8 @@ const Berita = () => {
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </>

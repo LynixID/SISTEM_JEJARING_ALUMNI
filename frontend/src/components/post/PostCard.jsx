@@ -8,7 +8,7 @@ import Card from '../common/Card'
 import Button from '../common/Button'
 import AlertModal from '../common/AlertModal'
 import ConfirmModal from '../common/ConfirmModal'
-import { Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2 } from 'lucide-react'
+import { Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2, Globe, Lock, User } from 'lucide-react'
 import CommentSection from '../comment/CommentSection'
 import EditPost from './EditPost'
 
@@ -45,6 +45,13 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
     return () => socket.off('post_liked', handlePostLiked)
   }, [post.id])
 
+  // Debug: Log post data untuk troubleshooting
+  useEffect(() => {
+    if (post.mentions) {
+      console.log('Post ID:', post.id, 'Mentions:', post.mentions, 'Type:', typeof post.mentions, 'Is Array:', Array.isArray(post.mentions))
+    }
+  }, [post.id, post.mentions])
+
   // Check apakah post milik user saat ini
   const isOwnPost = user?.id === post.author.id
 
@@ -65,8 +72,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   }
 
   // Handler untuk toggle like dengan optimistic update
-  const handleLike = async (e) => {
-    e.stopPropagation() // Prevent card click
+  const handleLike = async () => {
     if (loading) return
     setLoading(true)
     
@@ -111,68 +117,41 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   }
 
   // Handler untuk share post (native share API atau copy link)
-  const handleShare = (e) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation() // Prevent card click
-    }
-    
-    const postUrl = `${window.location.origin}/posts/${post.id}`
-    const shareText = post.content ? post.content.substring(0, 100) : 'Lihat postingan ini'
-    
-    console.log('Share clicked, URL:', postUrl) // Debug log
-    
+  const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `Postingan dari ${post.author?.nama || 'Alumni'}`,
-        text: shareText,
-        url: postUrl
-      }).catch((err) => {
-        // Jika user cancel share, tidak perlu tampilkan error
-        if (err.name !== 'AbortError') {
-          console.error('Error sharing:', err)
-        }
+        title: 'Lihat post ini',
+        text: post.content.substring(0, 100),
+        url: window.location.href
       })
     } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(postUrl).then(() => {
-        setAlertModal({
-          isOpen: true,
-          title: 'Berhasil',
-          message: 'Link postingan berhasil disalin!',
-          variant: 'success'
-        })
-      }).catch((err) => {
-        console.error('Error copying to clipboard:', err)
-        setAlertModal({
-          isOpen: true,
-          title: 'Error',
-          message: 'Gagal menyalin link',
-          variant: 'error'
-        })
+      navigator.clipboard.writeText(window.location.href)
+      setAlertModal({
+        isOpen: true,
+        title: 'Berhasil',
+        message: 'Link berhasil disalin!',
+        variant: 'success'
       })
     }
   }
 
-  // Handler untuk navigate ke detail post
-  const handleCardClick = () => {
+  // Handler untuk klik card (navigasi ke detail post)
+  const handleCardClick = (e) => {
+    // Jangan navigate jika klik pada elemen interaktif (button, link, dll)
+    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('[role="button"]')) {
+      return
+    }
     navigate(`/posts/${post.id}`)
   }
 
   return (
-    <Card 
-      className="p-4 mb-4"
-      onClick={handleCardClick}
-    >
+    <Card className="p-4 mb-4 cursor-pointer hover:shadow-md transition-shadow" onClick={handleCardClick}>
       {/* Post header dengan author info dan menu */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          {/* Author avatar - clickable ke profil */}
+          {/* Author avatar - clickable */}
           <button
-            onClick={(e) => {
-              e.stopPropagation() // Prevent card click
-              navigate(`/profil/${post.author.id}`)
-            }}
+            onClick={() => navigate(`/profil/${post.author.id}`)}
             className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 hover:ring-2 hover:ring-blue-300 transition-all cursor-pointer"
           >
             {post.author?.fotoProfil ? (
@@ -188,22 +167,34 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
               </span>
             )}
           </button>
-          {/* Author name dan timestamp - clickable ke profil */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation() // Prevent card click
-              navigate(`/profil/${post.author.id}`)
-            }}
-            className="text-left hover:opacity-80 transition-opacity"
-          >
-            <p className="font-semibold text-gray-900 hover:text-blue-600">{post.author?.nama}</p>
-            <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
-          </button>
+          {/* Author name dan timestamp - clickable */}
+          <div className="flex-1">
+            <button
+              onClick={() => navigate(`/profil/${post.author.id}`)}
+              className="text-left hover:opacity-80 transition-opacity"
+            >
+              <p className="font-semibold text-gray-900 hover:text-blue-600">{post.author?.nama}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+                {/* Visibility badge di samping waktu */}
+                {post.visibility && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+                    post.visibility === 'PUBLIC' 
+                      ? 'bg-blue-50 text-blue-600' 
+                      : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {post.visibility === 'PUBLIC' ? <Globe size={12} /> : <Lock size={12} />}
+                    {post.visibility === 'PUBLIC' ? 'Publik' : 'Hanya Koneksi'}
+                  </span>
+                )}
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Edit/Delete menu untuk post owner */}
         {isOwnPost && (
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
+          <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="p-1 rounded-full hover:bg-gray-100"
@@ -238,6 +229,38 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
         )}
       </div>
 
+      {/* Mentions */}
+      {post.mentions && Array.isArray(post.mentions) && post.mentions.length > 0 && (
+        <div className="mb-3 flex items-center gap-2 flex-wrap text-sm text-gray-600">
+          <User size={14} className="text-gray-400 flex-shrink-0" />
+          <span>bersama dengan</span>
+          {post.mentions.length === 1 ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                navigate(`/profil/${post.mentions[0].id}`)
+              }}
+              className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+            >
+              {post.mentions[0]?.nama || 'Seseorang'}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigate(`/profil/${post.mentions[0].id}`)
+                }}
+                className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+              >
+                {post.mentions[0]?.nama || 'Seseorang'}
+              </button>
+              <span>dan {post.mentions.length - 1} lainnya</span>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Post content text */}
       <div className="mb-3">
         <p className="text-gray-900 whitespace-pre-wrap">{post.content}</p>
@@ -256,28 +279,19 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
       )}
 
       {/* Action buttons: Like, Comment, Share */}
-      <div 
-        className="flex items-center gap-4 pt-3 border-t border-gray-200" 
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      <div className="flex items-center gap-4 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={handleLike}
           disabled={loading}
-          className={`flex items-center gap-2 ${isLiked ? 'text-red-600' : 'text-gray-600'} hover:text-red-600 transition-colors cursor-pointer`}
-          type="button"
+          className={`flex items-center gap-2 ${isLiked ? 'text-red-600' : 'text-gray-600'} hover:text-red-600 transition-colors`}
         >
           <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
           <span className="text-sm font-medium">{likesCount}</span>
         </button>
 
         <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowComments(!showComments)
-          }}
-          className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
-          type="button"
+          onClick={() => setShowComments(!showComments)}
+          className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
         >
           <MessageCircle size={20} />
           <span className="text-sm font-medium">{commentsCount}</span>
@@ -285,9 +299,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
 
         <button
           onClick={handleShare}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors cursor-pointer relative z-10"
-          type="button"
+          className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors"
         >
           <Share2 size={20} />
           <span className="text-sm">Bagikan</span>

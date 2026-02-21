@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { deleteComment, createComment } from '../../services/api'
 import { getImageUrl } from '../../utils/imageUtils'
@@ -7,6 +8,7 @@ import EditComment from './EditComment'
 
 const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdated, isReply = false }) => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   
   // State management untuk UI interactions
   const [showMenu, setShowMenu] = useState(false)
@@ -65,10 +67,20 @@ const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdate
     }
   }
 
+  const handleProfileClick = (e) => {
+    e.stopPropagation()
+    if (comment.author?.id) {
+      navigate(`/profil/${comment.author.id}`)
+    }
+  }
+
   return (
     <div className={isReply ? "ml-8 mt-2" : ""}>
       <div className="flex gap-2">
-        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+        <div 
+          onClick={handleProfileClick}
+          className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+        >
           {comment.author?.fotoProfil ? (
             <img
               src={getImageUrl(comment.author.fotoProfil, 'profiles')}
@@ -93,7 +105,12 @@ const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdate
           <div className={`rounded-lg p-3 ${isReply ? 'bg-gray-100' : 'bg-gray-50'}`}>
             <div className="flex items-start justify-between mb-1">
               <div>
-                <p className="font-semibold text-sm text-gray-900">{comment.author?.nama}</p>
+                <p 
+                  onClick={handleProfileClick}
+                  className="font-semibold text-sm text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                >
+                  {comment.author?.nama}
+                </p>
                 <p className="text-xs text-gray-500">{formatDate(comment.createdAt)}</p>
               </div>
               {isOwnComment && (

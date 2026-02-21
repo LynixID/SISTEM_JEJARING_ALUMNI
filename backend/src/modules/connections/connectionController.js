@@ -436,11 +436,11 @@ export const getConnections = async (req, res) => {
             id: true,
             nama: true,
             email: true,
+            angkatan: true, // angkatan ada di User, bukan Profile
+            domisili: true, // domisili ada di User, bukan Profile
             profile: {
               select: {
-                fotoProfil: true,
-                angkatan: true,
-                domisili: true
+                fotoProfil: true // hanya fotoProfil yang ada di Profile
               }
             }
           }
@@ -450,11 +450,11 @@ export const getConnections = async (req, res) => {
             id: true,
             nama: true,
             email: true,
+            angkatan: true, // angkatan ada di User, bukan Profile
+            domisili: true, // domisili ada di User, bukan Profile
             profile: {
               select: {
-                fotoProfil: true,
-                angkatan: true,
-                domisili: true
+                fotoProfil: true // hanya fotoProfil yang ada di Profile
               }
             }
           }
@@ -466,22 +466,28 @@ export const getConnections = async (req, res) => {
     })
 
     // Format connections untuk return user yang terhubung (bukan requester)
-    const formattedConnections = connections.map(conn => {
-      const connectedUser = conn.userId === userId ? conn.connectedTo : conn.user
-      return {
-        id: conn.id,
-        status: conn.status,
-        createdAt: conn.createdAt,
-        user: {
-          id: connectedUser.id,
-          nama: connectedUser.nama,
-          email: connectedUser.email,
-          fotoProfil: connectedUser.profile?.fotoProfil || null,
-          angkatan: connectedUser.profile?.angkatan || null,
-          domisili: connectedUser.profile?.domisili || null
+    const formattedConnections = connections
+      .filter(conn => {
+        // Filter out connections where user or connectedTo is null
+        const connectedUser = conn.userId === userId ? conn.connectedTo : conn.user
+        return connectedUser !== null
+      })
+      .map(conn => {
+        const connectedUser = conn.userId === userId ? conn.connectedTo : conn.user
+        return {
+          id: conn.id,
+          status: conn.status,
+          createdAt: conn.createdAt,
+          user: {
+            id: connectedUser.id,
+            nama: connectedUser.nama,
+            email: connectedUser.email,
+            fotoProfil: connectedUser.profile?.fotoProfil || null,
+            angkatan: connectedUser.angkatan || null, // angkatan ada di User, bukan Profile
+            domisili: connectedUser.domisili || null // domisili ada di User, bukan Profile
+          }
         }
-      }
-    })
+      })
 
     res.json({
       connections: formattedConnections

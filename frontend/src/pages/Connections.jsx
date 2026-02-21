@@ -303,7 +303,11 @@ const Connections = () => {
               </Card>
             ) : (
               <Card className="p-0 overflow-hidden">
-                {connections.length === 0 ? (
+                {loading ? (
+                  <div className="p-12 text-center">
+                    <div className="text-gray-500">Memuat koneksi...</div>
+                  </div>
+                ) : connections.length === 0 ? (
                   <div className="p-12 text-center">
                     <Users size={48} className="mx-auto mb-4 text-gray-300" />
                     <p className="text-gray-500 text-lg">Belum ada koneksi</p>

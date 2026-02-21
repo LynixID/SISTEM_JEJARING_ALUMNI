@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Calendar, Eye, ArrowLeft, User as UserIcon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import api from '../services/api'
+import api, { markAnnouncementAsRead } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
 import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
@@ -40,7 +40,18 @@ const AnnouncementDetail = () => {
       setLoading(true)
       setError('')
       const response = await api.get(`/announcements/${id}`)
-      setAnnouncement(response.data.announcement)
+      const announcementData = response.data.announcement || response.data
+      setAnnouncement(announcementData)
+
+      // Mark as read jika user authenticated dan announcement published
+      if (isAuthenticated && announcementData?.published) {
+        try {
+          await markAnnouncementAsRead(announcementData.id)
+        } catch (error) {
+          console.error('Error marking announcement as read:', error)
+          // Jangan tampilkan error ke user, ini opsional
+        }
+      }
     } catch (err) {
       console.error('Error fetching announcement:', err)
       setError(err.response?.data?.error || 'Gagal memuat pengumuman')
@@ -142,10 +153,7 @@ const AnnouncementDetail = () => {
 
               <div className="p-6">
                 {/* Header Info */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    {getCategoryBadge(announcement.category)}
-                  </div>
+                <div className="flex items-start justify-end mb-4">
                   <div className="flex items-center gap-1 text-sm text-gray-500">
                     <Eye size={16} />
                     {announcement.views || 0} dilihat

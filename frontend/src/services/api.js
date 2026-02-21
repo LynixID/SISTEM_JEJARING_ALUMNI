@@ -50,6 +50,12 @@ export const getPostById = (id) => {
 export const createPost = (data, image) => {
   const formData = new FormData()
   formData.append('content', data.content)
+  if (data.visibility) {
+    formData.append('visibility', data.visibility)
+  }
+  if (data.mentions && Array.isArray(data.mentions) && data.mentions.length > 0) {
+    formData.append('mentions', JSON.stringify(data.mentions))
+  }
   if (image) {
     formData.append('image', image)
   }
@@ -63,6 +69,16 @@ export const createPost = (data, image) => {
 export const updatePost = (id, data, image) => {
   const formData = new FormData()
   if (data.content) formData.append('content', data.content)
+  if (data.visibility !== undefined) {
+    formData.append('visibility', data.visibility)
+  }
+  if (data.mentions !== undefined) {
+    if (Array.isArray(data.mentions) && data.mentions.length > 0) {
+      formData.append('mentions', JSON.stringify(data.mentions))
+    } else {
+      formData.append('mentions', JSON.stringify([]))
+    }
+  }
   if (image === null) {
     // Jika image null, berarti request untuk remove image
     formData.append('removeImage', 'true')
@@ -223,6 +239,23 @@ export const acceptConnection = (id) => {
 
 export const rejectConnection = (id) => {
   return api.put(`/connections/${id}/reject`)
+}
+
+// Reads API (untuk tracking announcement dan event yang sudah dibaca)
+export const getUnreadNewsCount = () => {
+  return api.get('/reads/unread-count')
+}
+
+export const getReadStatus = (announcementIds = [], eventIds = []) => {
+  return api.post('/reads/read-status', { announcementIds, eventIds })
+}
+
+export const markAnnouncementAsRead = (id) => {
+  return api.post(`/reads/announcements/${id}/read`)
+}
+
+export const markEventAsRead = (id) => {
+  return api.post(`/reads/events/${id}/read`)
 }
 
 export default api

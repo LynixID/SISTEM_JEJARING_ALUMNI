@@ -33,17 +33,20 @@ export const createEventValidation = [
     .isLength({ min: 3, max: 200 })
     .withMessage('Lokasi harus antara 3-200 karakter'),
   
-  body('category')
+  body('image')
     .optional({ nullable: true, checkFalsy: true })
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Kategori harus antara 2-50 karakter'),
-  
-  body('poster')
-    .optional({ nullable: true, checkFalsy: true })
-    .trim()
-    .isURL()
-    .withMessage('URL poster tidak valid'),
+    .custom((value) => {
+      // Jika value kosong/null/undefined, skip validasi
+      if (!value || (typeof value === 'string' && value.trim() === '')) {
+        return true
+      }
+      // Jika ada value, validasi panjangnya
+      const trimmed = String(value).trim()
+      if (trimmed.length < 1 || trimmed.length > 255) {
+        throw new Error('Image filename harus antara 1-255 karakter')
+      }
+      return true
+    }),
   
   body('linkDaftar')
     .optional({ nullable: true, checkFalsy: true })
@@ -85,17 +88,20 @@ export const updateEventValidation = [
     .isLength({ min: 3, max: 200 })
     .withMessage('Lokasi harus antara 3-200 karakter'),
   
-  body('category')
+  body('image')
     .optional({ nullable: true, checkFalsy: true })
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Kategori harus antara 2-50 karakter'),
-  
-  body('poster')
-    .optional({ nullable: true, checkFalsy: true })
-    .trim()
-    .isURL()
-    .withMessage('URL poster tidak valid'),
+    .custom((value) => {
+      // Jika value kosong/null/undefined, skip validasi
+      if (!value || (typeof value === 'string' && value.trim() === '')) {
+        return true
+      }
+      // Jika ada value, validasi panjangnya
+      const trimmed = String(value).trim()
+      if (trimmed.length < 1 || trimmed.length > 255) {
+        throw new Error('Image filename harus antara 1-255 karakter')
+      }
+      return true
+    }),
   
   body('linkDaftar')
     .optional({ nullable: true, checkFalsy: true })

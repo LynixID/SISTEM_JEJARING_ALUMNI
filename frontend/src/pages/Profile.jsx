@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
-import { getUserProfile, getConnectionStatus } from '../services/api'
+import { getUserProfile, getConnectionStatus, acceptConnection, rejectConnection, getPosts } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
-import { Edit, User, Briefcase, Award, GraduationCap, FileText, Globe, MapPin, Mail, Phone, Calendar, UserPlus, MessageCircle, Check, Clock } from 'lucide-react'
+import { Edit, User, Briefcase, Award, GraduationCap, FileText, Globe, MapPin, Mail, Phone, Calendar, UserPlus, MessageCircle, Check, Clock, X, Newspaper } from 'lucide-react'
 import Button from '../components/common/Button'
 import ConnectModal from '../components/connection/ConnectModal'
+import PostCard from '../components/post/PostCard'
 
 const Profile = () => {
   const { id } = useParams()
@@ -19,7 +20,17 @@ const Profile = () => {
   const [isOwnProfile, setIsOwnProfile] = useState(false)
   const [showConnectModal, setShowConnectModal] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState(null)
+  const [connectionInfo, setConnectionInfo] = useState(null)
   const [loadingConnection, setLoadingConnection] = useState(false)
+  const [processingConnection, setProcessingConnection] = useState(false)
+  const [userPosts, setUserPosts] = useState([])
+  const [loadingPosts, setLoadingPosts] = useState(false)
+  const [postsPagination, setPostsPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  })
 
   // Fetch user profile saat component mount atau id berubah
   useEffect(() => {
@@ -43,9 +54,11 @@ const Profile = () => {
       setLoadingConnection(true)
       const response = await getConnectionStatus(userId)
       setConnectionStatus(response.data.status)
+      setConnectionInfo(response.data.connection)
     } catch (error) {
       console.error('Error fetching connection status:', error)
       setConnectionStatus(null)
+      setConnectionInfo(null)
     } finally {
       setLoadingConnection(false)
     }
@@ -56,6 +69,46 @@ const Profile = () => {
     // Refresh connection status
     if (user?.id) {
       fetchConnectionStatus(user.id)
+    }
+  }
+
+  // Handle accept connection
+  const handleAcceptConnection = async () => {
+    if (!connectionInfo?.id) return
+    
+    try {
+      setProcessingConnection(true)
+      await acceptConnection(connectionInfo.id)
+      // Refresh connection status
+      if (user?.id) {
+        await fetchConnectionStatus(user.id)
+      }
+    } catch (error) {
+      alert(error.response?.data?.error || 'Gagal menerima request koneksi')
+    } finally {
+      setProcessingConnection(false)
+    }
+  }
+
+  // Handle reject connection
+  const handleRejectConnection = async () => {
+    if (!connectionInfo?.id) return
+    
+    if (!window.confirm('Apakah Anda yakin ingin menolak request koneksi ini?')) {
+      return
+    }
+
+    try {
+      setProcessingConnection(true)
+      await rejectConnection(connectionInfo.id)
+      // Refresh connection status
+      if (user?.id) {
+        await fetchConnectionStatus(user.id)
+      }
+    } catch (error) {
+      alert(error.response?.data?.error || 'Gagal menolak request koneksi')
+    } finally {
+      setProcessingConnection(false)
     }
   }
 
@@ -74,6 +127,37 @@ const Profile = () => {
       setLoading(false)
     }
   }
+
+  // Fetch user posts
+  const fetchUserPosts = async (userId, page = 1) => {
+    try {
+      setLoadingPosts(true)
+      const limit = postsPagination.limit || 10
+      const response = await getPosts({ userId, page, limit })
+      if (page === 1) {
+        setUserPosts(response.data.posts || [])
+      } else {
+        setUserPosts(prev => [...prev, ...(response.data.posts || [])])
+      }
+      setPostsPagination(prev => ({
+        ...prev,
+        page: response.data.pagination.page,
+        total: response.data.pagination.total,
+        totalPages: response.data.pagination.totalPages
+      }))
+    } catch (error) {
+      console.error('Error fetching user posts:', error)
+    } finally {
+      setLoadingPosts(false)
+    }
+  }
+
+  // Fetch posts saat tab postingan aktif atau user berubah
+  useEffect(() => {
+    if (activeTab === 'posts' && user?.id) {
+      fetchUserPosts(user.id, 1)
+    }
+  }, [activeTab, user?.id])
 
   const handleEditProfile = () => {
     navigate(`/profil/${user?.id || currentUser?.id}/edit`)
@@ -116,9 +200,10 @@ const Profile = () => {
   const fotoProfil = profile.fotoProfil || null
   const coverPhoto = profile.coverPhoto || null
 
-  // Filter tabs - hanya tampilkan yang ada datanya (kecuali About yang selalu tampil)
+  // Filter tabs - hanya tampilkan yang ada datanya (kecuali About dan Posts yang selalu tampil)
   const allTabs = [
     { id: 'about', label: 'Tentang', icon: User, alwaysShow: true },
+    { id: 'posts', label: 'Postingan', icon: Newspaper, alwaysShow: true },
     { 
       id: 'portfolio', 
       label: 'Portfolio', 
@@ -251,10 +336,34 @@ const Profile = () => {
                                 Koneksikan
                               </Button>
                             )}
-                            {connectionStatus === 'PENDING' && (
+                            {connectionStatus === 'PENDING' && connectionInfo?.isRequester && (
                               <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-xl border border-yellow-200">
                                 <Clock size={18} />
                                 <span className="text-sm font-medium">Request Dikirim</span>
+                              </div>
+                            )}
+                            {connectionStatus === 'PENDING' && !connectionInfo?.isRequester && (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={handleAcceptConnection}
+                                  disabled={processingConnection}
+                                  className="flex items-center gap-2 rounded-xl"
+                                >
+                                  <Check size={18} />
+                                  {processingConnection ? 'Memproses...' : 'Terima'}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleRejectConnection}
+                                  disabled={processingConnection}
+                                  className="flex items-center gap-2 rounded-xl text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                                >
+                                  <X size={18} />
+                                  Tolak
+                                </Button>
                               </div>
                             )}
                             {connectionStatus === 'ACCEPTED' && (
@@ -633,6 +742,58 @@ const Profile = () => {
                     <Award className="mx-auto text-gray-300 mb-4" size={48} />
                     <p className="text-gray-500">Belum ada sertifikasi</p>
                   </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'posts' && (
+              <div>
+                {loadingPosts && userPosts.length === 0 ? (
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                    <div className="text-gray-500">Memuat postingan...</div>
+                  </div>
+                ) : userPosts.length === 0 ? (
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                    <Newspaper className="mx-auto text-gray-300 mb-4" size={48} />
+                    <p className="text-gray-500">Belum ada postingan</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      {userPosts.map((post) => (
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          onPostDeleted={(postId) => {
+                            setUserPosts(prev => prev.filter(p => p.id !== postId))
+                          }}
+                          onPostUpdated={() => {
+                            if (user?.id) {
+                              fetchUserPosts(user.id, 1)
+                            }
+                          }}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* Pagination */}
+                    {postsPagination.totalPages > 1 && (
+                      <div className="mt-6 flex justify-center">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            if (user?.id && postsPagination.page < postsPagination.totalPages) {
+                              fetchUserPosts(user.id, postsPagination.page + 1)
+                            }
+                          }}
+                          disabled={loadingPosts || postsPagination.page >= postsPagination.totalPages}
+                          className="rounded-lg"
+                        >
+                          {loadingPosts ? 'Memuat...' : 'Muat Lebih Banyak'}
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

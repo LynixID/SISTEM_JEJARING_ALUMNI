@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Home, Users, MessageCircle, Bell, User, Newspaper, UserPlus, Edit, ChevronDown, ChevronRight, FileText, CalendarCheck } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { getUnreadCount, getConnectionRequests } from '../../services/api'
+import { getUnreadCount, getConnectionRequests, getUnreadNewsCount } from '../../services/api'
 import { getSocket } from '../../config/socket'
 
 const Sidebar = () => {
@@ -11,6 +11,7 @@ const Sidebar = () => {
   const [kelolaBeritaOpen, setKelolaBeritaOpen] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   const [pendingConnectionsCount, setPendingConnectionsCount] = useState(0)
+  const [unreadNewsCount, setUnreadNewsCount] = useState(0)
 
   // Fetch unread count
   useEffect(() => {
@@ -79,6 +80,29 @@ const Sidebar = () => {
     }
   }, [isAuthenticated, user])
 
+  // Fetch unread news count (announcement + event)
+  useEffect(() => {
+    if (!isAuthenticated || user?.role === 'ADMIN') return
+
+    const fetchUnreadNewsCount = async () => {
+      try {
+        const response = await getUnreadNewsCount()
+        setUnreadNewsCount(response.data.unreadCount || 0)
+      } catch (error) {
+        console.error('Error fetching unread news count:', error)
+      }
+    }
+
+    fetchUnreadNewsCount()
+
+    // Polling setiap 30 detik untuk update
+    const interval = setInterval(fetchUnreadNewsCount, 30000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [isAuthenticated, user])
+
   const getProfilePath = () => {
     return user?.id ? `/profil/${user.id}` : '/profil'
   }
@@ -132,6 +156,8 @@ const Sidebar = () => {
             const showNotificationBadge = item.path === '/notifikasi' && unreadCount > 0 && user?.role !== 'ADMIN'
             // Tambahkan badge untuk Koneksi jika ada pending requests
             const showConnectionBadge = item.path === '/koneksi' && pendingConnectionsCount > 0 && user?.role !== 'ADMIN'
+            // Tambahkan badge untuk Berita jika ada unread announcement/event
+            const showNewsBadge = item.path === '/berita' && unreadNewsCount > 0 && user?.role !== 'ADMIN'
 
             return (
               <li key={item.path}>
@@ -155,6 +181,11 @@ const Sidebar = () => {
                   {showConnectionBadge && (
                     <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {pendingConnectionsCount > 9 ? '9+' : pendingConnectionsCount}
+                    </span>
+                  )}
+                  {showNewsBadge && (
+                    <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadNewsCount > 9 ? '9+' : unreadNewsCount}
                     </span>
                   )}
                 </Link>

@@ -17,7 +17,6 @@ export const getAllAnnouncements = async (req, res) => {
       page = 1, 
       limit = 10, 
       search = '', 
-      category = '',
       published = undefined 
     } = req.query
 
@@ -40,10 +39,6 @@ export const getAllAnnouncements = async (req, res) => {
       ]
     }
 
-    if (category) {
-      where.category = category
-    }
-
     const skip = (parseInt(page) - 1) * parseInt(limit)
     const take = parseInt(limit)
 
@@ -56,7 +51,6 @@ export const getAllAnnouncements = async (req, res) => {
         id: true,
         title: true,
         slug: true,
-        category: true,
         image: true,
         published: true,
         views: true,
@@ -91,11 +85,32 @@ export const getAllAnnouncements = async (req, res) => {
       }, {})
     }
 
-    // Tambahkan nama author ke data pengumuman
+    // Ambil read status untuk user yang sedang login
+    const userId = req.user?.userId
+    let readStatusMap = {}
+    if (userId && announcementsRaw.length > 0) {
+      const announcementIds = announcementsRaw.map(a => a.id)
+      const reads = await prisma.announcementRead.findMany({
+        where: {
+          userId: userId,
+          announcementId: { in: announcementIds }
+        },
+        select: {
+          announcementId: true
+        }
+      })
+      readStatusMap = reads.reduce((acc, read) => {
+        acc[read.announcementId] = true
+        return acc
+      }, {})
+    }
+
+    // Tambahkan nama author dan read status ke data pengumuman
     const announcements = announcementsRaw.map(announcement => ({
       ...announcement,
       image: announcement.image ? getImagePath(announcement.image, 'announcements') : null,
-      authorName: announcement.authorId ? authorsMap[announcement.authorId] || 'Tidak diketahui' : null
+      authorName: announcement.authorId ? authorsMap[announcement.authorId] || 'Tidak diketahui' : null,
+      isRead: userId ? !!readStatusMap[announcement.id] : false
     }))
 
     const total = await prisma.announcement.count({ where })
@@ -170,7 +185,7 @@ export const createAnnouncement = async (req, res) => {
       })
     }
 
-    const { title, content, category, image, published } = req.body
+    const { title, content, image, published } = req.body
     const authorId = req.user.userId
 
     // Buat slug
@@ -195,7 +210,6 @@ export const createAnnouncement = async (req, res) => {
         title,
         slug,
         content,
-        category,
         image: imageFilename,
         published: isPublished,
         authorId
@@ -263,7 +277,7 @@ export const updateAnnouncement = async (req, res) => {
     }
 
     const { id } = req.params
-    const { title, content, category, image, published } = req.body
+    const { title, content, image, published } = req.body
     const userId = req.user.userId
     const userRole = req.user.role
 
@@ -311,7 +325,6 @@ export const updateAnnouncement = async (req, res) => {
       ...(title && { title }),
       ...(title && { slug }),
       ...(content !== undefined && { content }),
-      ...(category && { category }),
       ...(published !== undefined && { published })
     }
 

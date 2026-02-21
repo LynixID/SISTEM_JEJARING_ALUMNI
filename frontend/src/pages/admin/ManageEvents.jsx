@@ -9,6 +9,9 @@ import Sidebar from '../../components/layout/Sidebar'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import Input from '../../components/common/Input'
+import AlertModal from '../../components/common/AlertModal'
+import ImageLightbox from '../../components/common/ImageLightbox'
+import { getImageUrl } from '../../utils/imageUtils'
 
 const ManageEvents = () => {
   const { user } = useAuth()
@@ -17,7 +20,6 @@ const ManageEvents = () => {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
   const [publishedFilter, setPublishedFilter] = useState('')
   const [pagination, setPagination] = useState({
     page: 1,
@@ -29,22 +31,22 @@ const ManageEvents = () => {
   const [showParticipants, setShowParticipants] = useState(null)
   const [participants, setParticipants] = useState([])
   const [editingId, setEditingId] = useState(null)
+  const [lightboxImage, setLightboxImage] = useState({ isOpen: false, url: '', alt: '' })
+  const [successModal, setSuccessModal] = useState({ isOpen: false, message: '' })
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' })
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     tanggal: '',
     lokasi: '',
-    category: '',
-    poster: '',
+    image: '',
     linkDaftar: '',
     published: false
   })
 
-  const categories = ['Webinar', 'Workshop', 'Seminar', 'Reuni', 'Networking', 'Lainnya']
-
   useEffect(() => {
     fetchEvents()
-  }, [pagination.page, search, categoryFilter, publishedFilter])
+  }, [pagination.page, search, publishedFilter])
 
   const fetchEvents = async () => {
     try {
@@ -53,7 +55,6 @@ const ManageEvents = () => {
         page: pagination.page,
         limit: pagination.limit,
         ...(search && { search }),
-        ...(categoryFilter && { category: categoryFilter }),
         ...(publishedFilter !== '' && { published: publishedFilter })
       })
 
@@ -62,7 +63,10 @@ const ManageEvents = () => {
       setPagination(response.data.pagination)
     } catch (error) {
       console.error('Error fetching events:', error)
-      alert(error.response?.data?.error || 'Gagal mengambil data event')
+      setErrorModal({ 
+        isOpen: true, 
+        message: error.response?.data?.error || 'Gagal mengambil data event' 
+      })
     } finally {
       setLoading(false)
     }
@@ -75,7 +79,10 @@ const ManageEvents = () => {
       setShowParticipants(eventId)
     } catch (error) {
       console.error('Error fetching participants:', error)
-      alert(error.response?.data?.error || 'Gagal mengambil data peserta')
+      setErrorModal({ 
+        isOpen: true, 
+        message: error.response?.data?.error || 'Gagal mengambil data peserta' 
+      })
     }
   }
 
@@ -97,15 +104,24 @@ const ManageEvents = () => {
 
       if (editingId) {
         await api.put(`/events/${editingId}`, dataToSend)
-        alert('Event berhasil diupdate')
+        setSuccessModal({ 
+          isOpen: true, 
+          message: 'Event berhasil diupdate' 
+        })
       } else {
         await api.post('/events', dataToSend)
-        alert('Event berhasil dibuat')
+        setSuccessModal({ 
+          isOpen: true, 
+          message: 'Event berhasil dibuat' 
+        })
       }
       setShowForm(false)
       fetchEvents()
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal menyimpan event')
+      setErrorModal({ 
+        isOpen: true, 
+        message: error.response?.data?.error || 'Gagal menyimpan event' 
+      })
     }
   }
 
@@ -114,10 +130,16 @@ const ManageEvents = () => {
 
     try {
       await api.delete(`/events/${id}`)
-      alert('Event berhasil dihapus')
+      setSuccessModal({ 
+        isOpen: true, 
+        message: 'Event berhasil dihapus' 
+      })
       fetchEvents()
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal menghapus event')
+      setErrorModal({ 
+        isOpen: true, 
+        message: error.response?.data?.error || 'Gagal menghapus event' 
+      })
     }
   }
 
@@ -126,7 +148,10 @@ const ManageEvents = () => {
       await api.put(`/events/${id}/publish`, { published: !currentStatus })
       fetchEvents()
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal mengupdate status publish')
+      setErrorModal({ 
+        isOpen: true, 
+        message: error.response?.data?.error || 'Gagal mengupdate status publish' 
+      })
     }
   }
 
@@ -179,16 +204,6 @@ const ManageEvents = () => {
             />
           </div>
           <div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Semua Kategori</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
           </div>
           <div>
             <select
@@ -202,12 +217,11 @@ const ManageEvents = () => {
             </select>
           </div>
           <div className="flex gap-2">
-            {(search || categoryFilter || publishedFilter) && (
+            {(search || publishedFilter) && (
               <Button
                 variant="outline"
                 onClick={() => {
                   setSearch('')
-                  setCategoryFilter('')
                   setPublishedFilter('')
                 }}
                 className="flex items-center gap-2"
@@ -226,10 +240,10 @@ const ManageEvents = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pembuat</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -238,13 +252,13 @@ const ManageEvents = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading && events.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
                     Memuat data...
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
                     Tidak ada event
                   </td>
                 </tr>
@@ -252,8 +266,34 @@ const ManageEvents = () => {
                 events.map((event) => (
                   <tr key={event.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
+                      {event.image ? (
+                        <div 
+                          className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+                          onClick={() => setLightboxImage({ 
+                            isOpen: true, 
+                            url: getImageUrl(event.image, 'events'), 
+                            alt: event.title 
+                          })}
+                        >
+                          <img
+                            src={getImageUrl(event.image, 'events')}
+                            alt={event.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                              e.target.parentElement.innerHTML = '<div class="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">No Image</div>'
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                          No Image
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">{event.title}</div>
-                      <div className="text-xs text-gray-500 mt-1 line-clamp-2">{event.description.substring(0, 60)}...</div>
+                      <div className="text-xs text-gray-500 mt-1 line-clamp-2">{event.description?.substring(0, 60)}...</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">{formatDateShort(event.tanggal)}</div>
@@ -263,13 +303,6 @@ const ManageEvents = () => {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {event.lokasi || '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      {event.category && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {event.category}
-                        </span>
-                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-700">
@@ -461,19 +494,6 @@ const ManageEvents = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Kategori
-                    </label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Pilih Kategori</option>
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
                   </div>
                 </div>
 
@@ -491,13 +511,13 @@ const ManageEvents = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    URL Poster (opsional)
+                    URL Image (opsional)
                   </label>
                   <Input
                     type="url"
-                    value={formData.poster}
-                    onChange={(e) => setFormData({ ...formData, poster: e.target.value })}
-                    placeholder="https://example.com/poster.jpg"
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
                   />
                 </div>
 
@@ -588,6 +608,34 @@ const ManageEvents = () => {
           </Card>
         </div>
       )}
+
+      {/* Success Modal */}
+      <AlertModal
+        isOpen={successModal.isOpen}
+        onClose={() => setSuccessModal({ isOpen: false, message: '' })}
+        title="Berhasil"
+        message={successModal.message}
+        variant="success"
+        buttonText="OK"
+      />
+
+      {/* Error Modal */}
+      <AlertModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="Error"
+        message={errorModal.message}
+        variant="error"
+        buttonText="OK"
+      />
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxImage.isOpen}
+        onClose={() => setLightboxImage({ isOpen: false, url: '', alt: '' })}
+        imageUrl={lightboxImage.url}
+        alt={lightboxImage.alt}
+      />
     </>
   )
 }

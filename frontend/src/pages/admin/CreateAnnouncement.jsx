@@ -10,6 +10,8 @@ import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import Input from '../../components/common/Input'
 import RichTextEditor from '../../components/common/RichTextEditor'
+import AlertModal from '../../components/common/AlertModal'
+import { getImageUrl } from '../../utils/imageUtils'
 
 const CreateAnnouncement = () => {
   const { user } = useAuth()
@@ -21,7 +23,6 @@ const CreateAnnouncement = () => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: 'Berita Umum',
     image: '',
     published: false
   })
@@ -30,8 +31,8 @@ const CreateAnnouncement = () => {
   const [selectedFile, setSelectedFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [uploading, setUploading] = useState(false)
-
-  const categories = ['Berita Umum', 'Agenda', 'Program DPW', 'Peluang Kerjasama']
+  const [successModal, setSuccessModal] = useState({ isOpen: false, message: '' })
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' })
 
   useEffect(() => {
     if (isEdit && id) {
@@ -54,25 +55,34 @@ const CreateAnnouncement = () => {
       setFormData({
         title: announcement.title || '',
         content: announcement.content || '',
-        category: announcement.category || 'Berita Umum',
         image: announcement.image || '',
         published: announcement.published !== undefined ? announcement.published : false
       })
-      // Set preview untuk image yang sudah ada
+      // Set preview untuk image yang sudah ada (extract filename jika full path)
       if (announcement.image) {
-        setImagePreview(announcement.image)
+        // Jika image adalah full path, extract filename untuk disimpan di formData
+        const imageFilename = announcement.image.includes('/') 
+          ? announcement.image.split('/').pop() 
+          : announcement.image
+        setFormData(prev => ({ ...prev, image: imageFilename }))
+        // Set preview dengan full URL
+        setImagePreview(getImageUrl(announcement.image, 'announcements'))
       }
       
       console.log('Loaded announcement data for edit:', {
         title: announcement.title,
         content: announcement.content?.substring(0, 50) + '...',
-        category: announcement.category,
         published: announcement.published
       })
     } catch (error) {
       console.error('Error fetching announcement:', error)
-      alert(error.response?.data?.error || 'Gagal mengambil data pengumuman')
-      navigate(isAdmin ? '/admin/announcements' : '/pengurus/berita')
+      setErrorModal({ 
+        isOpen: true, 
+        message: error.response?.data?.error || 'Gagal mengambil data pengumuman' 
+      })
+      setTimeout(() => {
+        navigate(isAdmin ? '/admin/announcements' : '/pengurus/berita')
+      }, 2000)
     } finally {
       setLoading(false)
     }
@@ -88,7 +98,10 @@ const CreateAnnouncement = () => {
     // Validasi tipe file
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
     if (!allowedTypes.includes(file.type)) {
-      alert('File type tidak didukung. Hanya file gambar (JPG, PNG, WebP, GIF) yang diperbolehkan.')
+      setErrorModal({ 
+        isOpen: true, 
+        message: 'File type tidak didukung. Hanya file gambar (JPG, PNG, WebP, GIF) yang diperbolehkan.' 
+      })
       e.target.value = ''
       return
     }
@@ -96,7 +109,10 @@ const CreateAnnouncement = () => {
     // Validasi ukuran file (maks 5MB)
     const maxSize = 5 * 1024 * 1024 // 5MB
     if (file.size > maxSize) {
-      alert('Ukuran file terlalu besar. Maksimal 5MB.')
+      setErrorModal({ 
+        isOpen: true, 
+        message: 'Ukuran file terlalu besar. Maksimal 5MB.' 
+      })
       e.target.value = ''
       return
     }
@@ -113,38 +129,27 @@ const CreateAnnouncement = () => {
 
   const handleUploadImage = async () => {
     if (!selectedFile) {
-      return
+      return null
     }
 
     try {
       setUploading(true)
       
-      const formData = new FormData()
-      formData.append('image', selectedFile)
-      formData.append('category', 'announcements')
+      const uploadFormData = new FormData()
+      uploadFormData.append('image', selectedFile)
+      uploadFormData.append('category', 'announcements')
 
-      const response = await api.post('/upload/image', formData, {
+      const response = await api.post('/upload/image', uploadFormData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       })
 
-      // Simpan hanya filename di formData (untuk database)
-      setFormData(prev => ({
-        ...prev,
-        image: response.data.filename
-      }))
-
-      // Update preview dengan full URL dari server
-      setImagePreview(response.data.url)
-      
-      // Hapus pilihan file
-      setSelectedFile(null)
-      
-      alert('Gambar berhasil diupload')
+      // Return filename untuk disimpan
+      return response.data.filename
     } catch (error) {
       console.error('Error uploading image:', error)
-      alert(error.response?.data?.error || 'Gagal mengupload gambar')
+      throw new Error(error.response?.data?.error || 'Gagal mengupload gambar')
     } finally {
       setUploading(false)
     }
@@ -153,38 +158,72 @@ const CreateAnnouncement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    // Upload gambar terlebih dahulu jika ada file baru yang dipilih
-    if (selectedFile) {
-      await handleUploadImage()
-      // Tunggu sedikit untuk memastikan image sudah di-set ke formData
-      await new Promise(resolve => setTimeout(resolve, 500))
-    }
-    
+    // Validasi form
     if (!formData.title.trim()) {
-      alert('Judul harus diisi')
+      setErrorModal({ 
+        isOpen: true, 
+        message: 'Judul harus diisi' 
+      })
       return
     }
 
     if (!formData.content.trim() || formData.content.replace(/<[^>]*>/g, '').trim().length < 10) {
-      alert('Konten minimal 10 karakter')
+      setErrorModal({ 
+        isOpen: true, 
+        message: 'Konten minimal 10 karakter' 
+      })
       return
     }
 
     try {
       setSaving(true)
       
-      if (isEdit) {
-        await api.put(`/announcements/${id}`, formData)
-        alert('Pengumuman berhasil diperbarui')
-      } else {
-        await api.post('/announcements', formData)
-        alert('Pengumuman berhasil dibuat')
+      // Upload gambar terlebih dahulu jika ada file baru yang dipilih
+      let imageFilename = formData.image
+      if (selectedFile) {
+        try {
+          imageFilename = await handleUploadImage()
+          // Update formData dengan filename yang baru diupload
+          setFormData(prev => ({
+            ...prev,
+            image: imageFilename
+          }))
+        } catch (uploadError) {
+          setErrorModal({ 
+            isOpen: true, 
+            message: uploadError.message || 'Gagal mengupload gambar' 
+          })
+          setSaving(false)
+          return
+        }
       }
       
-      navigate(isAdmin ? '/admin/announcements' : '/pengurus/berita')
+      // Siapkan data untuk dikirim (gunakan imageFilename yang sudah diupload atau yang sudah ada)
+      const submitData = {
+        ...formData,
+        image: imageFilename || ''
+      }
+      
+      if (isEdit) {
+        await api.put(`/announcements/${id}`, submitData)
+        setSuccessModal({ 
+          isOpen: true, 
+          message: 'Pengumuman berhasil diperbarui' 
+        })
+      } else {
+        await api.post('/announcements', submitData)
+        setSuccessModal({ 
+          isOpen: true, 
+          message: 'Pengumuman berhasil dibuat' 
+        })
+      }
     } catch (error) {
       console.error('Error saving announcement:', error)
-      alert(error.response?.data?.error || 'Gagal menyimpan pengumuman')
+      const errorMessage = error.response?.data?.error || error.response?.data?.errors?.[0]?.msg || 'Gagal menyimpan pengumuman'
+      setErrorModal({ 
+        isOpen: true, 
+        message: errorMessage 
+      })
     } finally {
       setSaving(false)
     }
@@ -319,21 +358,6 @@ const CreateAnnouncement = () => {
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Informasi Pengumuman</h3>
                       
                       <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Kategori *
-                          </label>
-                          <select
-                            value={formData.category}
-                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            required
-                          >
-                            {categories.map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                          </select>
-                        </div>
 
                         {/* Upload Gambar */}
                         <div>
@@ -351,31 +375,8 @@ const CreateAnnouncement = () => {
                             Format: JPG, PNG, WebP, GIF. Maksimal 5MB
                           </p>
                           
-                          {/* Preview atau Upload Button */}
-                          {selectedFile && (
-                            <div className="mt-3 space-y-2">
-                              <Button
-                                type="button"
-                                onClick={handleUploadImage}
-                                disabled={uploading}
-                                className="w-full text-sm"
-                              >
-                                {uploading ? 'Mengupload...' : 'Upload Gambar'}
-                              </Button>
-                              {imagePreview && (
-                                <div className="rounded-lg overflow-hidden border border-gray-200">
-                                  <img
-                                    src={imagePreview}
-                                    alt="Preview"
-                                    className="w-full h-48 object-cover"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          
-                          {/* Preview untuk gambar yang sudah ada atau sudah diupload */}
-                          {!selectedFile && imagePreview && (
+                          {/* Preview gambar yang dipilih */}
+                          {imagePreview && (
                             <div className="mt-3 rounded-lg overflow-hidden border border-gray-200">
                               <img
                                 src={imagePreview}
@@ -394,7 +395,11 @@ const CreateAnnouncement = () => {
                                 type="button"
                                 onClick={() => {
                                   setImagePreview(null)
+                                  setSelectedFile(null)
                                   setFormData(prev => ({ ...prev, image: '' }))
+                                  // Reset file input
+                                  const fileInput = document.querySelector('input[type="file"]')
+                                  if (fileInput) fileInput.value = ''
                                 }}
                                 className="w-full mt-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200"
                               >
@@ -434,13 +439,13 @@ const CreateAnnouncement = () => {
                       <div className="space-y-3">
                         <Button
                           type="submit"
-                          disabled={saving || loading}
+                          disabled={saving || loading || uploading}
                           className="w-full flex items-center justify-center gap-2 py-3"
                         >
-                          {saving ? (
+                          {(saving || uploading) ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              Menyimpan...
+                              {uploading ? 'Mengupload gambar...' : 'Menyimpan...'}
                             </>
                           ) : (
                             <>
@@ -557,21 +562,6 @@ const CreateAnnouncement = () => {
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Kategori *
-                            </label>
-                            <select
-                              value={formData.category}
-                              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                              required
-                            >
-                              {categories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
                               <ImageIcon size={16} className="inline mr-1" />
                               Gambar (opsional)
                             </label>
@@ -585,40 +575,30 @@ const CreateAnnouncement = () => {
                               Format: JPG, PNG, WebP, GIF. Maksimal 5MB
                             </p>
                             
-                            {selectedFile && (
-                              <div className="mt-3 space-y-2">
-                                <Button
-                                  type="button"
-                                  onClick={handleUploadImage}
-                                  disabled={uploading}
-                                  className="w-full text-sm"
-                                >
-                                  {uploading ? 'Mengupload...' : 'Upload Gambar'}
-                                </Button>
-                                {imagePreview && (
-                                  <div className="rounded-lg overflow-hidden border border-gray-200">
-                                    <img
-                                      src={imagePreview}
-                                      alt="Preview"
-                                      className="w-full h-48 object-cover"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            
-                            {!selectedFile && imagePreview && (
+                            {imagePreview && (
                               <div className="mt-3 rounded-lg overflow-hidden border border-gray-200">
                                 <img
                                   src={imagePreview}
                                   alt="Preview"
                                   className="w-full h-48 object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none'
+                                    const errorDiv = e.target.nextSibling
+                                    if (errorDiv) errorDiv.style.display = 'block'
+                                  }}
                                 />
+                                <div className="hidden p-4 bg-gray-100 text-center text-sm text-gray-500">
+                                  Gambar tidak dapat dimuat
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setImagePreview(null)
+                                    setSelectedFile(null)
                                     setFormData(prev => ({ ...prev, image: '' }))
+                                    // Reset file input
+                                    const fileInput = document.querySelector('input[type="file"]')
+                                    if (fileInput) fileInput.value = ''
                                   }}
                                   className="w-full mt-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200"
                                 >
@@ -650,11 +630,20 @@ const CreateAnnouncement = () => {
                         <div className="space-y-3">
                           <Button
                             type="submit"
-                            disabled={saving}
+                            disabled={saving || uploading}
                             className="w-full flex items-center justify-center gap-2 py-3"
                           >
-                            <Save size={18} />
-                            {isEdit ? 'Update' : 'Simpan'}
+                            {(saving || uploading) ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                {uploading ? 'Mengupload gambar...' : 'Menyimpan...'}
+                              </>
+                            ) : (
+                              <>
+                                <Save size={18} />
+                                {isEdit ? 'Update' : 'Simpan'}
+                              </>
+                            )}
                           </Button>
                           <Button
                             type="button"
@@ -674,6 +663,29 @@ const CreateAnnouncement = () => {
           </div>
         </div>
       )}
+
+      {/* Success Modal */}
+      <AlertModal
+        isOpen={successModal.isOpen}
+        onClose={() => {
+          setSuccessModal({ isOpen: false, message: '' })
+          navigate(isAdmin ? '/admin/announcements' : '/pengurus/berita')
+        }}
+        title="Berhasil"
+        message={successModal.message}
+        variant="success"
+        buttonText="OK"
+      />
+
+      {/* Error Modal */}
+      <AlertModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="Error"
+        message={errorModal.message}
+        variant="error"
+        buttonText="OK"
+      />
     </>
   )
 }

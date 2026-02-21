@@ -1,26 +1,36 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, X } from 'lucide-react'
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, getUnreadCount } from '../../services/api'
+import { Bell, X, UserPlus } from 'lucide-react'
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, getUnreadCount, getConnectionRequests } from '../../services/api'
 import { getSocket } from '../../config/socket'
+import { getImageUrl } from '../../utils/imageUtils'
 
 const NotificationBell = () => {
   const navigate = useNavigate()
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const [showDropdown, setShowDropdown] = useState(false)
+  const [pendingConnectionsCount, setPendingConnectionsCount] = useState(0)
+  const [pendingConnections, setPendingConnections] = useState([])
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false)
+  const [showConnDropdown, setShowConnDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
   const dropdownRef = useRef(null)
 
   useEffect(() => {
     fetchNotifications()
     fetchUnreadCount()
+    fetchPendingConnections()
     
     // Setup Socket.io listener untuk real-time notifications
     const socket = getSocket()
     const handleNewNotification = (notification) => {
       setNotifications(prev => [notification, ...prev])
       setUnreadCount(prev => prev + 1)
+      
+      // Refresh pending connections jika ada notifikasi connection
+      if (notification.type === 'CONNECTION_REQUEST' || notification.type === 'CONNECTION_ACCEPTED') {
+        fetchPendingConnections()
+      }
     }
 
     socket.on('new_notification', handleNewNotification)
@@ -29,6 +39,7 @@ const NotificationBell = () => {
     const interval = setInterval(() => {
       fetchNotifications()
       fetchUnreadCount()
+      fetchPendingConnections()
     }, 30000)
 
     return () => {
@@ -40,7 +51,8 @@ const NotificationBell = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false)
+        setShowNotifDropdown(false)
+        setShowConnDropdown(false)
       }
     }
 
@@ -63,6 +75,17 @@ const NotificationBell = () => {
       setUnreadCount(response.data.unreadCount)
     } catch (error) {
       console.error('Error fetching unread count:', error)
+    }
+  }
+
+  const fetchPendingConnections = async () => {
+    try {
+      const response = await getConnectionRequests('PENDING')
+      const requests = response.data?.requests || []
+      setPendingConnectionsCount(requests.length || 0)
+      setPendingConnections(requests.slice(0, 10))
+    } catch (error) {
+      console.error('Error fetching pending connections:', error)
     }
   }
 
@@ -97,7 +120,9 @@ const NotificationBell = () => {
     }
 
     // Navigate berdasarkan type
-    if (notification.relatedType === 'post' && notification.relatedId) {
+    if (notification.type === 'CONNECTION_REQUEST' || notification.type === 'CONNECTION_ACCEPTED') {
+      navigate('/koneksi')
+    } else if (notification.relatedType === 'post' && notification.relatedId) {
       navigate(`/posts/${notification.relatedId}`)
     } else if (notification.relatedType === 'announcement' && notification.relatedId) {
       navigate(`/berita/${notification.relatedId}`)
@@ -105,7 +130,7 @@ const NotificationBell = () => {
       navigate(`/events/${notification.relatedId}`)
     }
 
-    setShowDropdown(false)
+    setShowNotifDropdown(false)
   }
 
   const formatTime = (dateString) => {
@@ -134,94 +159,231 @@ const NotificationBell = () => {
         return '📢'
       case 'EVENT':
         return '📅'
+      case 'CONNECTION_REQUEST':
+      case 'CONNECTION_ACCEPTED':
+        return '🔗'
       default:
         return '🔔'
     }
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
-        title="Notifikasi"
-      >
-        <Bell size={20} className="text-gray-700" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </button>
+    <div className="flex items-center gap-2" ref={dropdownRef}>
+      {/* Connection Requests */}
+      <div className="relative">
+        <button
+          onClick={() => {
+            setShowConnDropdown(prev => !prev)
+            setShowNotifDropdown(false)
+            fetchPendingConnections()
+          }}
+          className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+          title="Permintaan Koneksi"
+          type="button"
+        >
+          <UserPlus size={20} className="text-gray-700" />
+          {pendingConnectionsCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+              {pendingConnectionsCount > 9 ? '9+' : pendingConnectionsCount}
+            </span>
+          )}
+        </button>
 
-      {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900">Notifikasi</h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                disabled={loading}
-                className="text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Memproses...' : 'Tandai semua sudah dibaca'}
-              </button>
-            )}
-          </div>
-
-          <div className="overflow-y-auto flex-1">
-            {notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <Bell size={32} className="mx-auto mb-2 text-gray-300" />
-                <p>Tidak ada notifikasi</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                      !notification.read ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="text-xl flex-shrink-0">
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formatTime(notification.createdAt)}
-                        </p>
-                      </div>
-                      {!notification.read && (
-                        <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {notifications.length > 0 && (
-            <div className="p-2 border-t border-gray-200">
+        {showConnDropdown && (
+          <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Permintaan Koneksi</h3>
               <button
                 onClick={() => {
-                  setShowDropdown(false)
-                  navigate('/notifikasi')
+                  setShowConnDropdown(false)
+                  navigate('/koneksi')
                 }}
-                className="w-full text-center text-sm text-blue-600 hover:text-blue-700 py-2 font-medium"
+                className="text-xs text-blue-600 hover:text-blue-700"
+                type="button"
               >
-                Lihat semua notifikasi
+                Buka Koneksi
               </button>
             </div>
+
+            <div className="overflow-y-auto flex-1">
+              {pendingConnections.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <UserPlus size={32} className="mx-auto mb-2 text-gray-300" />
+                  <p>Tidak ada permintaan koneksi</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {pendingConnections.map((req) => (
+                    <div
+                      key={req.id}
+                      onClick={() => {
+                        setShowConnDropdown(false)
+                        navigate('/koneksi')
+                      }}
+                      className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {req.user?.fotoProfil ? (
+                            <>
+                              <img
+                                src={getImageUrl(req.user.fotoProfil, 'profiles')}
+                                alt={req.user?.nama || 'User'}
+                                className="w-9 h-9 rounded-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none'
+                                  const nextSibling = e.target.nextElementSibling
+                                  if (nextSibling && nextSibling.style) {
+                                    nextSibling.style.display = 'flex'
+                                  }
+                                }}
+                              />
+                              <span
+                                className="text-blue-600 text-xs font-semibold w-9 h-9 items-center justify-center hidden"
+                                style={{ display: 'none' }}
+                              >
+                                {(req.user?.nama || 'U').charAt(0).toUpperCase()}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-blue-600 text-xs font-semibold">
+                              {(req.user?.nama || 'U').charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {req.user?.nama || 'User'}
+                          </p>
+                          {req.message && (
+                            <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">
+                              {req.message}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formatTime(req.createdAt)}
+                          </p>
+                        </div>
+
+                        <div className="text-xs text-gray-400 flex-shrink-0">
+                          PENDING
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {pendingConnectionsCount > 0 && (
+              <div className="p-2 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowConnDropdown(false)
+                    navigate('/koneksi')
+                  }}
+                  className="w-full text-center text-sm text-blue-600 hover:text-blue-700 py-2 font-medium"
+                  type="button"
+                >
+                  Lihat semua permintaan koneksi
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Notifications Bell */}
+      <div className="relative">
+        <button
+          onClick={() => {
+            setShowNotifDropdown(prev => !prev)
+            setShowConnDropdown(false)
+          }}
+          className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+          title="Notifikasi"
+          type="button"
+        >
+          <Bell size={20} className="text-gray-700" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
           )}
-        </div>
-      )}
+        </button>
+
+        {showNotifDropdown && (
+          <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Notifikasi</h3>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  disabled={loading}
+                  className="text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                  type="button"
+                >
+                  {loading ? 'Memproses...' : 'Tandai semua sudah dibaca'}
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-y-auto flex-1">
+              {notifications.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <Bell size={32} className="mx-auto mb-2 text-gray-300" />
+                  <p>Tidak ada notifikasi</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                        !notification.read ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="text-xl flex-shrink-0">
+                          {getNotificationIcon(notification.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formatTime(notification.createdAt)}
+                          </p>
+                        </div>
+                        {!notification.read && (
+                          <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {notifications.length > 0 && (
+              <div className="p-2 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowNotifDropdown(false)
+                    navigate('/notifikasi')
+                  }}
+                  className="w-full text-center text-sm text-blue-600 hover:text-blue-700 py-2 font-medium"
+                  type="button"
+                >
+                  Lihat semua notifikasi
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

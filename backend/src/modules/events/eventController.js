@@ -9,7 +9,6 @@ export const getAllEvents = async (req, res) => {
       page = 1, 
       limit = 10, 
       search = '', 
-      category = '',
       published = undefined 
     } = req.query
 
@@ -30,10 +29,6 @@ export const getAllEvents = async (req, res) => {
       ]
     }
 
-    if (category) {
-      where.category = category
-    }
-
     const skip = (parseInt(page) - 1) * parseInt(limit)
     const take = parseInt(limit)
 
@@ -46,10 +41,9 @@ export const getAllEvents = async (req, res) => {
         id: true,
         title: true,
         description: true,
-        poster: true,
+        image: true,
         tanggal: true,
         lokasi: true,
-        category: true,
         linkDaftar: true,
         published: true,
         authorId: true,
@@ -83,12 +77,33 @@ export const getAllEvents = async (req, res) => {
       }, {})
     }
 
-    // Tambahkan nama author dan jumlah peserta ke data event
+    // Ambil read status untuk user yang sedang login
+    const userId = req.user?.userId
+    let readStatusMap = {}
+    if (userId && eventsRaw.length > 0) {
+      const eventIds = eventsRaw.map(e => e.id)
+      const reads = await prisma.eventRead.findMany({
+        where: {
+          userId: userId,
+          eventId: { in: eventIds }
+        },
+        select: {
+          eventId: true
+        }
+      })
+      readStatusMap = reads.reduce((acc, read) => {
+        acc[read.eventId] = true
+        return acc
+      }, {})
+    }
+
+    // Tambahkan nama author, jumlah peserta, dan read status ke data event
     const eventsWithCount = eventsRaw.map(event => ({
       ...event,
-      poster: event.poster ? getImagePath(event.poster, 'events') : null,
+      image: event.image ? getImagePath(event.image, 'events') : null,
       authorName: event.authorId ? authorsMap[event.authorId] || 'Tidak diketahui' : null,
-      participantsCount: event._count.participants
+      participantsCount: event._count.participants,
+      isRead: userId ? !!readStatusMap[event.id] : false
     }))
 
     const total = await prisma.event.count({ where })
@@ -166,7 +181,7 @@ export const getEventById = async (req, res) => {
     res.json({ 
       event: {
         ...event,
-        poster: event.poster ? getImagePath(event.poster, 'events') : null,
+        image: event.image ? getImagePath(event.image, 'events') : null,
         participants: event.participants?.map(p => ({
           ...p,
           user: {
@@ -195,8 +210,11 @@ export const createEvent = async (req, res) => {
       })
     }
 
-    const { title, description, poster, tanggal, lokasi, category, linkDaftar, published } = req.body
+    const { title, description, image, tanggal, lokasi, linkDaftar, published } = req.body
     const authorId = req.user.userId
+
+    console.log('Create event - Received data:', { title, image })
+    console.log('Image value:', image, 'Type:', typeof image)
 
     // Validasi tanggal tidak boleh di masa lalu (untuk event baru)
     const eventDate = new Date(tanggal)
@@ -204,8 +222,10 @@ export const createEvent = async (req, res) => {
       return res.status(400).json({ error: 'Tanggal event tidak boleh di masa lalu' })
     }
 
-    // Extract filename dari poster jika full path, atau simpan langsung jika sudah filename
-    const posterFilename = poster ? extractFilename(poster) : null
+    // Extract filename dari image jika full path, atau simpan langsung jika sudah filename
+    // Jika image kosong atau null, set ke null
+    const imageFilename = (image && image.trim()) ? extractFilename(image.trim()) : null
+    console.log('Extracted image filename:', imageFilename)
 
     const isPublished = published || false
 
@@ -213,10 +233,9 @@ export const createEvent = async (req, res) => {
       data: {
         title,
         description,
-        poster: posterFilename,
+        image: imageFilename,
         tanggal: new Date(tanggal),
         lokasi: lokasi || null,
-        category: category || null,
         linkDaftar: linkDaftar || null,
         published: isPublished,
         authorId
@@ -258,7 +277,7 @@ export const createEvent = async (req, res) => {
       message: 'Event berhasil dibuat',
       event: {
         ...event,
-        poster: event.poster ? getImagePath(event.poster, 'events') : null
+        image: event.image ? getImagePath(event.image, 'events') : null
       }
     })
   } catch (error) {
@@ -279,7 +298,7 @@ export const updateEvent = async (req, res) => {
     }
 
     const { id } = req.params
-    const { title, description, poster, tanggal, lokasi, category, linkDaftar, published } = req.body
+    const { title, description, image, tanggal, lokasi, linkDaftar, published } = req.body
 
     // Cek apakah event ada
     const existing = await prisma.event.findUnique({
@@ -298,19 +317,19 @@ export const updateEvent = async (req, res) => {
       }
     }
 
-    // Extract filename dari poster jika full path, atau simpan langsung jika sudah filename
+    // Extract filename dari image jika full path, atau simpan langsung jika sudah filename
     const updateData = {
       ...(title && { title }),
       ...(description !== undefined && { description }),
       ...(tanggal && { tanggal: new Date(tanggal) }),
       ...(lokasi !== undefined && { lokasi }),
-      ...(category !== undefined && { category }),
       ...(linkDaftar !== undefined && { linkDaftar }),
       ...(published !== undefined && { published })
     }
 
-    if (poster !== undefined) {
-      updateData.poster = poster ? extractFilename(poster) : null
+    if (image !== undefined) {
+      // Jika image kosong atau null, set ke null
+      updateData.image = (image && image.trim()) ? extractFilename(image.trim()) : null
     }
 
     const wasPublished = existing.published
@@ -356,7 +375,7 @@ export const updateEvent = async (req, res) => {
       message: 'Event berhasil diupdate',
       event: {
         ...event,
-        poster: event.poster ? getImagePath(event.poster, 'events') : null
+        image: event.image ? getImagePath(event.image, 'events') : null
       }
     })
   } catch (error) {
@@ -418,7 +437,7 @@ export const togglePublish = async (req, res) => {
       message: `Event berhasil ${event.published ? 'dipublish' : 'di-unpublish'}`,
       event: {
         ...event,
-        poster: event.poster ? getImagePath(event.poster, 'events') : null
+        image: event.image ? getImagePath(event.image, 'events') : null
       }
     })
   } catch (error) {

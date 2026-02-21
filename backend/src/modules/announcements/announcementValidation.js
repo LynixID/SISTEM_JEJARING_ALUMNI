@@ -15,18 +15,11 @@ export const createAnnouncementValidation = [
     .isLength({ min: 10 })
     .withMessage('Konten minimal 10 karakter'),
   
-  body('category')
-    .trim()
-    .notEmpty()
-    .withMessage('Kategori harus diisi')
-    .isIn(['Berita Umum', 'Agenda', 'Program DPW', 'Peluang Kerjasama', 'Event Alumni'])
-    .withMessage('Kategori tidak valid'),
-  
   body('image')
     .optional()
     .trim()
-    .isURL()
-    .withMessage('URL gambar tidak valid'),
+    .notEmpty()
+    .withMessage('Image tidak boleh kosong jika diisi'),
   
   body('published')
     .optional()
@@ -62,8 +55,8 @@ export const updateAnnouncementValidation = [
   body('image')
     .optional()
     .trim()
-    .isURL()
-    .withMessage('URL gambar tidak valid'),
+    .notEmpty()
+    .withMessage('Image tidak boleh kosong jika diisi'),
   
   body('published')
     .optional()

@@ -35,6 +35,9 @@ model User {
   connectedTo   Connection[] @relation("ConnectedToUser")
   eventParticipants EventParticipant[]
   notifications Notification[]
+  postMentions  PostMention[]
+  announcementReads AnnouncementRead[]
+  eventReads EventRead[]
 
   @@index([email])
   @@index([nim])
@@ -67,20 +70,38 @@ model Profile {
 }
 
 model Post {
-  id        String    @id @default(uuid())
-  content   String    @db.Text
+  id        String       @id @default(uuid())
+  content   String       @db.Text
   media     String?
   authorId  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  visibility PostVisibility @default(PUBLIC)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @default(now()) @updatedAt
 
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author    User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
   likes     Like[]
+  mentions PostMention[]
 
   @@index([authorId])
   @@index([createdAt])
+  @@index([visibility])
   @@map("posts")
+}
+
+model PostMention {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_mentions")
 }
 
 model Comment {
@@ -154,7 +175,6 @@ model Announcement {
   title     String
   slug      String   @unique
   content   String   @db.Text
-  category  String
   image     String?
   published Boolean  @default(false)
   views     Int      @default(0)
@@ -162,8 +182,9 @@ model Announcement {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  reads     AnnouncementRead[]
+
   @@index([published])
-  @@index([category])
   @@index([slug])
   @@map("announcements")
 }
@@ -172,10 +193,9 @@ model Event {
   id          String   @id @default(uuid())
   title       String
   description String   @db.Text
-  poster      String?
+  image       String?
   tanggal     DateTime
   lokasi      String?
-  category    String?
   linkDaftar  String?
   published   Boolean  @default(false)
   authorId    String?
@@ -183,6 +203,7 @@ model Event {
   updatedAt   DateTime @updatedAt
 
   participants EventParticipant[]
+  reads        EventRead[]
 
   @@index([published])
   @@index([tanggal])
@@ -213,6 +234,11 @@ enum ConnectionStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+enum PostVisibility {
+  PUBLIC
+  CONNECTIONS
 }
 
 model Notification {
@@ -272,4 +298,34 @@ enum SettingType {
   JSON
   NUMBER
   BOOLEAN
+}
+
+model AnnouncementRead {
+  id            String   @id @default(uuid())
+  announcementId String
+  userId        String
+  readAt        DateTime @default(now())
+
+  announcement  Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+  @@index([announcementId])
+  @@map("announcement_reads")
+}
+
+model EventRead {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  readAt    DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([eventId])
+  @@map("event_reads")
 }
