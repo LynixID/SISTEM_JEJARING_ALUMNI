@@ -258,5 +258,41 @@ export const markEventAsRead = (id) => {
   return api.post(`/reads/events/${id}/read`)
 }
 
+// Messages API
+export const getConversations = () => {
+  return api.get('/messages/conversations')
+}
+
+export const getMessages = (userId, params = {}) => {
+  return api.get(`/messages/${userId}`, { params })
+}
+
+export const sendMessage = (data, image) => {
+  const formData = new FormData()
+  formData.append('receiverId', data.receiverId)
+  if (data.content) {
+    formData.append('content', data.content)
+  }
+  if (data.parentId) {
+    formData.append('parentId', data.parentId)
+  }
+  if (image) {
+    formData.append('media', image)
+  }
+  return api.post('/messages', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export const deleteMessage = (id) => {
+  return api.delete(`/messages/${id}`)
+}
+
+export const markMessagesAsRead = (userId) => {
+  return api.put(`/messages/${userId}/read`)
+}
+
 export default api
 

@@ -21,6 +21,7 @@ import DirektoriAlumni from './pages/DirektoriAlumni'
 import PostDetail from './pages/PostDetail'
 import Notifications from './pages/Notifications'
 import Connections from './pages/Connections'
+import Chat from './pages/Chat'
 
 // Komponen untuk protect route: cek login, role, dan verified status
 const ProtectedRoute = ({ children, requireAdmin = false, requireAdminOrPengurus = false, allowUnverified = false }) => {
@@ -190,6 +191,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Connections />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat/:userId?"
+            element={
+              <ProtectedRoute>
+                <Chat />
               </ProtectedRoute>
             }
           />

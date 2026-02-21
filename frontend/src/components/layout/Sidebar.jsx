@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Home, Users, MessageCircle, Bell, User, Newspaper, UserPlus, Edit, ChevronDown, ChevronRight, FileText, CalendarCheck } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { getUnreadCount, getConnectionRequests, getUnreadNewsCount } from '../../services/api'
+import { getUnreadCount, getConnectionRequests, getUnreadNewsCount, getConversations } from '../../services/api'
 import { getSocket } from '../../config/socket'
 
 const Sidebar = () => {
@@ -12,6 +12,7 @@ const Sidebar = () => {
   const [unreadCount, setUnreadCount] = useState(0)
   const [pendingConnectionsCount, setPendingConnectionsCount] = useState(0)
   const [unreadNewsCount, setUnreadNewsCount] = useState(0)
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
 
   // Fetch unread count
   useEffect(() => {
@@ -103,6 +104,40 @@ const Sidebar = () => {
     }
   }, [isAuthenticated, user])
 
+  // Fetch unread messages count
+  useEffect(() => {
+    if (!isAuthenticated || user?.role === 'ADMIN') return
+
+    const fetchUnreadMessagesCount = async () => {
+      try {
+        const response = await getConversations()
+        const conversations = response.data.conversations || []
+        const totalUnread = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
+        setUnreadMessagesCount(totalUnread)
+      } catch (error) {
+        console.error('Error fetching unread messages count:', error)
+      }
+    }
+
+    fetchUnreadMessagesCount()
+
+    // Setup Socket.io listener untuk real-time updates
+    const socket = getSocket()
+    const handleNewMessage = () => {
+      fetchUnreadMessagesCount()
+    }
+
+    socket.on('newMessage', handleNewMessage)
+
+    // Polling setiap 30 detik untuk update
+    const interval = setInterval(fetchUnreadMessagesCount, 30000)
+
+    return () => {
+      socket.off('newMessage', handleNewMessage)
+      clearInterval(interval)
+    }
+  }, [isAuthenticated, user])
+
   const getProfilePath = () => {
     return user?.id ? `/profil/${user.id}` : '/profil'
   }
@@ -112,7 +147,7 @@ const Sidebar = () => {
     { icon: Users, label: 'Direktori', path: '/direktori', disabled: false },
     { icon: Newspaper, label: 'Berita', path: '/berita', disabled: false },
     { icon: UserPlus, label: 'Koneksi', path: '/koneksi', disabled: false },
-    { icon: MessageCircle, label: 'Pesan', path: '/pesan', disabled: true },
+    { icon: MessageCircle, label: 'Pesan', path: '/chat', disabled: false },
     { icon: Bell, label: 'Notifikasi', path: '/notifikasi', disabled: false },
     { icon: User, label: 'Profil', path: getProfilePath(), disabled: false }
   ]
@@ -134,6 +169,7 @@ const Sidebar = () => {
               (item.path === '/berita' && location.pathname.startsWith('/berita')) ||
               (item.path === '/notifikasi' && location.pathname.startsWith('/notifikasi')) ||
               (item.path === '/koneksi' && location.pathname.startsWith('/koneksi')) ||
+              (item.path === '/chat' && location.pathname.startsWith('/chat')) ||
               (item.path.startsWith('/profil') && location.pathname.startsWith('/profil'))
             )
             const isDisabled = item.disabled
@@ -158,6 +194,8 @@ const Sidebar = () => {
             const showConnectionBadge = item.path === '/koneksi' && pendingConnectionsCount > 0 && user?.role !== 'ADMIN'
             // Tambahkan badge untuk Berita jika ada unread announcement/event
             const showNewsBadge = item.path === '/berita' && unreadNewsCount > 0 && user?.role !== 'ADMIN'
+            // Tambahkan badge untuk Pesan jika ada unread messages
+            const showMessagesBadge = item.path === '/chat' && unreadMessagesCount > 0 && user?.role !== 'ADMIN'
 
             return (
               <li key={item.path}>
@@ -186,6 +224,11 @@ const Sidebar = () => {
                   {showNewsBadge && (
                     <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {unreadNewsCount > 9 ? '9+' : unreadNewsCount}
+                    </span>
+                  )}
+                  {showMessagesBadge && (
+                    <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
                     </span>
                   )}
                 </Link>

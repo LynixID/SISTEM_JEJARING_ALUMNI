@@ -386,7 +386,16 @@ const Profile = () => {
                             <Button
                               variant="outline"
                               className="flex items-center gap-2 rounded-xl"
-                              onClick={() => alert('Fitur pesan akan segera hadir!')}
+                              onClick={() => navigate(`/chat/${user.id}`, {
+                                state: {
+                                  userInfo: {
+                                    id: user.id,
+                                    nama: user.nama,
+                                    email: user.email,
+                                    fotoProfil: user.profile?.fotoProfil || null
+                                  }
+                                }
+                              })}
                             >
                               <MessageCircle size={18} />
                               Kirim Pesan
