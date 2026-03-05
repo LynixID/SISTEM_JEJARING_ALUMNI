@@ -76,3 +76,6 @@ router.put('/:userId/read', verifyToken, markAsRead)
 
 export default router
 
+
+
+
