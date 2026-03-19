@@ -38,6 +38,10 @@ model User {
   postMentions  PostMention[]
   announcementReads AnnouncementRead[]
   eventReads EventRead[]
+  jobs          jobs[]
+  discussionThreads DiscussionThread[]
+  discussionMemberships DiscussionMember[]
+  discussionMessages DiscussionMessage[]
 
   @@index([email])
   @@index([nim])
@@ -142,9 +146,9 @@ model Message {
   content   String   @db.Text
   senderId  String
   receiverId String
-  parentId  String?  // ID pesan yang di-reply (null untuk pesan biasa)
-  media     String?  // Path ke media/gambar
+  media     String?
   read      Boolean  @default(false)
+  parentId  String?
   createdAt DateTime @default(now())
 
   sender    User     @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
@@ -153,8 +157,8 @@ model Message {
   replies   Message[] @relation("MessageReplies")
 
   @@index([senderId, receiverId])
-  @@index([parentId])
   @@index([createdAt])
+  @@index([parentId])
   @@map("messages")
 }
 
@@ -306,6 +310,36 @@ enum SettingType {
   BOOLEAN
 }
 
+model jobs {
+  id             String      @id
+  title          String
+  slug           String      @unique
+  description    String      @db.Text
+  company        String
+  location       String?
+  employmentType String?
+  salaryRange    String?
+  contact        String?
+  applyLink      String?
+  image          String?
+  status         jobs_status @default(PENDING)
+  authorId       String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime
+
+  users          User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId], map: "jobs_authorId_fkey")
+  @@index([createdAt])
+  @@index([status])
+}
+
+enum jobs_status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model AnnouncementRead {
   id            String   @id @default(uuid())
   announcementId String
@@ -334,4 +368,79 @@ model EventRead {
   @@index([userId])
   @@index([eventId])
   @@map("event_reads")
+}
+
+model DiscussionThread {
+  id          String           @id @default(uuid())
+  title       String
+  content     String           @db.Text
+  image       String?
+  visibility  DiscussionVisibility @default(PUBLIC)
+  status      DiscussionStatus @default(OPEN)
+  authorId    String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  members     DiscussionMember[]
+  messages    DiscussionMessage[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([visibility])
+  @@map("discussion_threads")
+}
+
+model DiscussionMember {
+  id        String              @id @default(uuid())
+  threadId  String
+  userId    String
+  role      DiscussionMemberRole @default(MEMBER)
+  joinedAt  DateTime            @default(now())
+
+  thread    DiscussionThread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([userId])
+  @@index([threadId])
+  @@index([role])
+  @@map("discussion_members")
+}
+
+model DiscussionMessage {
+  id        String           @id @default(uuid())
+  threadId  String
+  senderId  String
+  content   String           @db.Text
+  media     String?
+  parentId  String?
+  createdAt DateTime         @default(now())
+
+  thread    DiscussionThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender    User             @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  parent    DiscussionMessage? @relation("DiscussionMessageReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   DiscussionMessage[] @relation("DiscussionMessageReplies")
+
+  @@index([threadId, createdAt])
+  @@index([senderId])
+  @@index([parentId])
+  @@map("discussion_messages")
+}
+
+enum DiscussionVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum DiscussionStatus {
+  OPEN
+  LOCKED
+}
+
+enum DiscussionMemberRole {
+  OWNER
+  MOD
+  MEMBER
 }

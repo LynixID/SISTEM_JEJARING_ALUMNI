@@ -386,7 +386,7 @@ const Profile = () => {
                             <Button
                               variant="outline"
                               className="flex items-center gap-2 rounded-xl"
-                              onClick={() => navigate(`/chat/${user.id}`, {
+                              onClick={() => navigate(`/pesan/${user.id}`, {
                                 state: {
                                   userInfo: {
                                     id: user.id,

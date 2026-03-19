@@ -7,7 +7,7 @@ import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Bell, Search, Filter, Check, CheckCheck, Trash2, Heart, MessageCircle, Reply, Megaphone, Calendar, X, UserPlus } from 'lucide-react'
+import { Bell, Search, Filter, Check, CheckCheck, Trash2, Heart, MessageCircle, Reply, Megaphone, Calendar, X, UserPlus, BriefcaseBusiness } from 'lucide-react'
 
 const Notifications = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -31,9 +31,11 @@ const Notifications = () => {
     { value: 'ALL', label: 'Semua', icon: Bell, color: 'gray' },
     { value: 'LIKE', label: 'Like', icon: Heart, color: 'red' },
     { value: 'COMMENT', label: 'Komentar', icon: MessageCircle, color: 'blue' },
+    { value: 'MESSAGE', label: 'Chat', icon: MessageCircle, color: 'blue' },
     { value: 'REPLY', label: 'Balasan', icon: Reply, color: 'green' },
     { value: 'ANNOUNCEMENT', label: 'Pengumuman', icon: Megaphone, color: 'purple' },
-    { value: 'EVENT', label: 'Event', icon: Calendar, color: 'orange' }
+    { value: 'EVENT', label: 'Event', icon: Calendar, color: 'orange' },
+    { value: 'JOB', label: 'Lowongan', icon: BriefcaseBusiness, color: 'indigo' }
   ]
 
   const statusOptions = [
@@ -200,6 +202,10 @@ const Notifications = () => {
       navigate(`/berita/${notification.relatedId}`)
     } else if (notification.relatedType === 'event' && notification.relatedId) {
       navigate(`/events/${notification.relatedId}`)
+    } else if (notification.relatedType === 'job_pending') {
+      navigate('/pengurus/lowongan')
+    } else if (notification.relatedType === 'job') {
+      navigate('/lowongan')
     }
   }
 
@@ -406,9 +412,11 @@ const Notifications = () => {
                             <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
                               notification.type === 'LIKE' ? 'bg-red-100 text-red-600' :
                               notification.type === 'COMMENT' ? 'bg-blue-100 text-blue-600' :
+                              notification.type === 'MESSAGE' ? 'bg-blue-100 text-blue-600' :
                               notification.type === 'REPLY' ? 'bg-green-100 text-green-600' :
                               notification.type === 'ANNOUNCEMENT' ? 'bg-purple-100 text-purple-600' :
                               notification.type === 'EVENT' ? 'bg-orange-100 text-orange-600' :
+                              notification.type === 'JOB' ? 'bg-indigo-100 text-indigo-600' :
                               notification.type === 'CONNECTION_REQUEST' || notification.type === 'CONNECTION_ACCEPTED' ? 'bg-indigo-100 text-indigo-600' :
                               'bg-gray-100 text-gray-600'
                             }`}>

@@ -22,7 +22,9 @@ import likeRoutes from './modules/likes/likeRoutes.js'
 import userRoutes from './modules/users/userRoutes.js'
 import connectionRoutes from './modules/connections/connectionRoutes.js'
 import readRoutes from './modules/reads/readRoutes.js'
+import discussionRoutes from './modules/discussions/discussionRoutes.js'
 import messageRoutes from './modules/messages/messageRoutes.js'
+import jobRoutes from './modules/jobs/jobRoutes.js'
 
 // Load environment variables
 dotenv.config()
@@ -88,7 +90,9 @@ app.use('/api', likeRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/connections', connectionRoutes)
 app.use('/api/reads', readRoutes)
+app.use('/api/discussions', discussionRoutes)
 app.use('/api/messages', messageRoutes)
+app.use('/api/jobs', jobRoutes)
 
 // 404 handler
 app.use((req, res) => {

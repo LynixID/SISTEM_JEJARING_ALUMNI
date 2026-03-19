@@ -258,7 +258,47 @@ export const markEventAsRead = (id) => {
   return api.post(`/reads/events/${id}/read`)
 }
 
-// Messages API
+// Jobs (Lowongan) API
+export const getJobs = (params = {}) => {
+  return api.get('/jobs', { params })
+}
+
+export const getPendingJobs = () => {
+  return api.get('/jobs/pending')
+}
+
+export const createJob = (data, image = null) => {
+  const formData = new FormData()
+  formData.append('title', data.title)
+  formData.append('company', data.company)
+  formData.append('description', data.description)
+  if (data.location) formData.append('location', data.location)
+  if (data.employmentType) formData.append('employmentType', data.employmentType)
+  if (data.salaryRange) formData.append('salaryRange', data.salaryRange)
+  if (data.contact) formData.append('contact', data.contact)
+  if (data.applyLink) formData.append('applyLink', data.applyLink)
+  if (image) formData.append('image', image)
+
+  return api.post('/jobs', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export const approveJob = (id) => {
+  return api.put(`/jobs/${id}/approve`)
+}
+
+export const rejectJob = (id) => {
+  return api.put(`/jobs/${id}/reject`)
+}
+
+export const deleteMyJob = (id) => {
+  return api.delete(`/jobs/${id}`)
+}
+
+// Messages (Chat) API
 export const getConversations = () => {
   return api.get('/messages/conversations')
 }
@@ -267,18 +307,19 @@ export const getMessages = (userId, params = {}) => {
   return api.get(`/messages/${userId}`, { params })
 }
 
-export const sendMessage = (data, image) => {
+export const sendMessage = (data, media = null) => {
   const formData = new FormData()
   formData.append('receiverId', data.receiverId)
-  if (data.content) {
+  if (data.content !== undefined && data.content !== null) {
     formData.append('content', data.content)
   }
   if (data.parentId) {
     formData.append('parentId', data.parentId)
   }
-  if (image) {
-    formData.append('media', image)
+  if (media) {
+    formData.append('media', media)
   }
+
   return api.post('/messages', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
@@ -286,12 +327,97 @@ export const sendMessage = (data, image) => {
   })
 }
 
-export const deleteMessage = (id) => {
-  return api.delete(`/messages/${id}`)
-}
-
 export const markMessagesAsRead = (userId) => {
   return api.put(`/messages/${userId}/read`)
+}
+
+// Discussions (Forum Diskusi) API
+export const getDiscussions = (params = {}) => {
+  return api.get('/discussions', { params })
+}
+
+export const getDiscussionById = (id) => {
+  return api.get(`/discussions/${id}`)
+}
+
+export const createDiscussion = (data, image = null) => {
+  const formData = new FormData()
+  formData.append('title', data.title)
+  formData.append('content', data.content)
+  if (data.visibility) formData.append('visibility', data.visibility)
+  if (image) formData.append('image', image)
+
+  return api.post('/discussions', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export const updateDiscussion = (id, data, image = undefined) => {
+  const formData = new FormData()
+  if (data.title !== undefined) formData.append('title', data.title)
+  if (data.content !== undefined) formData.append('content', data.content)
+  if (data.visibility !== undefined) formData.append('visibility', data.visibility)
+
+  if (image === null) {
+    formData.append('removeImage', 'true')
+  } else if (image) {
+    formData.append('image', image)
+  }
+
+  return api.put(`/discussions/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export const joinDiscussion = (id) => {
+  return api.post(`/discussions/${id}/join`)
+}
+
+export const leaveDiscussion = (id) => {
+  return api.post(`/discussions/${id}/leave`)
+}
+
+export const lockDiscussion = (id) => {
+  return api.put(`/discussions/${id}/lock`)
+}
+
+export const unlockDiscussion = (id) => {
+  return api.put(`/discussions/${id}/unlock`)
+}
+
+export const getDiscussionMessages = (id, params = {}) => {
+  return api.get(`/discussions/${id}/messages`, { params })
+}
+
+export const sendDiscussionMessage = (id, data, media = null) => {
+  const formData = new FormData()
+  if (data?.content !== undefined && data?.content !== null) {
+    formData.append('content', data.content)
+  }
+  if (data?.parentId) {
+    formData.append('parentId', data.parentId)
+  }
+  if (media) {
+    formData.append('media', media)
+  }
+
+  return api.post(`/discussions/${id}/messages`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export const updateDiscussionMessage = (threadId, messageId, content) => {
+  return api.put(`/discussions/${threadId}/messages/${messageId}`, { content })
+}
+
+export const deleteDiscussionMessage = (threadId, messageId) => {
+  return api.delete(`/discussions/${threadId}/messages/${messageId}`)
 }
 
 export default api

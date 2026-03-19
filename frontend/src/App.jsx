@@ -21,7 +21,10 @@ import DirektoriAlumni from './pages/DirektoriAlumni'
 import PostDetail from './pages/PostDetail'
 import Notifications from './pages/Notifications'
 import Connections from './pages/Connections'
+import Discussions from './pages/Discussions'
+import DiscussionDetail from './pages/DiscussionDetail'
 import Chat from './pages/Chat'
+import Jobs from './pages/Jobs'
 
 // Komponen untuk protect route: cek login, role, dan verified status
 const ProtectedRoute = ({ children, requireAdmin = false, requireAdminOrPengurus = false, allowUnverified = false }) => {
@@ -195,10 +198,42 @@ function App() {
             }
           />
           <Route
-            path="/chat/:userId?"
+            path="/lowongan"
+            element={
+              <ProtectedRoute>
+                <Jobs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pesan"
             element={
               <ProtectedRoute>
                 <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pesan/:userId"
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/diskusi"
+            element={
+              <ProtectedRoute>
+                <Discussions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/diskusi/:id"
+            element={
+              <ProtectedRoute>
+                <DiscussionDetail />
               </ProtectedRoute>
             }
           />
@@ -207,6 +242,22 @@ function App() {
             element={
               <ProtectedRoute requireAdminOrPengurus={true}>
                 <ManageAnnouncements />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pengurus/lowongan/draft"
+            element={
+              <ProtectedRoute requireAdminOrPengurus={true}>
+                <Jobs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pengurus/lowongan"
+            element={
+              <ProtectedRoute requireAdminOrPengurus={true}>
+                <Jobs />
               </ProtectedRoute>
             }
           />

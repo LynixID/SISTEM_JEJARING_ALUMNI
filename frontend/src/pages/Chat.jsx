@@ -696,7 +696,7 @@ const Chat = () => {
 
   const handleSelectConversation = (conversation) => {
     setSelectedConversation(conversation)
-    navigate(`/chat/${conversation.partner.id}`)
+    navigate(`/pesan/${conversation.partner.id}`)
     fetchMessages(conversation.partner.id, true)
     setReplyingTo(null)
   }
@@ -763,7 +763,7 @@ const Chat = () => {
     })
     
     // Navigate ke chat dengan user tersebut
-    navigate(`/chat/${user.id}`)
+    navigate(`/pesan/${user.id}`)
     
     // Fetch messages untuk user tersebut (akan return empty array jika belum ada)
     // Pass userInfo untuk memastikan nama tidak hilang
