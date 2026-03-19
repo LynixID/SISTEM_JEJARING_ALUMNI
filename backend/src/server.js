@@ -25,6 +25,7 @@ import readRoutes from './modules/reads/readRoutes.js'
 import discussionRoutes from './modules/discussions/discussionRoutes.js'
 import messageRoutes from './modules/messages/messageRoutes.js'
 import jobRoutes from './modules/jobs/jobRoutes.js'
+import wilayahRoutes from './modules/wilayah/wilayahRoutes.js'
 
 // Load environment variables
 dotenv.config()
@@ -93,6 +94,7 @@ app.use('/api/reads', readRoutes)
 app.use('/api/discussions', discussionRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/jobs', jobRoutes)
+app.use('/api/wilayah', wilayahRoutes)
 
 // 404 handler
 app.use((req, res) => {
