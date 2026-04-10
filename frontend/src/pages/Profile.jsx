@@ -9,6 +9,7 @@ import { Edit, User, Briefcase, Award, GraduationCap, FileText, Globe, MapPin, M
 import Button from '../components/common/Button'
 import ConnectModal from '../components/connection/ConnectModal'
 import PostCard from '../components/post/PostCard'
+import ReportModal from '../components/common/ReportModal'
 
 const Profile = () => {
   const { id } = useParams()
@@ -25,6 +26,7 @@ const Profile = () => {
   const [processingConnection, setProcessingConnection] = useState(false)
   const [userPosts, setUserPosts] = useState([])
   const [loadingPosts, setLoadingPosts] = useState(false)
+  const [reportModal, setReportModal] = useState(false)
   const [postsPagination, setPostsPagination] = useState({
     page: 1,
     limit: 10,
@@ -400,6 +402,15 @@ const Profile = () => {
                               <MessageCircle size={18} />
                               Kirim Pesan
                             </Button>
+
+                            {/* Tombol Laporkan Pengguna */}
+                            <button
+                              onClick={() => setReportModal(true)}
+                              className="ml-auto flex items-center gap-1.5 text-gray-400 hover:text-red-500 transition-colors text-sm px-3 py-2 rounded-xl hover:bg-red-50"
+                              title="Laporkan pengguna ini"
+                            >
+                              🚩 Laporkan
+                            </button>
                           </div>
                         )}
                       </div>
@@ -818,6 +829,17 @@ const Profile = () => {
           onClose={() => setShowConnectModal(false)}
           targetUser={user}
           onSuccess={handleConnectionSuccess}
+        />
+      )}
+
+      {/* Report Modal */}
+      {!isOwnProfile && user && (
+        <ReportModal
+          isOpen={reportModal}
+          onClose={() => setReportModal(false)}
+          targetType="USER"
+          targetId={user.id}
+          targetName={user.nama}
         />
       )}
     </div>

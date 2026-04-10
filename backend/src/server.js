@@ -26,6 +26,7 @@ import discussionRoutes from './modules/discussions/discussionRoutes.js'
 import messageRoutes from './modules/messages/messageRoutes.js'
 import jobRoutes from './modules/jobs/jobRoutes.js'
 import wilayahRoutes from './modules/wilayah/wilayahRoutes.js'
+import reportRoutes from './modules/reports/reportRoutes.js'
 
 // Load environment variables
 dotenv.config()
@@ -74,6 +75,14 @@ app.use('/uploads', (req, res, next) => {
   next()
 }, express.static(path.join(__dirname, '../uploads')))
 
+app.use('/uploads_trash', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:5173')
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Content-Type')
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin')
+  next()
+}, express.static(path.join(__dirname, '../uploads_trash')))
+
 // Register route modules
 app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminRoutes)
@@ -95,6 +104,7 @@ app.use('/api/discussions', discussionRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/jobs', jobRoutes)
 app.use('/api/wilayah', wilayahRoutes)
+app.use('/api/reports', reportRoutes)
 
 // 404 handler
 app.use((req, res) => {

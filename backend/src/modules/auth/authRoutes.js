@@ -1,6 +1,6 @@
 import express from 'express'
 import { body } from 'express-validator'
-import { requestOTP, verifyOTPAndRegister, resendOTP, login, getMe } from './authController.js'
+import { requestOTP, verifyOTPAndRegister, resendOTP, login, getMe, googleLogin, completeProfile } from './authController.js'
 import { verifyToken } from '../../middleware/auth.js'
 import { otpRateLimiter, verifyOTPRateLimiter, loginRateLimiter } from '../../middleware/rateLimiter.js'
 
@@ -81,12 +81,60 @@ const loginValidation = [
   body('password').notEmpty().withMessage('Password harus diisi'),
 ]
 
+const googleLoginValidation = [
+  body('credential')
+    .notEmpty()
+    .withMessage('Google credential wajib dikirim'),
+]
+
+const completeProfileValidation = [
+  body('nama')
+    .trim()
+    .notEmpty()
+    .withMessage('Nama harus diisi')
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Nama harus antara 2-100 karakter'),
+  body('nim')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ min: 8, max: 20 })
+    .withMessage('NIM harus antara 8-20 karakter')
+    .matches(/^[0-9]+$/)
+    .withMessage('NIM harus berupa angka'),
+  body('prodi')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Program studi harus antara 2-100 karakter'),
+  body('angkatan')
+    .optional({ nullable: true, checkFalsy: true })
+    .custom((value) => {
+      if (!value) return true
+      const num = parseInt(value)
+      if (isNaN(num)) return false
+      return num >= 1945 && num <= new Date().getFullYear() + 1
+    })
+    .withMessage(`Angkatan harus antara 1945-${new Date().getFullYear() + 1}`),
+  body('domisili')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ min: 2, max: 120 })
+    .withMessage('Domisili harus antara 2-120 karakter'),
+  body('whatsapp')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .matches(/^(08|628)[0-9]{9,12}$/)
+    .withMessage('Nomor WhatsApp tidak valid. Format: 08xxxxxxxxxx atau 628xxxxxxxxxx'),
+]
+
 // Routes dengan rate limiting dan validasi
 router.post('/register/request-otp', otpRateLimiter, requestOTPValidation, requestOTP)
 router.post('/register/verify-otp', verifyOTPRateLimiter, verifyOTPValidation, verifyOTPAndRegister)
 router.post('/register/resend-otp', otpRateLimiter, resendOTPValidation, resendOTP)
 router.post('/login', loginRateLimiter, loginValidation, login)
+router.post('/google', googleLoginValidation, googleLogin)
 router.get('/me', verifyToken, getMe)
+router.put('/complete-profile', verifyToken, completeProfileValidation, completeProfile)
 
 export default router
 

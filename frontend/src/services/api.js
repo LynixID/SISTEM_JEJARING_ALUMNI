@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const api = axios.create({
   baseURL: API_URL,
@@ -329,6 +329,15 @@ export const sendMessage = (data, media = null) => {
 
 export const markMessagesAsRead = (userId) => {
   return api.put(`/messages/${userId}/read`)
+}
+
+// Auth (SSO + complete profile)
+export const googleLogin = (credential) => {
+  return api.post('/auth/google', { credential })
+}
+
+export const completeProfile = (data) => {
+  return api.put('/auth/complete-profile', data)
 }
 
 // Discussions (Forum Diskusi) API

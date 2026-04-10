@@ -130,6 +130,49 @@ const UserManagement = () => {
     }
   }
 
+  const handleSuspend = async (userId) => {
+    const reason = window.prompt('Alasan penangguhan (Suspended):', 'Pelanggaran ketentuan layanan')
+    if (reason === null) return // Cancelled
+
+    try {
+      await api.patch(`/admin/users/${userId}/suspend`, { reason })
+      fetchUsers()
+      setAlertModal({
+        isOpen: true,
+        title: 'Berhasil',
+        message: 'User telah ditangguhkan',
+        variant: 'success'
+      })
+    } catch (error) {
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: error.response?.data?.error || 'Gagal menangguhkan user',
+        variant: 'error'
+      })
+    }
+  }
+
+  const handleUnsuspend = async (userId) => {
+    try {
+      await api.patch(`/admin/users/${userId}/unsuspend`)
+      fetchUsers()
+      setAlertModal({
+        isOpen: true,
+        title: 'Berhasil',
+        message: 'Penangguhan user telah dicabut',
+        variant: 'success'
+      })
+    } catch (error) {
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: error.response?.data?.error || 'Gagal membuka penangguhan',
+        variant: 'error'
+      })
+    }
+  }
+
   const getRoleBadge = (role) => {
     const colors = {
       ALUMNI: 'bg-blue-100 text-blue-800',
@@ -143,8 +186,15 @@ const UserManagement = () => {
     )
   }
 
-  const getVerifiedBadge = (verified) => {
-    return verified ? (
+  const getVerifiedBadge = (user) => {
+    if (user.isSuspended) {
+      return (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" title={`Alasan: ${user.suspendReason}`}>
+          Suspended
+        </span>
+      )
+    }
+    return user.verified ? (
       <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
         Terverifikasi
       </span>
@@ -282,7 +332,7 @@ const UserManagement = () => {
                           {getRoleBadge(user.role)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {getVerifiedBadge(user.verified)}
+                          {getVerifiedBadge(user)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex gap-2">
@@ -312,6 +362,24 @@ const UserManagement = () => {
                               <option value="ALUMNI">Alumni</option>
                               <option value="PENGURUS">Pengurus</option>
                             </select>
+
+                            {user.isSuspended ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUnsuspend(user.id)}
+                              >
+                                Unsuspend
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => handleSuspend(user.id)}
+                              >
+                                Suspend
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

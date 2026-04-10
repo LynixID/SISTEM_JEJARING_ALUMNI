@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { LayoutDashboard, Users, LogOut, User, Menu, X, Settings, Newspaper, Calendar, ChevronDown, ChevronRight, FileText, CalendarCheck } from 'lucide-react'
+import { 
+  LayoutDashboard, Users, LogOut, User, Menu, X, Settings, 
+  Newspaper, Calendar, ChevronDown, ChevronRight, FileText, 
+  CalendarCheck, ShieldAlert, MessageSquare, FolderOpen 
+} from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import NotificationBell from '../admin/NotificationBell'
@@ -21,24 +25,45 @@ const AdminSidebar = () => {
     navigate('/login', { replace: true })
   }
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-    { icon: Users, label: 'Manajemen User', path: '/admin/users' },
-    { icon: Settings, label: 'Pengaturan', path: '/admin/settings' }
-  ]
-
-  const kelolaBeritaSubmenu = [
-    { icon: FileText, label: 'Pengumuman', path: '/admin/announcements' },
-    { icon: CalendarCheck, label: 'Event', path: '/admin/events' }
+  const navigationGroups = [
+    {
+      title: 'UTAMA',
+      items: [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' }
+      ]
+    },
+    {
+      title: 'DATA PENGGUNA',
+      items: [
+        { icon: Users, label: 'Manajemen User', path: '/admin/users' },
+        { icon: ShieldAlert, label: 'Laporan Konten', path: '/admin/laporan' },
+        { icon: MessageSquare, label: 'Manajemen Komentar', path: '/admin/komentar' }
+      ]
+    },
+    {
+      title: 'KONTEN & BERITA',
+      items: [
+        { icon: FileText, label: 'Pengumuman', path: '/admin/announcements' },
+        { icon: CalendarCheck, label: 'Event', path: '/admin/events' }
+      ]
+    },
+    {
+      title: 'SISTEM',
+      items: [
+        { icon: FolderOpen, label: 'Manajemen File', path: '/admin/files' },
+        { icon: Settings, label: 'Pengaturan', path: '/admin/settings' }
+      ]
+    }
   ]
 
   return (
-    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-gray-900 text-white h-screen sticky top-0 flex flex-col transition-all duration-300`}>
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-gray-900 text-white h-screen sticky top-0 flex flex-col transition-all duration-300 z-50`}>
       {/* Toggle Button */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4 border-b border-gray-800 flex items-center justify-between overflow-hidden">
+        {!isCollapsed && <span className="font-bold text-blue-400">ADMIN PANEL</span>}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="w-full flex items-center justify-center p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
+          className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
           title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
           {isCollapsed ? <Menu size={20} /> : <X size={20} />}
@@ -46,101 +71,43 @@ const AdminSidebar = () => {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto p-4">
-        <ul className="space-y-2">
-          {menuItems.slice(0, 2).map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path || 
-                           (item.path === '/admin/users' && location.pathname.startsWith('/admin/users'))
-            return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  }`}
-                  title={isCollapsed ? item.label : ''}
-                >
-                  <Icon size={20} />
-                  {!isCollapsed && <span>{item.label}</span>}
-                </Link>
-              </li>
-            )
-          })}
-          
-          {/* Kelola Berita dengan Submenu */}
-          <li>
-            {isCollapsed ? (
-              <div className="px-4 py-3 rounded-lg bg-gray-800">
-                <Newspaper size={20} className="mx-auto" title="Kelola Berita" />
-              </div>
-            ) : (
-              <>
-                <button
-                  onClick={() => setKelolaBeritaOpen(!kelolaBeritaOpen)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
-                    location.pathname === '/admin/announcements' || location.pathname === '/admin/events'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Newspaper size={20} />
-                    <span>Kelola Berita</span>
-                  </div>
-                  {kelolaBeritaOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                </button>
-                {kelolaBeritaOpen && (
-                  <ul className="mt-2 ml-4 space-y-1 border-l-2 border-gray-700 pl-2">
-                    {kelolaBeritaSubmenu.map((subItem) => {
-                      const SubIcon = subItem.icon
-                      const isSubActive = location.pathname === subItem.path
-                      return (
-                        <li key={subItem.path}>
-                          <Link
-                            to={subItem.path}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                              isSubActive
-                                ? 'bg-blue-700 text-white'
-                                : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                            }`}
-                          >
-                            <SubIcon size={16} />
-                            <span>{subItem.label}</span>
-                          </Link>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </>
+      <nav className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+        {navigationGroups.map((group, groupIdx) => (
+          <div key={group.title} className={groupIdx > 0 ? 'mt-6' : ''}>
+            {!isCollapsed && (
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-4 mb-2">
+                {group.title}
+              </h3>
             )}
-          </li>
-
-          {/* Menu Pengaturan (di bawah Kelola Berita) */}
-          {menuItems.slice(2).map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path
-            return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  }`}
-                  title={isCollapsed ? item.label : ''}
-                >
-                  <Icon size={20} />
-                  {!isCollapsed && <span>{item.label}</span>}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+            <ul className="space-y-1">
+              {group.items.map((item) => {
+                const Icon = item.icon
+                const isActive = location.pathname === item.path || 
+                               (item.path === '/admin/users' && location.pathname.startsWith('/admin/users'))
+                
+                return (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all duration-200 group relative ${
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
+                          : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                      }`}
+                      title={isCollapsed ? item.label : ''}
+                    >
+                      <Icon size={20} className={isActive ? 'text-white' : 'group-hover:text-blue-400 transition-colors'} />
+                      {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+                      {isActive && !isCollapsed && (
+                        <div className="absolute right-2 w-1.5 h-1.5 rounded-full bg-white shadow-glow" />
+                      )}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       {/* Bottom Section - Profile, Notifikasi, Logout */}

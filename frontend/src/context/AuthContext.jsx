@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import api, { googleLogin as googleLoginApi } from '../services/api'
 
 const AuthContext = createContext()
 
@@ -78,6 +78,23 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user }
     } catch (error) {
       const message = error.response?.data?.error || 'Email atau password salah'
+      return { success: false, message }
+    }
+  }
+
+  const loginWithGoogle = async (credential) => {
+    try {
+      const response = await googleLoginApi(credential)
+      const { token, user } = response.data
+
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+      setUser(user)
+      setIsAuthenticated(true)
+
+      return { success: true, user }
+    } catch (error) {
+      const message = error.response?.data?.error || 'Gagal login dengan Google'
       return { success: false, message }
     }
   }
@@ -166,6 +183,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     isLoading,
     login,
+    loginWithGoogle,
     register,
     requestOTP,
     verifyOTPAndRegister,

@@ -5,6 +5,10 @@ import { body, validationResult } from 'express-validator'
 import { generateOTP, createOTPExpiry, verifyOTP } from '../../services/otpService.js'
 import { sendOTPEmail, sendAdminNotificationEmail } from '../../services/emailService.js'
 import { getImagePath } from '../../utils/fileUtils.js'
+import { OAuth2Client } from 'google-auth-library'
+import crypto from 'crypto'
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 // Request OTP untuk registrasi
 export const requestOTP = async (req, res) => {
@@ -355,6 +359,16 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Email atau password salah' })
     }
 
+    // Check if user is suspended
+    if (user.isSuspended) {
+      return res.status(403).json({ 
+        error: `Akun Anda ditangguhkan (Suspended). Alasan: ${user.suspendReason || 'Pelanggaran ketentuan layanan.'}`,
+        isSuspended: true,
+        suspendedAt: user.suspendedAt,
+        suspendReason: user.suspendReason
+      })
+    }
+
     // Cek email sudah terverifikasi (kecuali ADMIN)
     if (!user.emailVerified && user.role !== 'ADMIN') {
       return res.status(401).json({ error: 'Email belum terverifikasi. Silakan verifikasi email terlebih dahulu.' })
@@ -424,6 +438,153 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error('Login error:', error)
     res.status(500).json({ error: 'Terjadi kesalahan saat login' })
+  }
+}
+
+// Login/Register via Google SSO (ambil email saja)
+export const googleLogin = async (req, res) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(err => err.msg).join(', ')
+      return res.status(400).json({ error: errorMessages, errors: errors.array() })
+    }
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ error: 'GOOGLE_CLIENT_ID belum diset di environment' })
+    }
+
+    const { credential } = req.body
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    })
+
+    const payload = ticket.getPayload()
+    const email = payload?.email
+    const emailVerified = payload?.email_verified
+
+    if (!email) return res.status(400).json({ error: 'Email Google tidak ditemukan' })
+    if (!emailVerified) return res.status(400).json({ error: 'Email Google belum terverifikasi' })
+
+    // Check if user exists and is suspended BEFORE upserting (if possible)
+    // Actually upsert will handle it, but we need to check the existing state
+    const existingUser = await prisma.user.findUnique({ where: { email } })
+    if (existingUser && existingUser.isSuspended) {
+      return res.status(403).json({ 
+        error: `Akun Anda ditangguhkan (Suspended). Alasan: ${existingUser.suspendReason || 'Pelanggaran ketentuan layanan.'}`,
+        isSuspended: true,
+        suspendedAt: existingUser.suspendedAt,
+        suspendReason: existingUser.suspendReason
+      })
+    }
+
+    // Upsert user: hanya email terisi + emailVerified true
+    // NOTE: kolom "nama" di schema wajib, jadi kita set '' agar dianggap belum lengkap
+    const randomPassword = crypto.randomBytes(32).toString('hex')
+    const hashedPassword = await bcrypt.hash(randomPassword, 10)
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {
+        emailVerified: true,
+        // jangan mengubah verified di sini (tetap butuh verifikasi admin)
+      },
+      create: {
+        email,
+        password: hashedPassword,
+        nama: '',
+        role: 'ALUMNI',
+        verified: false,
+        emailVerified: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        nama: true,
+        nim: true,
+        role: true,
+        verified: true,
+        emailVerified: true,
+        createdAt: true,
+      },
+    })
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    )
+
+    const refreshToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
+    )
+
+    res.json({
+      message: 'Login Google berhasil',
+      token,
+      refreshToken,
+      user,
+    })
+  } catch (error) {
+    console.error('Google login error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat login Google' })
+  }
+}
+
+// Lengkapi data diri (tanpa password) untuk akun SSO
+export const completeProfile = async (req, res) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(err => err.msg).join(', ')
+      return res.status(400).json({ error: errorMessages, errors: errors.array() })
+    }
+
+    const userId = req.user.userId
+    const { nama, nim, prodi, angkatan, domisili, whatsapp } = req.body
+
+    // Cek NIM duplikat jika ada
+    if (nim) {
+      const existingNIM = await prisma.user.findUnique({ where: { nim } })
+      if (existingNIM && existingNIM.id !== userId) {
+        return res.status(400).json({ error: 'NIM sudah terdaftar' })
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        nama: (nama || '').trim(),
+        nim: nim || null,
+        prodi: prodi || null,
+        angkatan: angkatan ? parseInt(angkatan) : null,
+        domisili: domisili || null,
+        whatsapp: whatsapp || null,
+      },
+      select: {
+        id: true,
+        email: true,
+        nama: true,
+        nim: true,
+        prodi: true,
+        angkatan: true,
+        domisili: true,
+        whatsapp: true,
+        role: true,
+        verified: true,
+        emailVerified: true,
+        createdAt: true,
+      },
+    })
+
+    res.json({ message: 'Data diri berhasil dilengkapi', user: updated })
+  } catch (error) {
+    console.error('Complete profile error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat melengkapi data diri' })
   }
 }
 

@@ -6,32 +6,53 @@ import api from '../../services/api'
 import AdminSidebar from '../../components/layout/AdminSidebar'
 import Card from '../../components/common/Card'
 import Button from '../../components/common/Button'
+import { 
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, PieChart, Pie 
+} from 'recharts'
 
 const AdminDashboard = () => {
   const { user, isLoading: authLoading } = useAuth()
   const [statistics, setStatistics] = useState(null)
+  const [advancedStats, setAdvancedStats] = useState(null)
   const [recentUsers, setRecentUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!authLoading && user) {
-      fetchStatistics()
-      fetchRecentUsers()
+      fetchAllData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user])
+
+  const fetchAllData = async () => {
+    setLoading(true)
+    await Promise.all([
+      fetchStatistics(),
+      fetchAdvancedStats(),
+      fetchRecentUsers()
+    ])
+    setLoading(false)
+  }
 
   const fetchStatistics = async () => {
     try {
       const response = await api.get('/admin/statistics')
       setStatistics(response.data.statistics)
-      setError(null)
     } catch (error) {
       console.error('Error fetching statistics:', error)
-      setError('Gagal memuat statistik. Silakan refresh halaman.')
-    } finally {
-      setLoading(false)
+      setError('Gagal memuat statistik dasar.')
+    }
+  }
+
+  const fetchAdvancedStats = async () => {
+    try {
+      const response = await api.get('/admin/statistics/advanced')
+      if (response.data.success) {
+        setAdvancedStats(response.data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching advanced stats:', error)
     }
   }
 
@@ -255,40 +276,113 @@ const AdminDashboard = () => {
               </Card>
             </div>
 
-            {/* Summary Stats */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Ringkasan Statistik</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Users className="text-blue-600" size={32} />
+            {/* Advanced Analytics Charts */}
+            {advancedStats && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* User Growth Chart */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-6">Tren Pertumbuhan Alumni (30 Hari)</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={advancedStats.userGrowth}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 10 }} 
+                          tickFormatter={(val) => val.split('-')[2]} // Only day
+                          stroke="#94a3b8"
+                        />
+                        <YAxis stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="count" 
+                          stroke="#3b82f6" 
+                          strokeWidth={3} 
+                          dot={{ r: 4 }} 
+                          activeDot={{ r: 6 }} 
+                          name="Registrasi Baru"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{statistics?.totalUsers || 0}</p>
-                  <p className="text-sm text-gray-600">Total User</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <CheckCircle className="text-green-600" size={32} />
+                </Card>
+
+                {/* Prodi Distribution */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-6">Sebaran Alumni per Program Studi (Top 10)</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={advancedStats.prodiDistribution} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                        <XAxis type="number" hide />
+                        <YAxis 
+                          dataKey="name" 
+                          type="category" 
+                          width={140} 
+                          tick={{ fontSize: 10 }} 
+                          stroke="#94a3b8" 
+                        />
+                        <Tooltip 
+                          cursor={{ fill: '#f8fafc' }}
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        />
+                        <Bar 
+                          dataKey="count" 
+                          fill="#6366f1" 
+                          radius={[0, 4, 4, 0]} 
+                          barSize={16}
+                          name="Jumlah Alumni"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{statistics?.verifiedUsers || 0}</p>
-                  <p className="text-sm text-gray-600">Terverifikasi</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Clock className="text-yellow-600" size={32} />
+                </Card>
+
+                {/* Angkatan Distribution */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-6">Sebaran per Angkatan</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={advancedStats.angkatanDistribution}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                        <YAxis stroke="#94a3b8" />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        />
+                        <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} name="Alumni" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{statistics?.pendingUsers || 0}</p>
-                  <p className="text-sm text-gray-600">Pending</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <TrendingUp className="text-purple-600" size={32} />
+                </Card>
+
+                {/* Platform Activity Engagement */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-6">Aktivitas Platform (Engagement)</h3>
+                  <div className="grid grid-cols-2 gap-4 h-64 overflow-y-auto">
+                    <div className="p-4 bg-blue-50 rounded-2xl flex flex-col items-center justify-center border border-blue-100">
+                      <span className="text-3xl font-black text-blue-600">{advancedStats.engagement.posts}</span>
+                      <span className="text-xs font-bold text-blue-400 uppercase tracking-widest mt-1">Total Posts</span>
+                    </div>
+                    <div className="p-4 bg-purple-50 rounded-2xl flex flex-col items-center justify-center border border-purple-100">
+                      <span className="text-3xl font-black text-purple-600">{advancedStats.engagement.comments}</span>
+                      <span className="text-xs font-bold text-purple-400 uppercase tracking-widest mt-1">Total Comments</span>
+                    </div>
+                    <div className="p-4 bg-orange-50 rounded-2xl flex flex-col items-center justify-center border border-orange-100">
+                      <span className="text-3xl font-black text-orange-600">{advancedStats.engagement.events}</span>
+                      <span className="text-xs font-bold text-orange-400 uppercase tracking-widest mt-1">Total Events</span>
+                    </div>
+                    <div className="p-4 bg-red-50 rounded-2xl flex flex-col items-center justify-center border border-red-100">
+                      <span className="text-3xl font-black text-red-600">{advancedStats.engagement.reports}</span>
+                      <span className="text-xs font-bold text-red-400 uppercase tracking-widest mt-1">Laporan Aktif</span>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{statistics?.pengurusCount || 0}</p>
-                  <p className="text-sm text-gray-600">Pengurus</p>
-                </div>
+                </Card>
               </div>
-            </Card>
+            )}
           </div>
         </main>
       </div>

@@ -5,9 +5,10 @@ import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import Card from '../components/common/Card'
 import { Eye, X } from 'lucide-react'
+import { GoogleLogin } from '@react-oauth/google'
 
 const Login = () => {
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     email: '',
@@ -36,6 +37,8 @@ const Login = () => {
       // Redirect sesuai role dan status verifikasi
       if (result.user.role === 'ADMIN') {
         navigate('/admin', { replace: true })
+      } else if (!result.user.nama || !String(result.user.nama).trim()) {
+        navigate('/lengkapi-data', { replace: true })
       } else if (!result.user.verified) {
         navigate('/waiting-verification', { replace: true })
       } else {
@@ -133,6 +136,44 @@ const Login = () => {
                 'Masuk'
               )}
             </Button>
+
+            <div className="pt-2">
+              <div className="flex items-center gap-3 my-2">
+                <div className="h-px bg-gray-200 flex-1" />
+                <div className="text-xs text-gray-500">atau</div>
+                <div className="h-px bg-gray-200 flex-1" />
+              </div>
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={async (credentialResponse) => {
+                    const credential = credentialResponse?.credential
+                    if (!credential) {
+                      setError('Gagal mendapatkan credential Google')
+                      return
+                    }
+                    setError('')
+                    setLoading(true)
+                    const result = await loginWithGoogle(credential)
+                    if (result.success) {
+                      if (result.user.role === 'ADMIN') {
+                        navigate('/admin', { replace: true })
+                      } else if (!result.user.nama || !String(result.user.nama).trim()) {
+                        navigate('/lengkapi-data', { replace: true })
+                      } else if (!result.user.verified) {
+                        navigate('/waiting-verification', { replace: true })
+                      } else {
+                        navigate('/dashboard', { replace: true })
+                      }
+                    } else {
+                      setError(result.message)
+                    }
+                    setLoading(false)
+                  }}
+                  onError={() => setError('Login Google gagal')}
+                  useOneTap={false}
+                />
+              </div>
+            </div>
           </form>
         </Card>
 

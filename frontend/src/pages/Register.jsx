@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import Card from '../components/common/Card'
+import { GoogleLogin } from '@react-oauth/google'
 
 const BACKEND_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 const WILAYAH_PROXY_BASE_URL = `${BACKEND_API_URL}/wilayah`
@@ -76,7 +77,7 @@ const PRODI_OPTIONS = [
 ]
 
 const Register = () => {
-  const { requestOTP } = useAuth()
+  const { requestOTP, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     nama: '',
@@ -482,6 +483,36 @@ const Register = () => {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Memproses...' : 'Daftar'}
             </Button>
+
+            <div className="pt-1">
+              <div className="flex items-center gap-3 my-2">
+                <div className="h-px bg-gray-200 flex-1" />
+                <div className="text-xs text-gray-500">atau daftar dengan</div>
+                <div className="h-px bg-gray-200 flex-1" />
+              </div>
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={async (credentialResponse) => {
+                    const credential = credentialResponse?.credential
+                    if (!credential) {
+                      setError('Gagal mendapatkan credential Google')
+                      return
+                    }
+                    setError('')
+                    setLoading(true)
+                    const result = await loginWithGoogle(credential)
+                    if (result.success) {
+                      navigate('/lengkapi-data', { replace: true })
+                    } else {
+                      setError(result.message)
+                    }
+                    setLoading(false)
+                  }}
+                  onError={() => setError('Daftar/Login Google gagal')}
+                  useOneTap={false}
+                />
+              </div>
+            </div>
           </form>
         </Card>
       </div>

@@ -25,9 +25,14 @@ import Discussions from './pages/Discussions'
 import DiscussionDetail from './pages/DiscussionDetail'
 import Chat from './pages/Chat'
 import Jobs from './pages/Jobs'
+import CompleteProfile from './pages/CompleteProfile'
+import ManageReports from './pages/admin/ManageReports'
+import ManageComments from './pages/admin/ManageComments'
+import ManageFiles from './pages/admin/ManageFiles'
+
 
 // Komponen untuk protect route: cek login, role, dan verified status
-const ProtectedRoute = ({ children, requireAdmin = false, requireAdminOrPengurus = false, allowUnverified = false }) => {
+const ProtectedRoute = ({ children, requireAdmin = false, requireAdminOrPengurus = false, allowUnverified = false, allowIncompleteProfile = false }) => {
   const { isAuthenticated, user, isLoading } = useAuth()
 
   if (isLoading) {
@@ -37,6 +42,14 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireAdminOrPengurus
   // Jika belum login, redirect ke login
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  // Cek kelengkapan profil (untuk mencegah akses akun SSO yang belum isi data diri)
+  if (!allowIncompleteProfile && user?.role !== 'ADMIN') {
+    const nama = (user?.nama || '').trim()
+    if (!nama) {
+      return <Navigate to="/lengkapi-data" replace />
+    }
   }
 
   // Cek verified status (kecuali allowUnverified atau ADMIN)
@@ -66,12 +79,20 @@ const PublicRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
+    const isAdmin = user?.role === 'ADMIN'
+    const hasCompleteName = isAdmin ? true : !!(user?.nama && String(user.nama).trim())
+
+    // Jika profil belum lengkap (nama kosong), paksa ke lengkapi-data lebih dulu
+    if (!hasCompleteName) {
+      return <Navigate to="/lengkapi-data" replace />
+    }
+
     // Cek apakah user perlu verifikasi admin
-    if (user?.role !== 'ADMIN' && !user?.verified) {
+    if (!isAdmin && !user?.verified) {
       return <Navigate to="/waiting-verification" replace />
     }
-    
-    if (user?.role === 'ADMIN') {
+
+    if (isAdmin) {
       return <Navigate to="/admin" replace />
     }
     return <Navigate to="/dashboard" replace />
@@ -114,6 +135,14 @@ function App() {
             element={
               <ProtectedRoute allowUnverified={true}>
                 <WaitingVerification />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lengkapi-data"
+            element={
+              <ProtectedRoute allowUnverified={true} allowIncompleteProfile={true}>
+                <CompleteProfile />
               </ProtectedRoute>
             }
           />
@@ -370,6 +399,30 @@ function App() {
             element={
               <ProtectedRoute requireAdmin={true}>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/laporan"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <ManageReports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/komentar"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <ManageComments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/files"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <ManageFiles />
               </ProtectedRoute>
             }
           />

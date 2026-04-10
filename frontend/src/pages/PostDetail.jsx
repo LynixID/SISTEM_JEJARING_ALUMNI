@@ -14,6 +14,7 @@ import AlertModal from '../components/common/AlertModal'
 import ConfirmModal from '../components/common/ConfirmModal'
 import { Loader } from 'lucide-react'
 import { getSocket } from '../config/socket'
+import ReportModal from '../components/common/ReportModal'
 
 const PostDetail = () => {
   const { id } = useParams()
@@ -38,6 +39,7 @@ const PostDetail = () => {
     variant: 'warning',
     onConfirm: () => {}
   })
+  const [reportModal, setReportModal] = useState(false)
 
   // Redirect ke login jika belum authenticated
   useEffect(() => {
@@ -420,6 +422,17 @@ const PostDetail = () => {
                     <Share2 size={22} />
                     <span className="text-base">Bagikan</span>
                   </button>
+
+                  {/* Tombol Laporkan — hanya untuk post milik orang lain */}
+                  {!isOwnPost && (
+                    <button
+                      onClick={() => setReportModal(true)}
+                      className="ml-auto flex items-center gap-1.5 text-gray-400 hover:text-red-500 transition-colors text-sm"
+                      title="Laporkan postingan ini"
+                    >
+                      🚩 Laporkan
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -467,6 +480,15 @@ const PostDetail = () => {
         title={confirmModal.title}
         message={confirmModal.message}
         variant={confirmModal.variant}
+      />
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={reportModal}
+        onClose={() => setReportModal(false)}
+        targetType="POST"
+        targetId={post?.id}
+        targetName={post?.content}
       />
     </div>
   )
