@@ -91,6 +91,7 @@ const CompleteProfile = () => {
     prodiLainnya: '',
     angkatan: '',
     domisili: '',
+    allowEmailNotification: true,
   })
   const [selectedProvinceCode, setSelectedProvinceCode] = useState('')
   const [selectedRegencyCode, setSelectedRegencyCode] = useState('')
@@ -143,6 +144,7 @@ const CompleteProfile = () => {
       prodiLainnya: user.prodi && !prodiInList ? user.prodi : '',
       angkatan: user.angkatan ? String(user.angkatan) : '',
       domisili: user.domisili || '',
+      allowEmailNotification: user.allowEmailNotification ?? true,
     })
   }, [user])
 
@@ -199,6 +201,7 @@ const CompleteProfile = () => {
         prodi: finalProdi,
         angkatan: form.angkatan,
         domisili: finalDomisili,
+        allowEmailNotification: form.allowEmailNotification,
       })
       await refreshUser()
 
@@ -343,11 +346,22 @@ const CompleteProfile = () => {
               </div>
             </div>
 
-            {(domisiliText || form.domisili) && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-700">
-                <span className="font-medium">Domisili terpilih:</span> {domisiliText || form.domisili}
-              </div>
             )}
+            
+            <div className="flex items-center gap-3 p-4 bg-primary-50 rounded-lg border border-primary-100">
+              <input
+                type="checkbox"
+                id="allowEmailNotification"
+                name="allowEmailNotification"
+                checked={form.allowEmailNotification}
+                onChange={(e) => setForm(prev => ({ ...prev, allowEmailNotification: e.target.checked }))}
+                className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+              />
+              <label htmlFor="allowEmailNotification" className="text-sm font-medium text-primary-900 cursor-pointer">
+                Dapatkan Notifikasi Berita & Pengumuman via Email
+                <p className="text-xs text-primary-700 font-normal mt-0.5">Kami akan mengirimkan email bertahap untuk info alumni terbaru.</p>
+              </label>
+            </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <Button type="submit" disabled={loading}>

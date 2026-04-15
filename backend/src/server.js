@@ -27,6 +27,7 @@ import messageRoutes from './modules/messages/messageRoutes.js'
 import jobRoutes from './modules/jobs/jobRoutes.js'
 import wilayahRoutes from './modules/wilayah/wilayahRoutes.js'
 import reportRoutes from './modules/reports/reportRoutes.js'
+import initJobs from './jobs/cron.js'
 
 // Load environment variables
 dotenv.config()
@@ -125,6 +126,10 @@ const PORT = process.env.PORT || 5000
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📡 Socket.io initialized`)
+  
+  // Initialize Background Jobs
+  initJobs()
+  
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`)
   console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`)
 })

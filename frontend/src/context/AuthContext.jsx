@@ -67,17 +67,26 @@ export const AuthProvider = ({ children }) => {
       
       const { token, user } = response.data
       
-      // Simpan token dan user data ke localStorage
       localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify(user))
       
-      // Update state global
       setUser(user)
       setIsAuthenticated(true)
       
       return { success: true, user }
     } catch (error) {
-      const message = error.response?.data?.error || 'Email atau password salah'
+      const data = error.response?.data
+      // Teruskan info suspen ke komponen Login agar bisa tampilkan pesan khusus
+      if (data?.isSuspended) {
+        return {
+          success: false,
+          isSuspended: true,
+          suspendReason: data.suspendReason,
+          suspendedAt: data.suspendedAt,
+          message: data.error
+        }
+      }
+      const message = data?.error || 'Email atau password salah'
       return { success: false, message }
     }
   }

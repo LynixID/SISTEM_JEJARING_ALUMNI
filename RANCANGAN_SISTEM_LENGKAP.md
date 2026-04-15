@@ -65,11 +65,11 @@ Sistem Informasi Jejaring Sosial berbasis Web untuk Ikatan Keluarga Alumni (IKA)
 │      BACKEND (Node.js + Express)        │
 │  - Express.js                           │
 │  - Prisma ORM                           │
-│  - JWT Authentication                  │
+│  - JWT Authentication                   │
 │  - Socket.io Server                     │
-│  - Multer (File Upload)                │
+│  - Multer (File Upload)                 │
 │  - Sharp (Image Compression)            │
-│  - Nodemailer (Email Service)          │
+│  - Nodemailer (Email Service)           │
 └─────────────────┬───────────────────────┘
                   │
                   │ Prisma ORM
@@ -95,11 +95,16 @@ backend/
 │   │   ├── connections/  # Koneksi alumni
 │   │   ├── announcements/ # Berita/pengumuman
 │   │   ├── events/       # Event
+│   │   ├── jobs/         # Lowongan kerja
+│   │   ├── discussions/  # Diskusi forum
 │   │   ├── notifications/# Notifikasi
+│   │   ├── reports/      # Moderasi konten
+│   │   ├── reads/        # Log baca (announcement/event)
+│   │   ├── wilayah/      # Data wilayah/domisili
 │   │   ├── admin/        # Admin management
 │   │   └── settings/     # Settings
 │   ├── middleware/       # Middleware (auth, validation)
-│   ├── services/         # Services (email, otp, file)
+│   ├── services/         # Services (email, broadcast, notification)
 │   ├── config/          # Konfigurasi (database, socket)
 │   └── server.js        # Entry point
 └── prisma/
@@ -141,13 +146,16 @@ frontend/
 | MySQL | Latest | Database relational |
 | JWT | ^9.0.3 | Authentication token |
 | Socket.io | ^4.8.3 | Real-time communication |
-| Multer | ^2.0.2 | File upload handling |
+| Multer | ^2.0.2 | File upload handling | 
 | Sharp | ^0.34.5 | Image processing & compression |
 | Nodemailer | ^6.10.1 | Email service |
 | bcryptjs | ^3.0.3 | Password hashing |
 | express-validator | ^7.3.1 | Input validation |
 | Helmet | ^8.1.0 | Security headers |
 | express-rate-limit | ^8.2.1 | Rate limiting |
+| node-cron | ^4.2.1 | Scheduled tasks |
+| exceljs | ^4.4.0 | Excel export/import |
+| google-auth-library | ^10.6.2 | Google OAuth |
 
 ### Frontend Stack
 | Teknologi | Versi | Keterangan |
@@ -251,11 +259,12 @@ frontend/
 #### 1.5 Detail Berita
 **Fitur:**
 - Tampilan lengkap berita
-- Judul, kategori, author, tanggal
+- Judul, author, tanggal
 - Konten lengkap dengan formatting
 - Gambar berita
 - Share button
 - Related berita
+- Read status tracking
 - Breadcrumb navigation
 
 #### 1.6 Daftar Event
@@ -275,11 +284,13 @@ frontend/
 **Fitur:**
 - Tampilan lengkap event
 - Deskripsi lengkap
-- Poster event
+- Poster/Image event
 - Informasi tanggal, waktu, lokasi
 - Link pendaftaran (eksternal)
+- Register button (internal tracking)
 - Share button
 - Related events
+- Read status tracking
 
 ---
 
@@ -534,6 +545,34 @@ frontend/
   - Accepted
   - Rejected
 
+#### 2.8 Lowongan Kerja (Jobs)
+**Fitur:**
+- **List Lowongan:**
+  - Tampilan kartu lowongan (perusahaan, lokasi, tipe)
+  - Search & Filter (tipe pekerjaan, lokasi)
+  - Status lowongan (Open/Closed)
+- **Detail Lowongan:**
+  - Deskripsi lengkap pekerjaan
+  - Kualifikasi & Benefit
+  - Tombol "Lamar Sekarang" (eksternal link/kontak)
+- **Post Job (Pengurus/Admin):**
+  - Form input lowongan (judul, deskripsi, perusahaan, dll)
+  - Approval system (jika diajukan alumni)
+
+#### 2.9 Diskusi Alumni (Discussions)
+**Fitur:**
+- **Forum Diskusi:**
+  - List thread diskusi berdasarkan kategori/topik
+  - Search diskusi
+- **Thread Interaction:**
+  - Create new thread (Judul, Konten, Image)
+  - Post reply/hanya diskusi
+  - Nested replies
+  - Report thread/comment
+- **Visibility:**
+  - Public threads
+  - Private threads (hanya member/koneksi)
+
 ---
 
 ### 3. Halaman Admin
@@ -693,6 +732,30 @@ frontend/
   - OTP expiry time
   - File upload limits
   - Image compression settings
+
+#### 3.7 Manajemen Laporan (Reports)
+**Fitur:**
+- **List Laporan:**
+  - Laporan masuk dari user (Post, Komentar, User)
+  - Alasan laporan (Spam, Harassment, dll)
+- **Actions:**
+  - Review konten yang dilaporkan
+  - Takedown konten
+  - Suspend user
+  - Dismiss laporan (jika tidak melanggar)
+
+#### 3.8 Manajemen Komentar
+**Fitur:**
+- List seluruh komentar di platform
+- Search & Filter berdasarkan author atau post
+- Bulk delete komentar
+
+#### 3.9 Manajemen File
+**Fitur:**
+- Monitoring penggunaan storage
+- List semua file yang diupload (Images/Documents)
+- Hapus file sampah/unused files
+- Kelola galeri sistem
 
 ---
 
@@ -1131,17 +1194,66 @@ frontend/
    - Verify/Reject user
    - Edit user data
    - Change user role
+   - Suspend user yang melanggar
 
-4. MANAJEMEN KONTEN
-   - Kelola berita (CRUD)
-   - Kelola event (CRUD)
-   - Moderate posts
+4. MANAJEMEN KONTEN & MODERASI
+   - Kelola laporan konten (take down/dismiss)
+   - Kelola berita & event (CRUD)
+   - Moderate semua komentar & posts
+   - Kelola file di server (File Manager)
    - Kelola settings
 
 5. ANALYTICS
    - Lihat statistik lengkap
-   - Export data (opsional)
-   - Generate reports (opsional)
+   - Export data alumni/event ke Excel
+```
+
+### Flow Submit Lowongan Kerja (Jobs)
+
+```
+1. Alumni/Pengurus akses halaman "Lowongan Kerja"
+   ↓
+2. Klik "Pasang Lowongan"
+   ↓
+3. Isi detail (Perusahaan, Jabatan, Deskripsi, Link/Kontak)
+   ↓
+4. Backend Create Job (status: PENDING)
+   ↓
+5. Notifikasi muncul di dashboard Admin/Pengurus
+   ↓
+6. Admin/Pengurus Review:
+   A. APPROVED: Lowongan tampil di publik
+   B. REJECTED: Lowongan dihapus/tetap pending
+```
+
+### Flow Diskusi Alumni (Discussions)
+
+```
+1. User akses menu "Diskusi"
+   ↓
+2. Pilih Kategori atau klik "Buat Diskusi Baru"
+   ↓
+3. Isi Judul & Deskripsi → Post
+   ↓
+4. User lain dapat membalas (Reply)
+   ↓
+5. Notifikasi dikirim ke Thread Author setiap ada balasan baru
+```
+
+### Flow Pelaporan Konten (Reporting)
+
+```
+1. User melihat konten melanggar (Post/Comment)
+   ↓
+2. Klik menu "Laporkan"
+   ↓
+3. Pilih Alasan (Spam, SARA, Harassment, dll)
+   ↓
+4. Backend Create Report → Entry ke Admin Dashboard
+   ↓
+5. Admin Review Laporan:
+   - Jika Melanggar: Take down konten + Suspend User (opsional)
+   - Jika Tidak (False Report): Dismiss laporan
 ```
 
 ---
@@ -1165,6 +1277,8 @@ model User {
   role          Role      @default(ALUMNI)
   verified      Boolean   @default(false)
   emailVerified Boolean   @default(false)
+  allowEmailNotification Boolean @default(true)
+  isSuspended   Boolean   @default(false)
   otp           String?
   otpExpiry     DateTime?
   createdAt     DateTime  @default(now())
@@ -1178,7 +1292,17 @@ model User {
   receivedMessages Message[] @relation("ReceiverMessages")
   connections   Connection[] @relation("UserConnections")
   connectedTo   Connection[] @relation("ConnectedToUser")
+  eventParticipants EventParticipant[]
   notifications Notification[]
+  postMentions  PostMention[]
+  announcementReads AnnouncementRead[]
+  eventReads EventRead[]
+  jobs          jobs[]
+  discussionThreads DiscussionThread[]
+  discussionMemberships DiscussionMember[]
+  discussionMessages DiscussionMessage[]
+  reports       Report[]
+  mailQueues    MailQueue[]
 
   @@index([email])
   @@index([nim])
@@ -1191,23 +1315,24 @@ model User {
 #### Profile
 ```prisma
 model Profile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  fotoProfil  String?
-  profesi     String?
-  skill       String?
-  perusahaan  String?
-  jabatan     String?
-  sosialMedia Json?
-  portfolio   Json?
-  experience  Json?
-  education   Json?
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  fotoProfil    String?
+  coverPhoto    String?
+  profesi       String?
+  perusahaan    String?
+  jabatan       String?
+  skill         String?
+  sosialMedia   Json?
+  portfolio     Json?
+  experience    Json?
+  education     Json?
   certifications Json?
-  languages   Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  languages     Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
 }
@@ -1216,59 +1341,23 @@ model Profile {
 #### Post
 ```prisma
 model Post {
-  id        String    @id @default(uuid())
-  content   String    @db.Text
+  id        String       @id @default(uuid())
+  content   String       @db.Text
   media     String?
   authorId  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  visibility PostVisibility @default(PUBLIC)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @default(now()) @updatedAt
 
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author    User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
   likes     Like[]
+  mentions  PostMention[]
 
   @@index([authorId])
   @@index([createdAt])
+  @@index([visibility])
   @@map("posts")
-}
-```
-
-#### Comment
-```prisma
-model Comment {
-  id        String   @id @default(uuid())
-  content   String   @db.Text
-  postId    String
-  authorId  String
-  parentId  String?  // Untuk nested comments
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
-  replies   Comment[] @relation("CommentReplies")
-
-  @@index([postId])
-  @@index([parentId])
-  @@map("comments")
-}
-```
-
-#### Like
-```prisma
-model Like {
-  id        String   @id @default(uuid())
-  postId    String
-  userId    String
-  createdAt DateTime @default(now())
-
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([postId, userId])
-  @@index([postId])
-  @@map("likes")
 }
 ```
 
@@ -1279,36 +1368,20 @@ model Message {
   content   String   @db.Text
   senderId  String
   receiverId String
+  media     String?
   read      Boolean  @default(false)
+  parentId  String?
   createdAt DateTime @default(now())
 
   sender    User     @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver  User     @relation("ReceiverMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  parent    Message? @relation("MessageReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Message[] @relation("MessageReplies")
 
   @@index([senderId, receiverId])
   @@index([createdAt])
+  @@index([parentId])
   @@map("messages")
-}
-```
-
-#### Connection
-```prisma
-model Connection {
-  id          String         @id @default(uuid())
-  userId      String
-  connectedUserId String
-  status      ConnectionStatus @default(PENDING)
-  message     String?        @db.Text
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  user        User           @relation("UserConnections", fields: [userId], references: [id], onDelete: Cascade)
-  connectedTo User           @relation("ConnectedToUser", fields: [connectedUserId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, connectedUserId])
-  @@index([userId])
-  @@index([status])
-  @@map("connections")
 }
 ```
 
@@ -1319,7 +1392,6 @@ model Announcement {
   title     String
   slug      String   @unique
   content   String   @db.Text
-  category  String
   image     String?
   published Boolean  @default(false)
   views     Int      @default(0)
@@ -1327,8 +1399,9 @@ model Announcement {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  reads     AnnouncementRead[]
+
   @@index([published])
-  @@index([category])
   @@index([slug])
   @@map("announcements")
 }
@@ -1340,16 +1413,17 @@ model Event {
   id          String   @id @default(uuid())
   title       String
   description String   @db.Text
-  poster      String?
+  image       String?
   tanggal     DateTime
   lokasi      String?
-  category    String?
   linkDaftar  String?
   published   Boolean  @default(false)
+  authorId    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   participants EventParticipant[]
+  reads        EventRead[]
 
   @@index([published])
   @@index([tanggal])
@@ -1357,95 +1431,81 @@ model Event {
 }
 ```
 
-#### EventParticipant
+#### DiscussionThread
 ```prisma
-model EventParticipant {
-  id        String   @id @default(uuid())
-  eventId   String
-  userId    String
-  createdAt DateTime @default(now())
+model DiscussionThread {
+  id          String           @id @default(uuid())
+  title       String
+  content     String           @db.Text
+  image       String?
+  visibility  DiscussionVisibility @default(PUBLIC)
+  status      DiscussionStatus @default(OPEN)
+  authorId    String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  members     DiscussionMember[]
+  messages    DiscussionMessage[]
 
-  @@unique([eventId, userId])
-  @@index([eventId])
-  @@map("event_participants")
-}
-```
-
-#### Notification
-```prisma
-model Notification {
-  id          String   @id @default(uuid())
-  userId      String
-  type        String   // like, comment, event, berita, connection
-  message     String
-  relatedId   String?  // ID dari post/event/berita/connection
-  relatedType String?  // post/event/berita/connection
-  read        Boolean  @default(false)
-  createdAt   DateTime @default(now())
-
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([read])
+  @@index([authorId])
   @@index([createdAt])
-  @@map("notifications")
+  @@index([status])
+  @@index([visibility])
+  @@map("discussion_threads")
 }
 ```
 
-#### AdminNotification
+#### Jobs
 ```prisma
-model AdminNotification {
-  id        String   @id @default(uuid())
-  type      String
-  message   String
-  userId    String?
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+model jobs {
+  id             String      @id
+  title          String
+  slug           String      @unique
+  description    String      @db.Text
+  company        String
+  location       String?
+  employmentType String?
+  salaryRange    String?
+  contact        String?
+  applyLink      String?
+  image          String?
+  status         jobs_status @default(PENDING)
+  authorId       String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime
 
-  @@index([read])
+  users          User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
   @@index([createdAt])
-  @@map("admin_notifications")
+  @@index([status])
 }
 ```
 
-#### Setting
+#### Report
 ```prisma
-model Setting {
-  id          String      @id @default(uuid())
-  key         String      @unique
-  category    String
-  value       String      @db.Text
-  type        SettingType @default(STRING)
-  label       String
-  description String?     @db.Text
-  isPublic    Boolean     @default(false)
-  order       Int         @default(0)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+model Report {
+  id          String           @id @default(uuid())
+  reporterId  String
+  targetType  ReportTargetType
+  targetId    String
+  reason      ReportReason
+  description String?          @db.Text
+  status      ReportStatus     @default(PENDING)
+  adminNote   String?          @db.Text
+  resolvedAt  DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
-  @@index([category])
-  @@index([key])
-  @@map("settings")
-}
-```
+  reporter    User             @relation(fields: [reporterId], references: [id], onDelete: Cascade)
 
-#### FileUpload
-```prisma
-model FileUpload {
-  id          String   @id @default(uuid())
-  filename    String
-  originalName String
-  path        String
-  mimeType    String
-  size        Int
-  uploadedBy  String?
-  createdAt   DateTime @default(now())
-
-  @@index([uploadedBy])
-  @@map("file_uploads")
+  @@index([status])
+  @@index([targetType])
+  @@index([targetId])
+  @@index([reporterId])
+  @@index([createdAt])
+  @@map("reports")
 }
 ```
 
@@ -1463,11 +1523,39 @@ enum ConnectionStatus {
   REJECTED
 }
 
-enum SettingType {
-  STRING
-  JSON
-  NUMBER
-  BOOLEAN
+enum PostVisibility {
+  PUBLIC
+  CONNECTIONS
+}
+
+enum DiscussionVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum DiscussionStatus {
+  OPEN
+  LOCKED
+}
+
+enum jobs_status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReportTargetType {
+  POST
+  COMMENT
+  USER
+}
+
+enum ReportReason {
+  SPAM, HARASSMENT, HATE_SPEECH, INAPPROPRIATE_CONTENT, FALSE_INFORMATION, OTHER
+}
+
+enum ReportStatus {
+  PENDING, REVIEWED, RESOLVED, DISMISSED
 }
 ```
 
@@ -1484,114 +1572,108 @@ POST   /api/auth/login
 POST   /api/auth/logout
 GET    /api/auth/me
 POST   /api/auth/refresh-token
+POST   /api/auth/google              # Google Login/Register
 ```
 
-### Users
+### Users & Profile
 ```
-GET    /api/users                    # List users (with filters)
+GET    /api/users                    # List alumni (with filters)
 GET    /api/users/:id                # Get user by ID
-PUT    /api/users/:id                # Update user (own profile)
-GET    /api/users/:id/profile        # Get user profile
-PUT    /api/users/:id/profile        # Update user profile
+PUT    /api/users/:id                # Update user (basic info)
+GET    /api/users/:id/profile        # Get user profile detail
+PUT    /api/users/:id/profile        # Update user profile (portfolio, exp, etc)
+GET    /api/wilayah/provinces        # Get data provinsi
+GET    /api/wilayah/cities/:provId   # Get data kota
 ```
 
-### Posts
+### Posts, Like & Comment
 ```
 GET    /api/posts                    # List posts (feed)
-GET    /api/posts/:id                # Get post by ID
 POST   /api/posts                    # Create post
 PUT    /api/posts/:id                # Update post
 DELETE /api/posts/:id                # Delete post
-```
-
-### Comments
-```
-GET    /api/posts/:postId/comments   # Get comments for post
+POST   /api/posts/:postId/like       # Toggle like
+GET    /api/posts/:postId/comments   # Get comments
 POST   /api/posts/:postId/comments   # Create comment
-PUT    /api/comments/:id             # Update comment
 DELETE /api/comments/:id             # Delete comment
 ```
 
-### Likes
-```
-POST   /api/posts/:postId/like       # Toggle like
-GET    /api/posts/:postId/likes      # Get likes for post
-```
-
-### Messages
+### Messages (Chat)
 ```
 GET    /api/messages/conversations   # Get conversation list
-GET    /api/messages/:userId         # Get messages with user
-POST   /api/messages                 # Send message
-PUT    /api/messages/:id/read        # Mark as read
+GET    /api/messages/:userId         # Get history messages
+POST   /api/messages                 # Send private message
+PUT    /api/messages/read/:userId    # Mark all messages as read
 ```
 
 ### Connections
 ```
-GET    /api/connections              # Get connections
-GET    /api/connections/requests     # Get connection requests
-POST   /api/connections              # Send connection request
+GET    /api/connections              # Get my connections
+GET    /api/connections/requests     # Get pending requests
+POST   /api/connections/:id          # Send connection request
 PUT    /api/connections/:id/accept   # Accept connection
 PUT    /api/connections/:id/reject   # Reject connection
 DELETE /api/connections/:id          # Remove connection
 ```
 
+### Lowongan Kerja (Jobs)
+```
+GET    /api/jobs                     # List open jobs
+POST   /api/jobs                     # Submit job (Alumni/Pengurus)
+GET    /api/jobs/:id                 # Get job detail
+PUT    /api/jobs/:id                 # Update job
+DELETE /api/jobs/:id                 # Delete job
+PUT    /api/jobs/:id/status          # Change status (Open/Closed)
+```
+
+### Diskusi Alumni (Discussions)
+```
+GET    /api/discussions              # List discussion threads
+POST   /api/discussions              # Create new thread
+GET    /api/discussions/:id          # Get thread detail & messages
+POST   /api/discussions/:id/messages # Post message to thread
+DELETE /api/discussions/messages/:id # Delete discussion message
+```
+
 ### Announcements (Berita)
 ```
-GET    /api/announcements            # List announcements
-GET    /api/announcements/:id       # Get announcement by ID
-POST   /api/announcements            # Create announcement (PENGURUS/ADMIN)
-PUT    /api/announcements/:id       # Update announcement
-DELETE /api/announcements/:id       # Delete announcement
-PUT    /api/announcements/:id/publish # Publish/Unpublish
+GET    /api/announcements            # List public news
+GET    /api/announcements/:id        # Get news detail
+POST   /api/announcements/read/:id   # Mark as read
 ```
 
 ### Events
 ```
-GET    /api/events                   # List events
-GET    /api/events/:id               # Get event by ID
-POST   /api/events                   # Create event (ADMIN)
-PUT    /api/events/:id               # Update event
-DELETE /api/events/:id               # Delete event
-POST   /api/events/:id/register      # Register for event
-GET    /api/events/:id/participants  # Get event participants
+GET    /api/events                   # List public events
+GET    /api/events/:id               # Get event detail
+POST   /api/events/register/:id      # Register participation
+POST   /api/events/read/:id          # Mark as read
 ```
 
 ### Notifications
 ```
-GET    /api/notifications            # Get user notifications
-PUT    /api/notifications/:id/read   # Mark as read
+GET    /api/notifications            # Get my notifications
+PUT    /api/notifications/:id/read   # Mark a notification read
 PUT    /api/notifications/read-all   # Mark all as read
-DELETE /api/notifications/:id        # Delete notification
+DELETE /api/notifications            # Clear all notifications
 ```
 
-### Admin
+### Admin & Moderation
 ```
-GET    /api/admin/users              # Get all users (with filters)
-GET    /api/admin/users/:id          # Get user detail
-PUT    /api/admin/users/:id/verify   # Verify user
-PUT    /api/admin/users/:id/reject   # Reject user
-PUT    /api/admin/users/:id/role     # Update user role
-DELETE /api/admin/users/:id         # Delete user
-GET    /api/admin/statistics         # Get statistics
-GET    /api/admin/notifications      # Get admin notifications
-PUT    /api/admin/notifications/:id/read # Mark admin notification as read
-```
-
-### Settings
-```
-GET    /api/settings                 # Get all settings
-GET    /api/settings/:key            # Get setting by key
-POST   /api/settings                 # Create setting (ADMIN)
-PUT    /api/settings/:id             # Update setting (ADMIN)
-DELETE /api/settings/:id             # Delete setting (ADMIN)
+GET    /api/admin/statistics         # Dashboard stats
+GET    /api/admin/users              # User management
+PUT    /api/admin/users/:id/verify   # Verify/Approve user
+PUT    /api/admin/users/:id/suspend  # Suspend/Unsuspend user
+GET    /api/reports                  # List user reports
+PUT    /api/reports/:id/resolve      # Resolve report
+GET    /api/admin/files              # File manager
+DELETE /api/admin/files/:id          # Delete file from server
 ```
 
 ### File Upload
 ```
-POST   /api/upload                   # Upload file
-POST   /api/upload/image              # Upload image (with compression)
-DELETE /api/upload/:id                # Delete uploaded file
+POST   /api/upload                   # Upload file generic
+POST   /api/upload/image             # Upload image (auto-resize/compress)
 ```
 
 ---
@@ -1602,45 +1684,41 @@ DELETE /api/upload/:id                # Delete uploaded file
 **Akses:**
 - ✅ Dashboard (feed)
 - ✅ Create/Edit/Delete own posts
-- ✅ Like/Comment/Share posts
-- ✅ View & Edit own profile
-- ✅ Direktori alumni
-- ✅ Detail alumni
+- ✅ Like/Comment/Share posts & forum
+- ✅ View & Edit own profile (Skills, Portfolio, Exp, etc)
+- ✅ Direktori alumni & Connection
 - ✅ Chat (private & room)
-- ✅ Connections
-- ✅ Notifications
+- ✅ Submit Lowongan Kerja (Jobs)
+- ✅ Create/Join Diskusi Alumni (Discussions)
+- ✅ Laporkan Konten (Reports)
 - ✅ View berita & event (public)
 
 **Tidak Bisa:**
 - ❌ Admin panel
-- ❌ Create berita
-- ❌ Create event
-- ❌ Manage users
+- ❌ Approve user/job
+- ❌ Manage system settings
 
 ### Role: PENGURUS
 **Akses:**
 - ✅ Semua akses ALUMNI
-- ✅ `/admin/berita` - Create/Edit/Delete berita
-- ✅ Publish/Unpublish berita
+- ✅ `/pengurus/berita` - Full CRUD berita
+- ✅ `/pengurus/lowongan` - Manage & Approve job postings
+- ✅ `/pengurus/events` - Manage events
+- ✅ Access specialized pengurus dashboard
 
 **Tidak Bisa:**
-- ❌ Admin panel lainnya
-- ❌ Manage users
-- ❌ Manage events (kecuali via berita)
+- ❌ Delete/Suspend user
+- ❌ Change system settings
+- ❌ Manage files server
 
 ### Role: ADMIN
 **Akses:**
-- ✅ Semua akses
-- ✅ `/admin/*` - Semua halaman admin
-- ✅ Manage users (verify, reject, edit, delete)
-- ✅ Manage berita (CRUD)
-- ✅ Manage events (CRUD)
-- ✅ Manage posts (moderate)
-- ✅ Settings
-- ✅ Statistics & Analytics
-
-**Tidak Bisa:**
-- ❌ Dashboard user biasa (redirect ke admin)
+- ✅ **Super User** (Semua akses fitur)
+- ✅ `/admin/*` - Full access admin dashboard
+- ✅ User Management (Verify, Reject, Suspend, Change Role)
+- ✅ Content Moderation (Manage Reports, Comments)
+- ✅ System Settings & File Manager
+- ✅ Statistics & Analytics exports
 
 ---
 
@@ -1765,7 +1843,6 @@ DELETE /api/upload/:id                # Delete uploaded file
   title: "DPW IKA UII Jateng Gelar Reuni Akbar 2024",
   slug: "dpw-ika-uii-jateng-gelar-reuni-akbar-2024",
   content: "Full content text...",
-  category: "Event Alumni",
   image: "path/to/image.jpg",
   published: true,
   views: 245,
@@ -1781,10 +1858,9 @@ DELETE /api/upload/:id                # Delete uploaded file
   id: "uuid",
   title: "Reuni Akbar Alumni UII Jateng 2024",
   description: "Event description...",
-  poster: "path/to/poster.jpg",
+  image: "path/to/poster.jpg",
   tanggal: "2024-12-20T09:00:00Z",
   lokasi: "Hotel Grand Candi, Semarang",
-  category: "Event Alumni",
   linkDaftar: "https://example.com/daftar",
   published: true,
   participants: [
@@ -1861,21 +1937,20 @@ DELETE /api/upload/:id                # Delete uploaded file
 
 ## 🎯 KESIMPULAN
 
-Dokumen ini mencakup semua informasi yang diperlukan untuk memahami dan membangun sistem jejaring sosial alumni. Semua fitur, flow, dan struktur data telah dijelaskan secara detail berdasarkan DEMO-SISTEM yang sudah lengkap.
+Dokumen ini mencakup semua informasi yang diperlukan untuk memahami dan membangun sistem jejaring sosial alumni. Semua fitur, flow, dan struktur data telah dijelaskan secara detail berdasarkan **implementasi sistem saat ini**.
 
 **Langkah Selanjutnya:**
-1. Setup environment (database, email service)
-2. Implementasi fitur sesuai prioritas (Auth → Feed → Chat → Admin)
-3. Testing setiap fitur
-4. Deployment ke production
+1. Maintain environment (database, email service)
+2. Monitoring fitur secara berkala
+3. Testing berkala untuk keamanan data
+4. Deployment maintenance
 
 **Referensi:**
-- DEMO-SISTEM: Acuan UI/UX dan fitur lengkap
 - APP: Struktur backend & frontend yang sudah ada
-- Detail Sistem: Rancangan awal sistem
+- Dokumen Teknis: Rancangan sistem lengkap
 
 ---
 
 **Dokumen ini dibuat sebagai acuan utama untuk pengembangan sistem.**  
-**Terakhir diupdate:** 2025-01-XX
+**Terakhir diupdate:** 2026-04-15 (Antigravity Assistant)
 

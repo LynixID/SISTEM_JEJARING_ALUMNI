@@ -362,10 +362,8 @@ export const login = async (req, res) => {
     // Check if user is suspended
     if (user.isSuspended) {
       return res.status(403).json({ 
-        error: `Akun Anda ditangguhkan (Suspended). Alasan: ${user.suspendReason || 'Pelanggaran ketentuan layanan.'}`,
-        isSuspended: true,
-        suspendedAt: user.suspendedAt,
-        suspendReason: user.suspendReason
+        error: 'Akun Anda ditangguhkan (Suspended). Harap hubungi admin untuk informasi lebih lanjut.',
+        isSuspended: true
       })
     }
 
@@ -473,10 +471,8 @@ export const googleLogin = async (req, res) => {
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser && existingUser.isSuspended) {
       return res.status(403).json({ 
-        error: `Akun Anda ditangguhkan (Suspended). Alasan: ${existingUser.suspendReason || 'Pelanggaran ketentuan layanan.'}`,
-        isSuspended: true,
-        suspendedAt: existingUser.suspendedAt,
-        suspendReason: existingUser.suspendReason
+        error: 'Akun Anda ditangguhkan (Suspended). Harap hubungi admin untuk informasi lebih lanjut.',
+        isSuspended: true
       })
     }
 
@@ -605,6 +601,7 @@ export const getMe = async (req, res) => {
         role: true,
         verified: true,
         emailVerified: true,
+        isSuspended: true,
         createdAt: true,
         profile: {
           select: {
@@ -618,6 +615,14 @@ export const getMe = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ error: 'User tidak ditemukan' })
+    }
+
+    // Cek apakah user sedang tersuspen — paksa logout dengan 403
+    if (user.isSuspended) {
+      return res.status(403).json({
+        error: 'Akun Anda ditangguhkan. Hubungi admin untuk informasi lebih lanjut.',
+        isSuspended: true
+      })
     }
 
     // Format image path jika ada

@@ -43,6 +43,7 @@ export const getUserProfile = async (req, res) => {
         whatsapp: true,
         role: true,
         verified: true,
+        allowEmailNotification: true,
         createdAt: true,
         profile: {
           select: {
@@ -298,12 +299,15 @@ export const updateUserBasicInfo = async (req, res) => {
       return res.status(403).json({ error: 'Tidak memiliki akses untuk mengedit data ini' })
     }
 
-    const { nama, whatsapp, domisili } = req.body
+    const { nama, whatsapp, domisili, allowEmailNotification } = req.body
 
     const updateData = {}
     if (nama !== undefined) updateData.nama = nama
     if (whatsapp !== undefined) updateData.whatsapp = whatsapp || null
     if (domisili !== undefined) updateData.domisili = domisili || null
+    if (allowEmailNotification !== undefined) {
+      updateData.allowEmailNotification = allowEmailNotification === true || allowEmailNotification === 'true'
+    }
 
     const user = await prisma.user.update({
       where: { id: userId },
@@ -317,6 +321,7 @@ export const updateUserBasicInfo = async (req, res) => {
         angkatan: true,
         domisili: true,
         whatsapp: true,
+        allowEmailNotification: true,
         role: true,
         verified: true,
         updatedAt: true
@@ -393,7 +398,15 @@ export const getUsers = async (req, res) => {
         where,
         skip,
         take,
-        include: {
+        select: {
+          id: true,
+          email: true,
+          nama: true,
+          nim: true,
+          role: true,
+          angkatan: true,
+          domisili: true,
+          createdAt: true,
           profile: {
             select: {
               fotoProfil: true,

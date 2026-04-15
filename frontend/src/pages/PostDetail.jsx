@@ -15,6 +15,7 @@ import ConfirmModal from '../components/common/ConfirmModal'
 import { Loader } from 'lucide-react'
 import { getSocket } from '../config/socket'
 import ReportModal from '../components/common/ReportModal'
+import LikesModal from '../components/post/LikesModal'
 
 const PostDetail = () => {
   const { id } = useParams()
@@ -40,6 +41,7 @@ const PostDetail = () => {
     onConfirm: () => {}
   })
   const [reportModal, setReportModal] = useState(false)
+  const [showLikesModal, setShowLikesModal] = useState(false)
 
   // Redirect ke login jika belum authenticated
   useEffect(() => {
@@ -76,12 +78,22 @@ const PostDetail = () => {
       }
     }
 
+    const handleCommentDeleted = (data) => {
+      if (data.postId === post.id) {
+        // Jika parent comment dihapus, semua replies juga ikut terhapus di backend
+        const countToRemove = 1 + (data.repliesCount || 0)
+        setCommentsCount(prev => Math.max(0, prev - countToRemove))
+      }
+    }
+
     socket.on('post_liked', handlePostLiked)
     socket.on('new_comment', handleNewComment)
+    socket.on('comment_deleted', handleCommentDeleted)
 
     return () => {
       socket.off('post_liked', handlePostLiked)
       socket.off('new_comment', handleNewComment)
+      socket.off('comment_deleted', handleCommentDeleted)
     }
   }, [post, user])
 
@@ -398,13 +410,20 @@ const PostDetail = () => {
 
                 {/* Action buttons: Like, Comment, Share */}
                 <div className="flex items-center gap-6 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={handleLike}
-                    className={`flex items-center gap-2 ${isLiked ? 'text-red-600' : 'text-gray-600'} hover:text-red-600 transition-colors`}
-                  >
-                    <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
-                    <span className="text-base font-medium">{likesCount}</span>
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={handleLike}
+                      className={`flex items-center justify-center p-1.5 rounded-full hover:bg-red-50 transition-colors ${isLiked ? 'text-red-600' : 'text-gray-600'} hover:text-red-600`}
+                    >
+                      <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
+                    </button>
+                    <button
+                      onClick={() => likesCount > 0 && setShowLikesModal(true)}
+                      className={`text-base font-medium transition-colors ${likesCount > 0 ? 'hover:text-blue-600 cursor-pointer hover:underline' : 'cursor-default text-gray-600'}`}
+                    >
+                      {likesCount}
+                    </button>
+                  </div>
 
                   <button
                     onClick={() => setShowComments(!showComments)}
@@ -489,6 +508,13 @@ const PostDetail = () => {
         targetType="POST"
         targetId={post?.id}
         targetName={post?.content}
+      />
+
+      {/* Likes Modal */}
+      <LikesModal
+        isOpen={showLikesModal}
+        onClose={() => setShowLikesModal(false)}
+        postId={post?.id}
       />
     </div>
   )

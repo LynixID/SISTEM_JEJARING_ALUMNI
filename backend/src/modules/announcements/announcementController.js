@@ -216,10 +216,14 @@ export const createAnnouncement = async (req, res) => {
       }
     })
 
-    // Create notification untuk semua user jika langsung di-publish
+    // Create notification & queue email broadcast jika langsung di-publish
     if (isPublished) {
       try {
         const { createBulkNotifications } = await import('../../services/notificationService.js')
+        const { queueAnnouncementBroadcast } = await import('../../services/broadcastService.js')
+        
+        // Queue email broadcast
+        await queueAnnouncementBroadcast(announcement)
         
         // Ambil semua user yang verified (kecuali admin)
         const users = await prisma.user.findMany({
@@ -341,10 +345,14 @@ export const updateAnnouncement = async (req, res) => {
       data: updateData
     })
 
-    // Create notification untuk semua user jika baru di-publish
+    // Create notification & queue email broadcast jika baru di-publish
     if (!wasPublished && willBePublished && published !== undefined) {
       try {
         const { createBulkNotifications } = await import('../../services/notificationService.js')
+        const { queueAnnouncementBroadcast } = await import('../../services/broadcastService.js')
+        
+        // Queue email broadcast
+        await queueAnnouncementBroadcast(announcement)
         
         // Ambil semua user yang verified (kecuali admin)
         const users = await prisma.user.findMany({
@@ -450,10 +458,14 @@ export const togglePublish = async (req, res) => {
       data: { published: willBePublished }
     })
 
-    // Create notification untuk semua user jika baru di-publish
+    // Create notification & queue email broadcast jika baru di-publish
     if (!wasPublished && willBePublished) {
       try {
         const { createBulkNotifications } = await import('../../services/notificationService.js')
+        const { queueAnnouncementBroadcast } = await import('../../services/broadcastService.js')
+        
+        // Queue email broadcast
+        await queueAnnouncementBroadcast(announcement)
         
         // Ambil semua user yang verified (kecuali admin)
         const users = await prisma.user.findMany({

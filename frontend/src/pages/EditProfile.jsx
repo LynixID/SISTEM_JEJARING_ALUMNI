@@ -25,7 +25,8 @@ const EditProfile = () => {
   const [basicInfo, setBasicInfo] = useState({
     nama: '',
     whatsapp: '',
-    domisili: ''
+    domisili: '',
+    allowEmailNotification: true
   })
 
   // Profile Info
@@ -126,7 +127,8 @@ const EditProfile = () => {
       setBasicInfo({
         nama: user.nama || '',
         whatsapp: user.whatsapp || '',
-        domisili: user.domisili || ''
+        domisili: user.domisili || '',
+        allowEmailNotification: user.allowEmailNotification ?? true
       })
       if (user.profile) {
         const profile = user.profile
@@ -655,6 +657,21 @@ const EditProfile = () => {
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900 mb-4">Informasi Dasar</h2>
                       <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100 mb-6">
+                          <input
+                            type="checkbox"
+                            id="allowEmailNotification"
+                            name="allowEmailNotification"
+                            checked={basicInfo.allowEmailNotification}
+                            onChange={(e) => setBasicInfo(prev => ({ ...prev, allowEmailNotification: e.target.checked }))}
+                            className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                          />
+                          <label htmlFor="allowEmailNotification" className="text-sm font-medium text-blue-900 cursor-pointer">
+                            Terima Notifikasi Berita & Pengumuman via Email
+                            <p className="text-xs text-blue-700 font-normal mt-0.5">Dapatkan update terbaru dari alumni langsung ke kotak masuk Anda.</p>
+                          </label>
+                        </div>
+
                         <Input
                           label="Nama"
                           value={basicInfo.nama}

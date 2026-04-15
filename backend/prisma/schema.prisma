@@ -20,9 +20,8 @@ model User {
   role          Role      @default(ALUMNI)
   verified      Boolean   @default(false)
   emailVerified Boolean   @default(false)
+  allowEmailNotification Boolean @default(true)
   isSuspended   Boolean   @default(false)
-  suspendedAt   DateTime?
-  suspendReason String?   @db.Text
   otp           String?
   otpExpiry     DateTime?
   createdAt     DateTime  @default(now())
@@ -46,6 +45,7 @@ model User {
   discussionMemberships DiscussionMember[]
   discussionMessages DiscussionMessage[]
   reports       Report[]
+  mailQueues    MailQueue[]
 
   @@index([email])
   @@index([nim])
@@ -494,4 +494,21 @@ enum ReportStatus {
   REVIEWED
   RESOLVED
   DISMISSED
+}
+
+model MailQueue {
+  id        String   @id @default(uuid())
+  userId    String
+  subject   String
+  content   String   @db.Text
+  status    String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  attempts  Int      @default(0)
+  error     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([status])
+  @@map("mail_queues")
 }

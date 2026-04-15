@@ -11,6 +11,7 @@ import Card from '../../components/common/Card'
 import Input from '../../components/common/Input'
 import AlertModal from '../../components/common/AlertModal'
 import ImageLightbox from '../../components/common/ImageLightbox'
+import UserBadge from '../../components/common/UserBadge'
 import { getImageUrl } from '../../utils/imageUtils'
 
 const ManageEvents = () => {
@@ -591,7 +592,10 @@ const ManageEvents = () => {
                   {participants.map((participant) => (
                     <div key={participant.id} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
                       <div className="flex-1">
-                        <div className="font-medium text-gray-900">{participant.user.nama}</div>
+                        <div className="font-medium text-gray-900">
+                          {participant.user.nama}
+                          <UserBadge role={participant.user.role} size="sm" />
+                        </div>
                         <div className="text-sm text-gray-500">
                           {participant.user.email}
                           {participant.user.nim && ` • NIM: ${participant.user.nim}`}

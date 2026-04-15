@@ -7,6 +7,10 @@ import Card from '../../components/common/Card'
 import Input from '../../components/common/Input'
 import AlertModal from '../../components/common/AlertModal'
 import ConfirmModal from '../../components/common/ConfirmModal'
+import Modal from '../../components/common/Modal'
+import UserBadge from '../../components/common/UserBadge'
+import ExportUserModal from '../../components/admin/ExportUserModal'
+import { FileSpreadsheet } from 'lucide-react'
 
 const UserManagement = () => {
   const { user } = useAuth()
@@ -16,6 +20,11 @@ const UserManagement = () => {
   const [search, setSearch] = useState('')
   const [filterVerified, setFilterVerified] = useState('all')
   const [filterRole, setFilterRole] = useState('all')
+  const [filterProdi, setFilterProdi] = useState('all')
+  const [filterDomisili, setFilterDomisili] = useState('all')
+  const [filterAngkatan, setFilterAngkatan] = useState('all')
+  const [filterOptions, setFilterOptions] = useState({ prodis: [], domisilis: [], angkatans: [] })
+  
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -30,11 +39,27 @@ const UserManagement = () => {
     variant: 'warning',
     onConfirm: () => {}
   })
+  const [suspendModal, setSuspendModal] = useState({
+    isOpen: false,
+    userId: null,
+    isLoading: false
+  })
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
   useEffect(() => {
     fetchUsers()
     fetchStatistics()
-  }, [pagination.page, search, filterVerified, filterRole])
+    fetchFilterOptions()
+  }, [pagination.page, search, filterVerified, filterRole, filterProdi, filterDomisili, filterAngkatan])
+
+  const fetchFilterOptions = async () => {
+    try {
+      const response = await api.get('/admin/users/filter-options')
+      setFilterOptions(response.data)
+    } catch (error) {
+      console.error('Error fetching filter options:', error)
+    }
+  }
 
   const fetchUsers = async () => {
     try {
@@ -44,7 +69,10 @@ const UserManagement = () => {
         limit: pagination.limit,
         search,
         ...(filterVerified !== 'all' && { verified: filterVerified }),
-        ...(filterRole !== 'all' && { role: filterRole })
+        ...(filterRole !== 'all' && { role: filterRole }),
+        ...(filterProdi !== 'all' && { prodi: filterProdi }),
+        ...(filterDomisili !== 'all' && { domisili: filterDomisili }),
+        ...(filterAngkatan !== 'all' && { angkatan: filterAngkatan })
       })
 
       const response = await api.get(`/admin/users?${params}`)
@@ -130,13 +158,18 @@ const UserManagement = () => {
     }
   }
 
-  const handleSuspend = async (userId) => {
-    const reason = window.prompt('Alasan penangguhan (Suspended):', 'Pelanggaran ketentuan layanan')
-    if (reason === null) return // Cancelled
+  const handleSuspendModal = (userId) => {
+    setSuspendModal({ isOpen: true, userId, isLoading: false })
+  }
+
+  const handleSuspend = async () => {
+    if (!suspendModal.userId) return
 
     try {
-      await api.patch(`/admin/users/${userId}/suspend`, { reason })
+      setSuspendModal(prev => ({ ...prev, isLoading: true }))
+      await api.patch(`/admin/users/${suspendModal.userId}/suspend`)
       fetchUsers()
+      setSuspendModal({ isOpen: false, userId: null, isLoading: false })
       setAlertModal({
         isOpen: true,
         title: 'Berhasil',
@@ -144,6 +177,7 @@ const UserManagement = () => {
         variant: 'success'
       })
     } catch (error) {
+      setSuspendModal(prev => ({ ...prev, isLoading: false }))
       setAlertModal({
         isOpen: true,
         title: 'Error',
@@ -153,24 +187,61 @@ const UserManagement = () => {
     }
   }
 
+  const handleDeleteUser = async (userId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus User',
+      message: 'Apakah Anda yakin ingin menghapus user ini secara permanen? Semua data terkait (postingan, komentar, profil, dll) juga akan terhapus.',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/admin/users/${userId}`)
+          fetchUsers()
+          fetchStatistics()
+          setAlertModal({
+            isOpen: true,
+            title: 'Berhasil',
+            message: 'User berhasil dihapus secara permanen',
+            variant: 'success'
+          })
+        } catch (error) {
+          setAlertModal({
+            isOpen: true,
+            title: 'Error',
+            message: error.response?.data?.error || 'Gagal menghapus user',
+            variant: 'error'
+          })
+        }
+      }
+    })
+  }
+
   const handleUnsuspend = async (userId) => {
-    try {
-      await api.patch(`/admin/users/${userId}/unsuspend`)
-      fetchUsers()
-      setAlertModal({
-        isOpen: true,
-        title: 'Berhasil',
-        message: 'Penangguhan user telah dicabut',
-        variant: 'success'
-      })
-    } catch (error) {
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: error.response?.data?.error || 'Gagal membuka penangguhan',
-        variant: 'error'
-      })
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Buka Penangguhan',
+      message: 'Apakah Anda yakin ingin memulihkan akses akun ini?',
+      variant: 'info',
+      onConfirm: async () => {
+        try {
+          await api.patch(`/admin/users/${userId}/unsuspend`)
+          fetchUsers()
+          setAlertModal({
+            isOpen: true,
+            title: 'Berhasil',
+            message: 'Penangguhan dicabut',
+            variant: 'success'
+          })
+        } catch (error) {
+          setAlertModal({
+            isOpen: true,
+            title: 'Error',
+            message: error.response?.data?.error || 'Gagal mencabut penangguhan',
+            variant: 'error'
+          })
+        }
+      }
+    })
   }
 
   const getRoleBadge = (role) => {
@@ -189,8 +260,8 @@ const UserManagement = () => {
   const getVerifiedBadge = (user) => {
     if (user.isSuspended) {
       return (
-        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" title={`Alasan: ${user.suspendReason}`}>
-          Suspended
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          Ditangguhkan
         </span>
       )
     }
@@ -215,6 +286,17 @@ const UserManagement = () => {
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900">Manajemen User</h1>
               <p className="text-gray-600 mt-1">Kelola alumni dan pengurus</p>
+            </div>
+            
+            <div className="flex justify-end mb-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsExportModalOpen(true)}
+                className="flex items-center space-x-2"
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Ekspor ke Excel
+              </Button>
             </div>
 
         {/* Statistics */}
@@ -245,7 +327,7 @@ const UserManagement = () => {
 
         {/* Filters */}
         <Card className="p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <Input
               label="Cari"
               placeholder="Nama, email, atau NIM..."
@@ -255,10 +337,11 @@ const UserManagement = () => {
                 setPagination({ ...pagination, page: 1 })
               }}
             />
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
                 value={filterVerified}
                 onChange={(e) => {
                   setFilterVerified(e.target.value)
@@ -270,10 +353,11 @@ const UserManagement = () => {
                 <option value="false">Pending</option>
               </select>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
               <select
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
                 value={filterRole}
                 onChange={(e) => {
                   setFilterRole(e.target.value)
@@ -285,10 +369,56 @@ const UserManagement = () => {
                 <option value="PENGURUS">Pengurus</option>
               </select>
             </div>
-            <div className="flex items-end">
-              <Button onClick={fetchUsers} className="w-full">
-                Refresh
-              </Button>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Prodi</label>
+              <select
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                value={filterProdi}
+                onChange={(e) => {
+                  setFilterProdi(e.target.value)
+                  setPagination({ ...pagination, page: 1 })
+                }}
+              >
+                <option value="all">Semua Prodi</option>
+                {filterOptions.prodis.map((p, i) => (
+                  <option key={i} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Wilayah</label>
+              <select
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                value={filterDomisili}
+                onChange={(e) => {
+                  setFilterDomisili(e.target.value)
+                  setPagination({ ...pagination, page: 1 })
+                }}
+              >
+                <option value="all">Semua Wilayah</option>
+                {filterOptions.domisilis.map((d, i) => (
+                  <option key={i} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Angkatan</label>
+              <select
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                value={filterAngkatan}
+                onChange={(e) => {
+                  setFilterAngkatan(e.target.value)
+                  setPagination({ ...pagination, page: 1 })
+                }}
+              >
+                <option value="all">Semua Angkatan</option>
+                {filterOptions.angkatans.map((a, i) => (
+                  <option key={i} value={a}>{a}</option>
+                ))}
+              </select>
             </div>
           </div>
         </Card>
@@ -317,7 +447,10 @@ const UserManagement = () => {
                     {users.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{user.nama}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {user.nama}
+                            <UserBadge role={user.role} size="sm" />
+                          </div>
                           {user.profile?.profesi && (
                             <div className="text-sm text-gray-500">{user.profile.profesi}</div>
                           )}
@@ -363,23 +496,35 @@ const UserManagement = () => {
                               <option value="PENGURUS">Pengurus</option>
                             </select>
 
-                            {user.isSuspended ? (
+                            {!user.isSuspended ? (
                               <Button
-                                variant="outline"
+                                variant="warning"
+                                size="sm"
+                                onClick={() => setSuspendModal({ 
+                                  isOpen: true, 
+                                  userId: user.id, 
+                                  isLoading: false 
+                                })}
+                              >
+                                Suspend
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => handleUnsuspend(user.id)}
                               >
                                 Unsuspend
                               </Button>
-                            ) : (
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() => handleSuspend(user.id)}
-                              >
-                                Suspend
-                              </Button>
                             )}
+                            
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.id)}
+                            >
+                              Hapus
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -437,6 +582,69 @@ const UserManagement = () => {
         title={confirmModal.title}
         message={confirmModal.message}
         variant={confirmModal.variant}
+      />
+
+      {/* Suspend Modal */}
+      <Modal
+        isOpen={suspendModal.isOpen}
+        onClose={() => setSuspendModal({ ...suspendModal, isOpen: false })}
+        title="Tangguhkan User"
+        size="md"
+        showCloseButton={!suspendModal.isLoading}
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 p-3 bg-red-100 rounded-xl">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Konfirmasi Penangguhan</h3>
+              <p className="text-sm text-gray-600">
+                Apakah Anda yakin ingin menangguhkan akun ini? User tidak akan bisa login ke sistem.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+            <Button
+              variant="outline"
+              onClick={() => setSuspendModal({ ...suspendModal, isOpen: false })}
+              disabled={suspendModal.isLoading}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleSuspend}
+              disabled={suspendModal.isLoading}
+            >
+              {suspendModal.isLoading ? 'Memproses...' : 'Tangguhkan User'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <ExportUserModal 
+        isOpen={isExportModalOpen} 
+        onClose={() => setIsExportModalOpen(false)} 
+      />
+
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        variant={confirmModal.variant}
+      />
+
+      <AlertModal 
+        isOpen={alertModal.isOpen}
+        title={alertModal.title}
+        message={alertModal.message}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        variant={alertModal.variant}
       />
     </div>
   )

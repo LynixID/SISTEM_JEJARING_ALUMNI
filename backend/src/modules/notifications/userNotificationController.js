@@ -116,6 +116,11 @@ export const deleteNotification = async (req, res) => {
       return res.status(403).json({ error: 'Anda tidak memiliki akses ke notifikasi ini' })
     }
 
+    // Notifikasi sistem (SYSTEM_*) tidak dapat dihapus oleh user
+    if (notification.type.startsWith('SYSTEM_')) {
+      return res.status(403).json({ error: 'Notifikasi sistem tidak dapat dihapus' })
+    }
+
     await prisma.notification.delete({
       where: { id }
     })

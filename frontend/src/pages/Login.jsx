@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
@@ -10,11 +10,14 @@ import { GoogleLogin } from '@react-oauth/google'
 const Login = () => {
   const { login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
   const [error, setError] = useState('')
+  const [suspendInfo, setSuspendInfo] = useState(location.state?.suspendInfo || null) // { reason, date }
   const [loading, setLoading] = useState(false)
   const [showCredentials, setShowCredentials] = useState(false)
 
@@ -28,13 +31,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setSuspendInfo(null)
     setLoading(true)
     
-    // Panggil fungsi login dari AuthContext
     const result = await login(formData.email, formData.password)
     
     if (result.success) {
-      // Redirect sesuai role dan status verifikasi
       if (result.user.role === 'ADMIN') {
         navigate('/admin', { replace: true })
       } else if (!result.user.nama || !String(result.user.nama).trim()) {
@@ -45,7 +47,12 @@ const Login = () => {
         navigate('/dashboard', { replace: true })
       }
     } else {
-      setError(result.message || 'Email atau password salah')
+      // Cek apakah kegagalan login karena suspen
+      if (result.isSuspended) {
+        setSuspendInfo({ reason: result.suspendReason, date: result.suspendedAt })
+      } else {
+        setError(result.message || 'Email atau password salah')
+      }
     }
     
     setLoading(false)
@@ -80,12 +87,36 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Error biasa */}
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 <span>{error}</span>
+              </div>
+            )}
+
+            {/* Banner suspen khusus */}
+            {suspendInfo && (
+              <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                  <span className="font-bold text-red-700 text-base">Akun Ditangguhkan (Suspended)</span>
+                </div>
+                <p className="text-sm text-red-700 mb-1">
+                  Akun Anda tidak dapat mengakses sistem saat ini.
+                </p>
+                {suspendInfo.reason && (
+                  <p className="text-sm text-red-600">
+                    <span className="font-semibold">Alasan:</span> {suspendInfo.reason}
+                  </p>
+                )}
+                <p className="text-sm text-red-600 mt-2 font-medium">
+                  Harap hubungi admin untuk informasi lebih lanjut.
+                </p>
               </div>
             )}
 

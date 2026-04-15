@@ -8,9 +8,13 @@ import sharp from 'sharp'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Pastikan direktori uploads sudah ada
-const uploadsDir = path.join(__dirname, '../../../uploads/images')
+// Gunakan __dirname agar path absolut selalu benar relatif terhadap lokasi file ini
+const uploadsDir = path.resolve(__dirname, '../../../uploads/images')
+
+console.log('Upload directory configured at:', uploadsDir)
+
 if (!fs.existsSync(uploadsDir)) {
+  console.log('Creating root uploads directory...')
   fs.mkdirSync(uploadsDir, { recursive: true })
 }
 
@@ -46,30 +50,37 @@ export const uploadImage = async (req, res) => {
     }
 
     const category = req.body.category || 'general'
-    const categoryDir = path.join(uploadsDir, category)
+    const categoryDir = path.resolve(uploadsDir, category)
     
+    console.log(`Processing upload - Category: ${category}, File: ${req.file.originalname}`)
+    console.log(`Target directory: ${categoryDir}`)
+
     // Buat folder kategori jika belum ada
     if (!fs.existsSync(categoryDir)) {
+      console.log(`Creating category directory: ${categoryDir}`)
       fs.mkdirSync(categoryDir, { recursive: true })
     }
 
     // Generate filename dengan UUID
     const uuid = randomUUID()
     const originalExt = path.extname(req.file.originalname)
-    const tempFilename = `${uuid}${originalExt}`
-    const tempFilePath = path.join(categoryDir, tempFilename)
+    // Tambahkan prefix 'temp_' untuk menghindari bentrokan nama file jika input adalah .webp
+    const tempFilename = `temp_${uuid}${originalExt}`
+    const tempFilePath = path.resolve(categoryDir, tempFilename)
 
     // Simpan file sementara dari buffer ke disk
     fs.writeFileSync(tempFilePath, req.file.buffer)
 
     // Compress dan convert ke WebP
     const finalFilename = `${uuid}.webp`
-    const finalFilePath = path.join(categoryDir, finalFilename)
+    const finalFilePath = path.resolve(categoryDir, finalFilename)
     let finalMimetype = 'image/webp'
     let compressionSuccess = false
+    let finalFileSize = 0
 
     try {
-      await sharp(tempFilePath)
+      // sharp().toFile() mengembalikan metadata file yang sangat berguna
+      const info = await sharp(tempFilePath)
         .resize(1920, 1920, {
           fit: 'inside',
           withoutEnlargement: true
@@ -77,31 +88,33 @@ export const uploadImage = async (req, res) => {
         .webp({ quality: 85 })
         .toFile(finalFilePath)
 
+      finalFileSize = info.size
+      
       // Hapus file temporary
-      fs.unlinkSync(tempFilePath)
+      if (fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath)
+      }
       compressionSuccess = true
     } catch (error) {
       console.error('Image compression error:', error)
       // Jika compress gagal, gunakan file original
       // Hapus file webp yang gagal dibuat (jika ada)
       if (fs.existsSync(finalFilePath)) {
-        fs.unlinkSync(finalFilePath)
+        try {
+          fs.unlinkSync(finalFilePath)
+        } catch (e) {}
       }
-      // Rename file temporary menjadi final filename dengan ekstensi asli
-      const fallbackFilename = tempFilename
-      const fallbackFilePath = path.join(categoryDir, fallbackFilename)
+      
+      // Gunakan file temporary sebagai hasil akhir (fallback)
       if (fs.existsSync(tempFilePath)) {
-        // File sudah ada di tempFilePath, jadi tidak perlu rename
+        const stats = fs.statSync(tempFilePath)
+        finalFileSize = stats.size
         finalMimetype = req.file.mimetype
       }
     }
 
-    // Tentukan filename dan path final
+    // Tentukan filename final
     const actualFinalFilename = compressionSuccess ? finalFilename : tempFilename
-    const actualFinalFilePath = compressionSuccess ? finalFilePath : tempFilePath
-
-    // Get final file size
-    const finalFileSize = fs.statSync(actualFinalFilePath).size
 
     // Return full URL untuk preview, tapi juga return filename untuk disimpan di database
     const fileUrl = `/uploads/images/${category}/${actualFinalFilename}`
@@ -109,7 +122,7 @@ export const uploadImage = async (req, res) => {
     res.status(200).json({
       message: 'File berhasil diupload',
       url: fileUrl, // Full URL untuk preview
-      filename: actualFinalFilename, // Filename untuk disimpan di database (.webp jika kompresi berhasil, ekstensi asli jika gagal)
+      filename: actualFinalFilename, // Filename untuk disimpan di database
       originalName: req.file.originalname,
       size: finalFileSize,
       mimetype: finalMimetype
@@ -129,7 +142,7 @@ export const deleteImage = async (req, res) => {
       return res.status(400).json({ error: 'Filename dan category diperlukan' })
     }
 
-    const filePath = path.join(uploadsDir, category, filename)
+    const filePath = path.resolve(uploadsDir, category, filename)
     
     // Cek apakah file ada
     if (!fs.existsSync(filePath)) {

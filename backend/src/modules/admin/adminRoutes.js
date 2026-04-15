@@ -12,6 +12,9 @@ import {
   bulkDeleteCommentsByAdmin,
   suspendUser,
   unsuspendUser,
+  deleteUser,
+  exportUsers,
+  getUserFilterOptions,
   getStorageStats,
   listFiles,
   deleteFile,
@@ -30,7 +33,9 @@ const router = express.Router()
 router.use(verifyToken)
 router.use(requireRole('ADMIN'))
 
-// Routes
+// User Management
+router.get('/users/export', exportUsers)
+router.get('/users/filter-options', getUserFilterOptions)
 router.get('/users', getAllUsers)
 router.get('/users/:id', getUserById)
 router.get('/statistics', getStatistics)
@@ -46,6 +51,7 @@ router.delete('/comments', bulkDeleteCommentsByAdmin)
 // User Suspension
 router.patch('/users/:id/suspend', suspendUser)
 router.patch('/users/:id/unsuspend', unsuspendUser)
+router.delete('/users/:id', deleteUser)
 
 // File Management
 router.get('/files/stats', getStorageStats)

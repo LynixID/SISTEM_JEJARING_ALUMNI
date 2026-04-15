@@ -29,6 +29,7 @@ import CompleteProfile from './pages/CompleteProfile'
 import ManageReports from './pages/admin/ManageReports'
 import ManageComments from './pages/admin/ManageComments'
 import ManageFiles from './pages/admin/ManageFiles'
+import GlobalSuspendListener from './components/common/GlobalSuspendListener'
 
 
 // Komponen untuk protect route: cek login, role, dan verified status
@@ -105,6 +106,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <GlobalSuspendListener />
         <Routes>
           <Route
             path="/login"

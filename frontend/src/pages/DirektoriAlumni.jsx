@@ -5,6 +5,7 @@ import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
 import { getUsers } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
+import UserBadge from '../components/common/UserBadge'
 import { Search, Filter, Grid, List, MapPin, Calendar, GraduationCap, Briefcase, Building2 } from 'lucide-react'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
@@ -346,19 +347,8 @@ const DirektoriAlumni = () => {
                           {/* User info */}
                           <h3 className="font-semibold text-base text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                             {user.nama}
+                            <UserBadge role={user.role} size="sm" />
                           </h3>
-                          
-                          {/* Role badge */}
-                          {user.role === 'ALUMNI' && (
-                            <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full mb-2">
-                              Alumni
-                            </span>
-                          )}
-                          {user.role === 'PENGURUS' && (
-                            <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full mb-2">
-                              Pengurus
-                            </span>
-                          )}
 
                           {user.profile?.profesi && (
                             <p className="text-gray-700 text-sm font-medium mb-1">{user.profile.profesi}</p>
@@ -439,17 +429,8 @@ const DirektoriAlumni = () => {
                                 <div className="flex items-center gap-2 mb-1">
                                   <h3 className="font-semibold text-base text-gray-900 group-hover:text-blue-600 transition-colors truncate">
                                     {user.nama}
+                                    <UserBadge role={user.role} size="sm" />
                                   </h3>
-                                  {user.role === 'ALUMNI' && (
-                                    <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full flex-shrink-0">
-                                      Alumni
-                                    </span>
-                                  )}
-                                  {user.role === 'PENGURUS' && (
-                                    <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full flex-shrink-0">
-                                      Pengurus
-                                    </span>
-                                  )}
                                 </div>
                                 {user.profile?.profesi && (
                                   <p className="text-gray-700 text-sm font-medium mb-1">{user.profile.profesi}</p>

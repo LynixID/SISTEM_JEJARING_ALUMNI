@@ -2,37 +2,58 @@ import prisma from '../../config/database.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { getIO } from '../../config/socket.js'
+import ExcelJS from 'exceljs'
+
+// Helper for building user where clause
+const buildUserFilter = (query) => {
+  const { search = '', verified, role, prodi, domisili, angkatan } = query
+  const where = {
+    role: {
+      in: ['ALUMNI', 'PENGURUS']
+    }
+  }
+
+  if (search) {
+    where.OR = [
+      { nama: { contains: search } },
+      { email: { contains: search } },
+      { nim: { contains: search } }
+    ]
+  }
+
+  if (verified !== undefined && verified !== 'all') {
+    where.verified = verified === 'true'
+  }
+
+  if (role && role !== 'all') {
+    where.role = role.toUpperCase()
+  }
+
+  if (prodi && prodi !== 'all') {
+    where.prodi = prodi
+  }
+
+  if (domisili && domisili !== 'all') {
+    where.domisili = domisili
+  }
+
+  if (angkatan && angkatan !== 'all') {
+    where.angkatan = parseInt(angkatan)
+  }
+
+  return where
+}
 
 // Get all users (alumni & pengurus only, exclude admin)
 export const getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '', verified, role } = req.query
+    const { page = 1, limit = 10 } = req.query
 
     const skip = (parseInt(page) - 1) * parseInt(limit)
     const take = parseInt(limit)
 
-    // Build where clause
-    const where = {
-      role: {
-        in: ['ALUMNI', 'PENGURUS'] // Exclude ADMIN
-      }
-    }
-
-    if (search) {
-      where.OR = [
-        { nama: { contains: search } },
-        { email: { contains: search } },
-        { nim: { contains: search } }
-      ]
-    }
-
-    if (verified !== undefined) {
-      where.verified = verified === 'true'
-    }
-
-    if (role && role !== 'all') {
-      where.role = role.toUpperCase()
-    }
+    const where = buildUserFilter(req.query)
 
     // Get users with pagination
     const [users, total] = await Promise.all([
@@ -51,6 +72,8 @@ export const getAllUsers = async (req, res) => {
           whatsapp: true,
           role: true,
           verified: true,
+          isSuspended: true,
+          suspendReason: true,
           createdAt: true,
           profile: {
             select: {
@@ -99,6 +122,7 @@ export const getUserById = async (req, res) => {
         whatsapp: true,
         role: true,
         verified: true,
+        isSuspended: true,
         createdAt: true,
         updatedAt: true,
         profile: {
@@ -528,11 +552,33 @@ export const suspendUser = async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        isSuspended: true,
-        suspendedAt: new Date(),
-        suspendReason: reason || 'Pelanggaran ketentuan layanan'
+        isSuspended: true
       }
     })
+
+    // Hapus notifikasi suspen lama jika ada (menghindari duplikat)
+    await prisma.notification.deleteMany({
+      where: { userId: id, type: 'SYSTEM_SUSPEND' }
+    })
+
+    // Buat notifikasi permanen (tidak bisa dihapus user) untuk memberi tahu user
+    await prisma.notification.create({
+      data: {
+        userId: id,
+        type: 'SYSTEM_SUSPEND',
+        message: `⚠️ Akun Anda telah ditangguhkan (Suspended). Harap hubungi admin untuk informasi lebih lanjut.`,
+        relatedType: 'suspend',
+        read: false
+      }
+    })
+
+    // Beri sinyal real-time agar user langsung terblokir meski sedang online
+    try {
+      const io = getIO()
+      io.to(`user:${id}`).emit('ACCOUNT_SUSPENDED')
+    } catch (err) {
+      console.error('Socket emit suspend error:', err)
+    }
 
     res.json({
       message: 'User berhasil ditangguhkan',
@@ -560,10 +606,13 @@ export const unsuspendUser = async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        isSuspended: false,
-        suspendedAt: null,
-        suspendReason: null
+        isSuspended: false
       }
+    })
+
+    // Hapus notifikasi suspen agar tidak menggantung di akun user
+    await prisma.notification.deleteMany({
+      where: { userId: id, type: 'SYSTEM_SUSPEND' }
     })
 
     res.json({
@@ -575,6 +624,130 @@ export const unsuspendUser = async (req, res) => {
     res.status(500).json({ error: 'Terjadi kesalahan saat mencabut penangguhan' })
   }
 }
+
+// Delete user
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    // Safety check: Don't let admin delete themselves
+    if (req.user.userId === id) {
+      return res.status(400).json({ error: 'Anda tidak dapat menghapus akun Anda sendiri' })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id }
+    })
+
+    if (!user) {
+      return res.status(404).json({ error: 'User tidak ditemukan' })
+    }
+
+    // Safety check: Don't let admin delete other admins easily
+    if (user.role === 'ADMIN') {
+      return res.status(403).json({ error: 'Tidak dapat menghapus sesama akun Administrator' })
+    }
+
+    await prisma.user.delete({
+      where: { id }
+    })
+
+    res.json({ message: 'User berhasil dihapus secara permanen' })
+  } catch (error) {
+    console.error('Delete user error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat menghapus user' })
+  }
+}
+
+// Export users to Excel
+export const exportUsers = async (req, res) => {
+  try {
+    const where = buildUserFilter(req.query)
+
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        nama: true,
+        email: true,
+        nim: true,
+        prodi: true,
+        angkatan: true,
+        domisili: true,
+        whatsapp: true,
+        role: true,
+        verified: true,
+        isSuspended: true,
+        createdAt: true
+      },
+      orderBy: {
+        nama: 'asc'
+      }
+    })
+
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Data User')
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'No', key: 'no', width: 5 },
+      { header: 'Nama Lengkap', key: 'nama', width: 30 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'NIM', key: 'nim', width: 15 },
+      { header: 'Program Studi', key: 'prodi', width: 25 },
+      { header: 'Angkatan', key: 'angkatan', width: 10 },
+      { header: 'Domisili', key: 'domisili', width: 20 },
+      { header: 'WhatsApp', key: 'whatsapp', width: 15 },
+      { header: 'Role', key: 'role', width: 15 },
+      { header: 'Status Verifikasi', key: 'verified', width: 20 },
+      { header: 'Status Suspend', key: 'suspended', width: 15 },
+      { header: 'Tanggal Daftar', key: 'createdAt', width: 20 }
+    ]
+
+    // Styling headers
+    worksheet.getRow(1).font = { bold: true }
+    worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' }
+
+    // Add data
+    users.forEach((user, index) => {
+      worksheet.addRow({
+        no: index + 1,
+        nama: user.nama,
+        email: user.email,
+        nim: user.nim || '-',
+        prodi: user.prodi || '-',
+        angkatan: user.angkatan || '-',
+        domisili: user.domisili || '-',
+        whatsapp: user.whatsapp || '-',
+        role: user.role,
+        verified: user.verified ? 'Terverifikasi' : 'Belum Verifikasi',
+        suspended: user.isSuspended ? 'Suspended' : 'Aktif',
+        createdAt: new Date(user.createdAt).toLocaleDateString('id-ID')
+      })
+    })
+
+    // Formatting
+    worksheet.eachRow((row, rowNumber) => {
+      row.alignment = { vertical: 'middle' }
+      if (rowNumber > 1) {
+        row.getCell('no').alignment = { horizontal: 'center' }
+        row.getCell('angkatan').alignment = { horizontal: 'center' }
+      }
+    })
+
+    // Set response headers
+    const filename = `Data_User_${new Date().toISOString().split('T')[0]}.xlsx`
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+
+    await workbook.xlsx.write(res)
+    res.end()
+
+  } catch (error) {
+    console.error('Export users error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat mengekspor data' })
+  }
+}
+
 
 
 // ─── FILE MANAGEMENT ─────────────────────────────────────────────────────────
@@ -914,5 +1087,49 @@ export const deleteTrashFile = async (req, res) => {
   } catch (error) {
     console.error('Delete trash file error:', error)
     res.status(500).json({ error: 'Gagal menghapus file sampah' })
+  }
+}
+
+// Get unique filter options for users (prodi, domisili, angkatan)
+export const getUserFilterOptions = async (req, res) => {
+  try {
+    const [prodis, domisilis, angkatans] = await Promise.all([
+      prisma.user.findMany({
+        where: { 
+          prodi: { not: null, not: '' }, 
+          role: { in: ['ALUMNI', 'PENGURUS'] } 
+        },
+        distinct: ['prodi'],
+        select: { prodi: true },
+        orderBy: { prodi: 'asc' }
+      }),
+      prisma.user.findMany({
+        where: { 
+          domisili: { not: null, not: '' }, 
+          role: { in: ['ALUMNI', 'PENGURUS'] } 
+        },
+        distinct: ['domisili'],
+        select: { domisili: true },
+        orderBy: { domisili: 'asc' }
+      }),
+      prisma.user.findMany({
+        where: { 
+          angkatan: { not: null }, 
+          role: { in: ['ALUMNI', 'PENGURUS'] } 
+        },
+        distinct: ['angkatan'],
+        select: { angkatan: true },
+        orderBy: { angkatan: 'desc' }
+      })
+    ])
+
+    res.json({
+      prodis: prodis.map(p => p.prodi),
+      domisilis: domisilis.map(d => d.domisili),
+      angkatans: angkatans.map(a => a.angkatan)
+    })
+  } catch (error) {
+    console.error('Get filter options error:', error)
+    res.status(500).json({ error: 'Gagal memuat opsi filter' })
   }
 }

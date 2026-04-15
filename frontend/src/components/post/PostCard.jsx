@@ -8,9 +8,11 @@ import Card from '../common/Card'
 import Button from '../common/Button'
 import AlertModal from '../common/AlertModal'
 import ConfirmModal from '../common/ConfirmModal'
+import UserBadge from '../common/UserBadge'
 import { Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2, Globe, Lock, User } from 'lucide-react'
 import CommentSection from '../comment/CommentSection'
 import EditPost from './EditPost'
+import LikesModal from './LikesModal'
 
 const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   const { user } = useAuth()
@@ -24,6 +26,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   const [loading, setLoading] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showLikesModal, setShowLikesModal] = useState(false)
   const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', variant: 'info' })
   const [confirmModal, setConfirmModal] = useState({ 
     isOpen: false, 
@@ -36,13 +39,36 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   // Setup Socket.io listener untuk real-time like updates
   useEffect(() => {
     const socket = getSocket()
+    
     const handlePostLiked = (data) => {
       if (data.postId === post.id) {
         setLikesCount(data.likesCount)
       }
     }
+
+    const handleNewComment = (comment) => {
+      if (comment.postId === post.id) {
+        setCommentsCount(prev => prev + 1)
+      }
+    }
+
+    const handleCommentDeleted = (data) => {
+      if (data.postId === post.id) {
+        // Jika parent comment dihapus, semua replies juga ikut terhapus di backend
+        const countToRemove = 1 + (data.repliesCount || 0)
+        setCommentsCount(prev => Math.max(0, prev - countToRemove))
+      }
+    }
+
     socket.on('post_liked', handlePostLiked)
-    return () => socket.off('post_liked', handlePostLiked)
+    socket.on('new_comment', handleNewComment)
+    socket.on('comment_deleted', handleCommentDeleted)
+
+    return () => {
+      socket.off('post_liked', handlePostLiked)
+      socket.off('new_comment', handleNewComment)
+      socket.off('comment_deleted', handleCommentDeleted)
+    }
   }, [post.id])
 
   // Debug: Log post data untuk troubleshooting
@@ -173,7 +199,10 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
               onClick={() => navigate(`/profil/${post.author.id}`)}
               className="text-left hover:opacity-80 transition-opacity"
             >
-              <p className="font-semibold text-gray-900 hover:text-blue-600">{post.author?.nama}</p>
+              <p className="font-semibold text-gray-900 hover:text-blue-600">
+                {post.author?.nama}
+                <UserBadge role={post.author?.role} size="sm" />
+              </p>
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
                 {/* Visibility badge di samping waktu */}
@@ -280,14 +309,21 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
 
       {/* Action buttons: Like, Comment, Share */}
       <div className="flex items-center gap-4 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={handleLike}
-          disabled={loading}
-          className={`flex items-center gap-2 ${isLiked ? 'text-red-600' : 'text-gray-600'} hover:text-red-600 transition-colors`}
-        >
-          <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
-          <span className="text-sm font-medium">{likesCount}</span>
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleLike}
+            disabled={loading}
+            className={`flex items-center justify-center p-1.5 rounded-full hover:bg-red-50 transition-colors ${isLiked ? 'text-red-600' : 'text-gray-600'} hover:text-red-600`}
+          >
+            <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
+          </button>
+          <button
+            onClick={() => likesCount > 0 && setShowLikesModal(true)}
+            className={`text-sm font-medium transition-colors ${likesCount > 0 ? 'hover:text-blue-600 cursor-pointer hover:underline' : 'cursor-default text-gray-600'}`}
+          >
+            {likesCount}
+          </button>
+        </div>
 
         <button
           onClick={() => setShowComments(!showComments)}
@@ -346,6 +382,13 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
         title={confirmModal.title}
         message={confirmModal.message}
         variant={confirmModal.variant}
+      />
+
+      {/* Likes Modal */}
+      <LikesModal
+        isOpen={showLikesModal}
+        onClose={() => setShowLikesModal(false)}
+        postId={post.id}
       />
     </Card>
   )

@@ -35,6 +35,7 @@ export const getComments = async (req, res) => {
             select: {
               id: true,
               nama: true,
+              role: true,
               profile: {
                 select: {
                   fotoProfil: true
@@ -49,6 +50,7 @@ export const getComments = async (req, res) => {
                 select: {
                   id: true,
                   nama: true,
+                  role: true,
                   profile: {
                     select: {
                       fotoProfil: true
@@ -73,6 +75,7 @@ export const getComments = async (req, res) => {
       author: {
         id: comment.author.id,
         nama: comment.author.nama,
+        role: comment.author.role,
         fotoProfil: comment.author.profile?.fotoProfil 
           ? getImagePath(comment.author.profile.fotoProfil, 'profiles')
           : null
@@ -82,6 +85,7 @@ export const getComments = async (req, res) => {
         author: {
           id: reply.author.id,
           nama: reply.author.nama,
+          role: reply.author.role,
           fotoProfil: reply.author.profile?.fotoProfil
             ? getImagePath(reply.author.profile.fotoProfil, 'profiles')
             : null

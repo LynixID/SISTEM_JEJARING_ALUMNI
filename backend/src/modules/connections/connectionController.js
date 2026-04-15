@@ -68,6 +68,7 @@ export const sendConnectionRequest = async (req, res) => {
           select: {
             id: true,
             nama: true,
+            role: true,
             profile: {
               select: {
                 fotoProfil: true
@@ -293,6 +294,7 @@ export const acceptConnection = async (req, res) => {
           select: {
             id: true,
             nama: true,
+            role: true,
             profile: {
               select: {
                 fotoProfil: true
@@ -478,6 +480,7 @@ export const getConnections = async (req, res) => {
           id: conn.id,
           status: conn.status,
           createdAt: conn.createdAt,
+          updatedAt: conn.updatedAt,
           user: {
             id: connectedUser.id,
             nama: connectedUser.nama,

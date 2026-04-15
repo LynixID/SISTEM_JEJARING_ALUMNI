@@ -120,6 +120,7 @@ export const getAllPosts = async (req, res) => {
             select: {
               id: true,
               nama: true,
+              role: true,
               profile: {
                 select: {
                   fotoProfil: true
@@ -187,6 +188,7 @@ export const getAllPosts = async (req, res) => {
           author: {
             id: post.author.id,
             nama: post.author.nama,
+            role: post.author.role,
             fotoProfil: post.author.profile?.fotoProfil ? getImagePath(post.author.profile.fotoProfil, 'profiles') : null
           }
         }
@@ -220,6 +222,7 @@ export const getPostById = async (req, res) => {
           select: {
             id: true,
             nama: true,
+            role: true,
             profile: {
               select: {
                 fotoProfil: true
@@ -391,6 +394,7 @@ export const createPost = async (req, res) => {
           select: {
             id: true,
             nama: true,
+            role: true,
             profile: {
               select: {
                 fotoProfil: true
@@ -496,6 +500,7 @@ export const createPost = async (req, res) => {
         author: {
           id: post.author.id,
           nama: post.author.nama,
+          role: post.author.role,
           fotoProfil: post.author.profile?.fotoProfil ? getImagePath(post.author.profile.fotoProfil, 'profiles') : null
         }
       })
@@ -591,6 +596,7 @@ export const updatePost = async (req, res) => {
           select: {
             id: true,
             nama: true,
+            role: true,
             profile: {
               select: {
                 fotoProfil: true

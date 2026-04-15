@@ -9,41 +9,11 @@ const Sidebar = () => {
   const location = useLocation()
   const { user, isAuthenticated } = useAuth()
   const [kelolaInformasiOpen, setKelolaInformasiOpen] = useState(true)
-  const [unreadCount, setUnreadCount] = useState(0)
   const [pendingConnectionsCount, setPendingConnectionsCount] = useState(0)
   const [unreadNewsCount, setUnreadNewsCount] = useState(0)
   const [newApprovedJobsCount, setNewApprovedJobsCount] = useState(0) // alumni & pengurus: approved since last seen
   const [pendingJobsCount, setPendingJobsCount] = useState(0) // pengurus pending approvals
 
-  // Fetch unread notifications count
-  useEffect(() => {
-    if (!isAuthenticated || user?.role === 'ADMIN') return
-
-    const fetchUnreadCount = async () => {
-      try {
-        const response = await getUnreadCount()
-        setUnreadCount(response.data.unreadCount || 0)
-      } catch (error) {
-        console.error('Error fetching unread count:', error)
-      }
-    }
-
-    fetchUnreadCount()
-
-    const socket = getSocket()
-    const handleNewNotification = () => {
-      fetchUnreadCount()
-    }
-
-    socket.on('new_notification', handleNewNotification)
-
-    const interval = setInterval(fetchUnreadCount, 30000)
-
-    return () => {
-      socket.off('new_notification', handleNewNotification)
-      clearInterval(interval)
-    }
-  }, [isAuthenticated, user])
 
   // Fetch pending connections count
   useEffect(() => {
@@ -144,7 +114,6 @@ const Sidebar = () => {
   const menuItems = [
     { icon: Home, label: 'Beranda', path: '/dashboard', disabled: false },
     { icon: Newspaper, label: 'Berita', path: '/berita', disabled: false },
-    { icon: Bell, label: 'Notifikasi', path: '/notifikasi', disabled: false },
     { icon: MessageCircle, label: 'Pesan', path: '/pesan', disabled: false },
     { icon: UserPlus, label: 'Koneksi', path: '/koneksi', disabled: false },
     { icon: Users, label: 'Direktori', path: '/direktori', disabled: false },
@@ -170,7 +139,6 @@ const Sidebar = () => {
               (item.path === '/lowongan' && location.pathname.startsWith('/lowongan')) ||
               (item.path === '/pesan' && (location.pathname === '/pesan' || location.pathname.startsWith('/pesan/'))) ||
               (item.path === '/berita' && location.pathname.startsWith('/berita')) ||
-              (item.path === '/notifikasi' && location.pathname.startsWith('/notifikasi')) ||
               (item.path === '/koneksi' && location.pathname.startsWith('/koneksi'))
             )
             const isDisabled = item.disabled
@@ -191,8 +159,6 @@ const Sidebar = () => {
             
             // Tambahkan badge untuk Koneksi jika ada pending requests
             const showConnectionBadge = item.path === '/koneksi' && pendingConnectionsCount > 0 && user?.role !== 'ADMIN'
-            // Tambahkan badge untuk Notifikasi jika ada unread
-            const showNotificationBadge = item.path === '/notifikasi' && unreadCount > 0 && user?.role !== 'ADMIN'
             // Tambahkan badge untuk Berita jika ada unread announcement/event
             const showNewsBadge = item.path === '/berita' && unreadNewsCount > 0 && user?.role !== 'ADMIN'
             // Badge untuk Lowongan (angka) untuk alumni & pengurus
@@ -215,11 +181,6 @@ const Sidebar = () => {
                   {showLowonganBadge && (
                     <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {newApprovedJobsCount > 9 ? '9+' : newApprovedJobsCount}
-                    </span>
-                  )}
-                  {showNotificationBadge && (
-                    <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
-                      {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
                   {showConnectionBadge && (

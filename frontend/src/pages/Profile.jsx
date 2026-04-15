@@ -5,6 +5,7 @@ import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
 import { getUserProfile, getConnectionStatus, acceptConnection, rejectConnection, getPosts } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
+import UserBadge from '../components/common/UserBadge'
 import { Edit, User, Briefcase, Award, GraduationCap, FileText, Globe, MapPin, Mail, Phone, Calendar, UserPlus, MessageCircle, Check, Clock, X, Newspaper } from 'lucide-react'
 import Button from '../components/common/Button'
 import ConnectModal from '../components/connection/ConnectModal'
@@ -292,7 +293,10 @@ const Profile = () => {
                     <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8 border border-gray-100">
                       <div className="space-y-3">
                         <div>
-                          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{user.nama}</h1>
+                          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                          {user.nama}
+                          <UserBadge role={user.role} size="md" />
+                        </h1>
                           {profile.profesi && (
                             <p className="text-lg sm:text-xl text-gray-700 font-medium">{profile.profesi}</p>
                           )}

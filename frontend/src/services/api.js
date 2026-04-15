@@ -340,6 +340,24 @@ export const completeProfile = (data) => {
   return api.put('/auth/complete-profile', data)
 }
 
+// Announcements API
+export const getAnnouncements = (params = {}) => {
+  return api.get('/announcements', { params })
+}
+
+export const getAnnouncementById = (id) => {
+  return api.get(`/announcements/${id}`)
+}
+
+// Events API
+export const getEvents = (params = {}) => {
+  return api.get('/events', { params })
+}
+
+export const getEventById = (id) => {
+  return api.get(`/events/${id}`)
+}
+
 // Discussions (Forum Diskusi) API
 export const getDiscussions = (params = {}) => {
   return api.get('/discussions', { params })

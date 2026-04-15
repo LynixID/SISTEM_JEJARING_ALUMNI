@@ -6,7 +6,6 @@ import {
 } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import NotificationBell from '../admin/NotificationBell'
 
 const AdminSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -125,8 +124,6 @@ const AdminSidebar = () => {
           )}
         </div>
 
-        {/* Notifikasi */}
-        <NotificationBell isCollapsed={isCollapsed} />
 
         {/* Profil Button */}
         <button 

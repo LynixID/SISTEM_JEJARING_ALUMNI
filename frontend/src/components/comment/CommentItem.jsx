@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { deleteComment, createComment } from '../../services/api'
 import { getImageUrl } from '../../utils/imageUtils'
+import UserBadge from '../common/UserBadge'
 import { Trash2, MoreVertical, Reply, Send, Loader, Edit2 } from 'lucide-react'
 import EditComment from './EditComment'
 
@@ -110,6 +111,7 @@ const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdate
                   className="font-semibold text-sm text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
                 >
                   {comment.author?.nama}
+                  <UserBadge role={comment.author?.role} size="sm" />
                 </p>
                 <p className="text-xs text-gray-500">{formatDate(comment.createdAt)}</p>
               </div>

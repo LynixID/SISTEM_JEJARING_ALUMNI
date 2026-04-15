@@ -6,6 +6,7 @@ import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
 import { getConversations, getMessages, sendMessage, markMessagesAsRead, getConnections } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
+import UserBadge from '../components/common/UserBadge'
 import { MessageCircle, Send, Image as ImageIcon, X, Reply, Loader, Plus, Search } from 'lucide-react'
 import Button from '../components/common/Button'
 
@@ -868,6 +869,7 @@ const Chat = () => {
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="font-semibold text-gray-900 truncate">
                             {conv.partner.nama}
+                            <UserBadge role={conv.partner.role} size="sm" />
                           </h3>
                           {conv.lastMessage && (
                             <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
@@ -915,6 +917,7 @@ const Chat = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900">
                       {selectedConversation.partner.nama}
+                      <UserBadge role={selectedConversation.partner.role} size="sm" />
                     </h3>
                   </div>
                 </div>

@@ -5,9 +5,10 @@ import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
+import UserBadge from '../components/common/UserBadge'
 import { getConnectionRequests, getConnections, acceptConnection, rejectConnection } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
-import { UserPlus, Check, X, Users, Clock, User, MessageCircle } from 'lucide-react'
+import { UserPlus, Check, X, Users, Clock, User, MessageCircle, Search, LayoutGrid, List as ListIcon } from 'lucide-react'
 import { getSocket } from '../config/socket'
 
 const Connections = () => {
@@ -19,6 +20,8 @@ const Connections = () => {
   const [connections, setConnections] = useState([])
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [viewType, setViewType] = useState('grid') // 'grid' or 'list'
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -122,6 +125,30 @@ const Connections = () => {
       year: 'numeric'
     })
   }
+
+  const formatConnectedSince = (dateString) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now - date
+    
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+    const months = Math.floor(days / 30)
+    const years = Math.floor(days / 365)
+
+    if (years >= 1) return `Terkoneksi sejak ${years} tahun`
+    if (months >= 1) return `Terkoneksi sejak ${months} bulan`
+    if (days >= 1) return `Terkoneksi sejak ${days} hari`
+    if (hours >= 1) return `Terkoneksi sejak ${hours} jam`
+    if (minutes >= 1) return `Terkoneksi sejak ${minutes} menit`
+    return 'Baru saja terkoneksi'
+  }
+
+  const filteredConnections = connections.filter(connection => 
+    connection.user.nama.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   if (authLoading || loading) {
     return (
@@ -241,6 +268,7 @@ const Connections = () => {
                                   onClick={() => handleViewProfile(request.user.id)}
                                 >
                                   {request.user.nama}
+                                  <UserBadge role={request.user.role} size="sm" />
                                 </h3>
                                 <div className="flex items-center gap-3 mt-1.5">
                                   {request.user.angkatan && (
@@ -314,55 +342,165 @@ const Connections = () => {
                     <p className="text-gray-400 text-sm mt-2">Koneksi yang sudah diterima akan muncul di sini</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-                    {connections.map((connection) => (
-                      <div
-                        key={connection.id}
-                        className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => handleViewProfile(connection.user.id)}
-                      >
-                        <div className="flex items-center gap-3">
-                          {/* Avatar */}
-                          <div className="flex-shrink-0">
-                            {connection.user.fotoProfil ? (
-                              <img
-                                src={getImageUrl(connection.user.fotoProfil, 'profiles')}
-                                alt={connection.user.nama}
-                                className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
-                                onError={(e) => {
-                                  e.target.style.display = 'none'
-                                  const fallback = e.target.nextElementSibling
-                                  if (fallback) fallback.style.display = 'flex'
-                                }}
-                              />
-                            ) : null}
-                            <div 
-                              className={`w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold ${connection.user.fotoProfil ? 'hidden' : ''}`}
-                              style={{ display: connection.user.fotoProfil ? 'none' : 'flex' }}
-                            >
-                              {connection.user.nama?.charAt(0) || 'U'}
+                  <div className="flex flex-col h-full">
+                    {/* Toolbar */}
+                    <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                          type="text"
+                          placeholder="Cari nama koneksi..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
+                        <button
+                          onClick={() => setViewType('grid')}
+                          className={`p-1.5 rounded-md transition-all ${
+                            viewType === 'grid' 
+                              ? 'bg-blue-50 text-blue-600 shadow-sm' 
+                              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                          }`}
+                          title="Grid View"
+                        >
+                          <LayoutGrid size={18} />
+                        </button>
+                        <button
+                          onClick={() => setViewType('list')}
+                          className={`p-1.5 rounded-md transition-all ${
+                            viewType === 'list' 
+                              ? 'bg-blue-50 text-blue-600 shadow-sm' 
+                              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                          }`}
+                          title="List View"
+                        >
+                          <ListIcon size={18} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {filteredConnections.length === 0 ? (
+                      <div className="p-12 text-center">
+                        <Search size={48} className="mx-auto mb-4 text-gray-200" />
+                        <p className="text-gray-500">Tidak ada koneksi yang cocok dengan "{searchTerm}"</p>
+                      </div>
+                    ) : viewType === 'grid' ? (
+                      /* Grid View */
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                        {filteredConnections.map((connection) => (
+                          <div
+                            key={connection.id}
+                            className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-blue-200 transition-all cursor-pointer group"
+                            onClick={() => handleViewProfile(connection.user.id)}
+                          >
+                            <div className="flex items-start gap-4">
+                              {/* Avatar */}
+                              <div className="flex-shrink-0">
+                                {connection.user.fotoProfil ? (
+                                  <img
+                                    src={getImageUrl(connection.user.fotoProfil, 'profiles')}
+                                    alt={connection.user.nama}
+                                    className="w-14 h-14 rounded-full object-cover border-2 border-gray-100 group-hover:border-blue-100 transition-colors shadow-sm"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none'
+                                      const fallback = e.target.nextElementSibling
+                                      if (fallback) fallback.style.display = 'flex'
+                                    }}
+                                  />
+                                ) : null}
+                                <div 
+                                  className={`w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-sm ${connection.user.fotoProfil ? 'hidden' : ''}`}
+                                  style={{ display: connection.user.fotoProfil ? 'none' : 'flex' }}
+                                >
+                                  {connection.user.nama?.charAt(0) || 'U'}
+                                </div>
+                              </div>
+    
+                              {/* Info */}
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                                  {connection.user.nama}
+                                  <UserBadge role={connection.user.role} size="sm" />
+                                </h3>
+                                {connection.user.angkatan && (
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    Angkatan {connection.user.angkatan}
+                                  </p>
+                                )}
+                                {connection.user.domisili && (
+                                  <p className="text-xs text-gray-500 truncate mb-2">
+                                    {connection.user.domisili}
+                                  </p>
+                                )}
+                                <div className="mt-auto">
+                                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full inline-block border border-blue-100">
+                                    {formatConnectedSince(connection.updatedAt || connection.createdAt)}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
-
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 truncate">
-                              {connection.user.nama}
-                            </h3>
-                            {connection.user.angkatan && (
-                              <p className="text-xs text-gray-600">
-                                Angkatan {connection.user.angkatan}
-                              </p>
-                            )}
-                            {connection.user.domisili && (
-                              <p className="text-xs text-gray-600 truncate">
-                                {connection.user.domisili}
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      /* List View */
+                      <div className="divide-y divide-gray-100">
+                        {filteredConnections.map((connection) => (
+                          <div
+                            key={connection.id}
+                            className="p-4 hover:bg-blue-50/30 transition-colors flex items-center justify-between gap-4 cursor-pointer group"
+                            onClick={() => handleViewProfile(connection.user.id)}
+                          >
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                              {/* Small Avatar */}
+                              <div className="flex-shrink-0">
+                                {connection.user.fotoProfil ? (
+                                  <img
+                                    src={getImageUrl(connection.user.fotoProfil, 'profiles')}
+                                    alt={connection.user.nama}
+                                    className="w-12 h-12 rounded-full object-cover border border-gray-200 group-hover:border-blue-200"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none'
+                                      const fallback = e.target.nextElementSibling
+                                      if (fallback) fallback.style.display = 'flex'
+                                    }}
+                                  />
+                                ) : null}
+                                <div 
+                                  className={`w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold ${connection.user.fotoProfil ? 'hidden' : ''}`}
+                                  style={{ display: connection.user.fotoProfil ? 'none' : 'flex' }}
+                                >
+                                  {connection.user.nama?.charAt(0) || 'U'}
+                                </div>
+                              </div>
+                              
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                  {connection.user.nama}
+                                </h4>
+                                <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 mt-0.5">
+                                  <span>Angkatan {connection.user.angkatan}</span>
+                                  {connection.user.domisili && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="truncate">{connection.user.domisili}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col items-end gap-2 text-right">
+                              <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                {formatConnectedSince(connection.updatedAt || connection.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>

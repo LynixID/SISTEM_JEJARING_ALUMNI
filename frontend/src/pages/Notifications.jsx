@@ -7,7 +7,7 @@ import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Bell, Search, Filter, Check, CheckCheck, Trash2, Heart, MessageCircle, Reply, Megaphone, Calendar, X, UserPlus, BriefcaseBusiness } from 'lucide-react'
+import { Bell, Search, Filter, Check, CheckCheck, Trash2, Heart, MessageCircle, Reply, Megaphone, Calendar, X, UserPlus, BriefcaseBusiness, ShieldAlert, Lock } from 'lucide-react'
 
 const Notifications = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -35,7 +35,8 @@ const Notifications = () => {
     { value: 'REPLY', label: 'Balasan', icon: Reply, color: 'green' },
     { value: 'ANNOUNCEMENT', label: 'Pengumuman', icon: Megaphone, color: 'purple' },
     { value: 'EVENT', label: 'Event', icon: Calendar, color: 'orange' },
-    { value: 'JOB', label: 'Lowongan', icon: BriefcaseBusiness, color: 'indigo' }
+    { value: 'JOB', label: 'Lowongan', icon: BriefcaseBusiness, color: 'indigo' },
+    { value: 'SYSTEM_SUSPEND', label: 'Sistem', icon: ShieldAlert, color: 'red' }
   ]
 
   const statusOptions = [
@@ -238,6 +239,11 @@ const Notifications = () => {
     if (type === 'CONNECTION_REQUEST' || type === 'CONNECTION_ACCEPTED') {
       return { value: type, label: 'Koneksi', icon: UserPlus, color: 'indigo' }
     }
+
+    // Handle system/suspension notifications
+    if (type && type.startsWith('SYSTEM_')) {
+      return { value: type, label: 'Sistem', icon: ShieldAlert, color: 'red' }
+    }
     
     return categories[0]
   }
@@ -403,13 +409,18 @@ const Notifications = () => {
                       return (
                         <div
                           key={notification.id}
-                          className={`p-4 hover:bg-gray-50 transition-colors ${
-                            !notification.read ? 'bg-blue-50' : ''
+                          className={`p-4 transition-colors ${
+                            notification.type && notification.type.startsWith('SYSTEM_')
+                              ? 'bg-red-50 border-l-4 border-red-500 hover:bg-red-100'
+                              : !notification.read
+                              ? 'bg-blue-50 hover:bg-gray-50'
+                              : 'hover:bg-gray-50'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             {/* Icon */}
                             <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                              notification.type && notification.type.startsWith('SYSTEM_') ? 'bg-red-100 text-red-600' :
                               notification.type === 'LIKE' ? 'bg-red-100 text-red-600' :
                               notification.type === 'COMMENT' ? 'bg-blue-100 text-blue-600' :
                               notification.type === 'MESSAGE' ? 'bg-blue-100 text-blue-600' :
@@ -428,7 +439,18 @@ const Notifications = () => {
                               className="flex-1 min-w-0 cursor-pointer"
                               onClick={() => handleNotificationClick(notification)}
                             >
-                              <p className={`text-sm ${!notification.read ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                              {/* Banner khusus untuk notifikasi suspen */}
+                              {notification.type && notification.type.startsWith('SYSTEM_') && (
+                                <div className="flex items-center gap-1 mb-1">
+                                  <Lock size={12} className="text-red-600" />
+                                  <span className="text-xs font-bold text-red-600 uppercase tracking-wide">Notifikasi Sistem</span>
+                                </div>
+                              )}
+                              <p className={`text-sm ${
+                                notification.type && notification.type.startsWith('SYSTEM_')
+                                  ? 'font-semibold text-red-800'
+                                  : !notification.read ? 'font-semibold text-gray-900' : 'text-gray-700'
+                              }`}>
                                 {notification.message}
                               </p>
                               <p className="text-xs text-gray-500 mt-1">
@@ -438,7 +460,8 @@ const Notifications = () => {
 
                             {/* Actions */}
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              {!notification.read && (
+                              {/* Tombol tandai baca hanya untuk notifikasi non-sistem */}
+                              {!notification.read && !(notification.type && notification.type.startsWith('SYSTEM_')) && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -450,16 +473,26 @@ const Notifications = () => {
                                   <Check size={18} className="text-gray-600" />
                                 </button>
                               )}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDelete(notification.id)
-                                }}
-                                className="p-2 rounded-lg hover:bg-red-50 transition-colors"
-                                title="Hapus notifikasi"
-                              >
-                                <Trash2 size={18} className="text-gray-600 hover:text-red-600" />
-                              </button>
+                              {/* Tombol hapus disembunyikan untuk notifikasi sistem */}
+                              {notification.type && notification.type.startsWith('SYSTEM_') ? (
+                                <div
+                                  className="p-2 rounded-lg cursor-not-allowed"
+                                  title="Notifikasi sistem tidak dapat dihapus"
+                                >
+                                  <Lock size={18} className="text-red-400" />
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDelete(notification.id)
+                                  }}
+                                  className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                                  title="Hapus notifikasi"
+                                >
+                                  <Trash2 size={18} className="text-gray-600 hover:text-red-600" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
