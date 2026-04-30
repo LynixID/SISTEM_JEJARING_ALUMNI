@@ -64,7 +64,7 @@ const Dashboard = () => {
         {/* Area konten kanan sidebar — full width sisa */}
         <div className="flex-1 min-w-0">
           {/* Inner: feed + right panel */}
-          <div className="flex gap-6 px-4 sm:px-6 py-8 max-w-screen-2xl mx-auto">
+          <div className="flex flex-col xl:flex-row gap-6 px-4 sm:px-6 py-8 max-w-screen-2xl mx-auto">
 
             {/* ── Kolom tengah: feed utama ── */}
             <main className="flex-1 min-w-0">

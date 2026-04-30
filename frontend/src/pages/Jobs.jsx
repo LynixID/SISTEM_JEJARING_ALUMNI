@@ -6,6 +6,7 @@ import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import Modal from '../components/common/Modal'
+import ConfirmModal from '../components/common/ConfirmModal'
 import { useAuth } from '../context/AuthContext'
 import { approveJob, createJob, deleteMyJob, getJobs, getPendingJobs, rejectJob } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
@@ -51,6 +52,7 @@ const Jobs = () => {
 
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [selectedJob, setSelectedJob] = useState(null)
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null })
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) navigate('/login', { replace: true })
@@ -149,7 +151,15 @@ const Jobs = () => {
       setTab('PENDING')
       await Promise.all([fetchJobs(), fetchPending()])
     } catch (err) {
-      alert(err.response?.data?.error || 'Gagal membuat lowongan')
+      const errorMsg = err.response?.data?.error || 'Gagal membuat lowongan'
+      const validationErrors = err.response?.data?.errors
+      
+      if (validationErrors && Array.isArray(validationErrors)) {
+        const details = validationErrors.map(e => `- ${e.msg}`).join('\n')
+        alert(`${errorMsg}:\n${details}`)
+      } else {
+        alert(errorMsg)
+      }
     } finally {
       setCreating(false)
     }
@@ -173,16 +183,16 @@ const Jobs = () => {
     }
   }
 
-  const onDeleteMyJob = async (id) => {
-    const ok = window.confirm(
-      isPengurus
-        ? 'Hapus lowongan ini? (Pengurus bisa menghapus lowongan yang sudah dipublikasikan)'
-        : 'Hapus lowongan ini? (Hanya bisa untuk yang belum disetujui)'
-    )
-    if (!ok) return
+  const confirmDeleteMyJob = (id) => {
+    setDeleteModal({ isOpen: true, id })
+  }
+
+  const handleDeleteMyJob = async () => {
+    if (!deleteModal.id) return
     try {
-      await deleteMyJob(id)
+      await deleteMyJob(deleteModal.id)
       await Promise.all([fetchJobs(), fetchPending()])
+      setDeleteModal({ isOpen: false, id: null })
     } catch (e) {
       alert(e.response?.data?.error || 'Gagal menghapus lowongan')
     }
@@ -298,68 +308,69 @@ const Jobs = () => {
                     <div className="text-gray-500 text-sm mt-1">Coba buat lowongan baru.</div>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {jobs.map((job) => (
-                      <Card key={job.id} className="p-5">
+                      <Card key={job.id} className="p-3 sm:p-5 flex flex-col h-full">
                         {job.image && (
                           <div className="mb-3">
                             <img
                               src={getImageUrl(job.image, 'jobs')}
                               alt={job.title}
-                              className="w-full max-h-56 object-cover rounded-xl border border-gray-200"
+                              className="w-full aspect-[3/2] object-cover rounded-xl border border-gray-200"
                               loading="lazy"
                             />
                           </div>
                         )}
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <div className="text-lg font-semibold text-gray-900">{job.title}</div>
-                            <div className="text-sm text-gray-700 mt-1">
+                        <div className="flex flex-col flex-1">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-base sm:text-lg font-semibold text-gray-900 line-clamp-2">{job.title}</div>
+                            <div className="text-xs sm:text-sm text-gray-700 mt-1">
                               <span className="font-medium">{job.company}</span>
-                              {job.location ? <span className="text-gray-500"> • {job.location}</span> : null}
+                              {job.location ? <span className="text-gray-500 block sm:inline"> {job.location}</span> : null}
                             </div>
-                            <div className="flex flex-wrap gap-2 mt-2">
+                            <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                               {job.employmentType ? (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 text-xs">
+                                <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 text-[9px] sm:text-xs">
                                   {job.employmentType}
                                 </span>
                               ) : null}
                               {job.salaryRange ? (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-xs">
+                                <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-[9px] sm:text-xs">
                                   {job.salaryRange}
                                 </span>
                               ) : null}
                               {job.contact ? (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs">
+                                <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[9px] sm:text-xs truncate max-w-full">
                                   {job.contact}
                                 </span>
                               ) : null}
                             </div>
-                            <div className="text-sm text-gray-600 mt-2 line-clamp-3 whitespace-pre-wrap">
+                            <div className="hidden sm:block text-sm text-gray-600 mt-2 line-clamp-3 whitespace-pre-wrap">
                               {job.description}
                             </div>
-                            <div className="text-xs text-gray-500 mt-2">
-                              Diposting oleh {job.author?.nama || 'Alumni'}
+                            <div className="hidden sm:block text-xs text-gray-500 mt-2">
+                              Oleh: {job.author?.nama || 'Alumni'}
                             </div>
                           </div>
-                            <div className="shrink-0 flex flex-col gap-2">
-                            <Button variant="outline" onClick={() => openDetail(job)}>
+                            <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
+                            <Button variant="outline" size="sm" onClick={() => openDetail(job)} className="text-xs">
                               Detail
                             </Button>
                               {isPengurusManage && (
                                 <Button
-                                  onClick={() => onDeleteMyJob(job.id)}
+                                  onClick={() => confirmDeleteMyJob(job.id)}
                                   variant="danger"
-                                  className="flex items-center gap-2"
+                                  size="sm"
+                                  className="flex items-center justify-center gap-1 text-xs"
                                 >
-                                  <Trash2 size={16} />
+                                  <Trash2 size={14} />
                                   Hapus
                                 </Button>
                               )}
                             {job.applyLink && (
-                              <a href={job.applyLink} target="_blank" rel="noreferrer">
-                                <Button variant="outline" className="flex items-center gap-2">
-                                  <ExternalLink size={16} />
+                              <a href={job.applyLink} target="_blank" rel="noreferrer" className="col-span-full">
+                                <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-1 text-xs">
+                                  <ExternalLink size={14} />
                                   Apply
                                 </Button>
                               </a>
@@ -411,77 +422,77 @@ const Jobs = () => {
                     </div>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {pendingJobs.map((job) => (
-                      <Card key={job.id} className="p-5">
-                        <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
-                            <Clock size={14} />
+                      <Card key={job.id} className="p-3 sm:p-5 flex flex-col h-full">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-gray-600 mb-2">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200 whitespace-nowrap">
+                            <Clock size={12} className="sm:w-[14px] sm:h-[14px]" />
                             PENDING
                           </span>
-                          <span className="text-gray-500">
+                          <span className="text-gray-500 truncate w-full sm:w-auto">
                             {isPengurus ? `Pengaju: ${job.author?.nama || 'Alumni'}` : 'Menunggu persetujuan pengurus'}
                           </span>
                         </div>
 
                         {job.image && (
-                          <div className="mb-3">
+                          <div className="mb-2 sm:mb-3">
                             <img
                               src={getImageUrl(job.image, 'jobs')}
                               alt={job.title}
-                              className="w-full max-h-56 object-cover rounded-xl border border-gray-200"
+                              className="w-full aspect-[3/2] object-cover rounded-xl border border-gray-200"
                               loading="lazy"
                             />
                           </div>
                         )}
 
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <div className="text-lg font-semibold text-gray-900">{job.title}</div>
-                            <div className="text-sm text-gray-700 mt-1">
+                        <div className="flex flex-col flex-1">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-base sm:text-lg font-semibold text-gray-900 line-clamp-2">{job.title}</div>
+                            <div className="text-xs sm:text-sm text-gray-700 mt-1">
                               <span className="font-medium">{job.company}</span>
-                              {job.location ? <span className="text-gray-500"> • {job.location}</span> : null}
+                              {job.location ? <span className="text-gray-500 block sm:inline"> {job.location}</span> : null}
                             </div>
-                            <div className="flex flex-wrap gap-2 mt-2">
+                            <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                               {job.employmentType ? (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 text-xs">
+                                <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 text-[9px] sm:text-xs">
                                   {job.employmentType}
                                 </span>
                               ) : null}
                               {job.salaryRange ? (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-xs">
+                                <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-[9px] sm:text-xs">
                                   {job.salaryRange}
                                 </span>
                               ) : null}
                               {job.contact ? (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs">
+                                <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] sm:text-xs truncate max-w-full">
                                   {job.contact}
                                 </span>
                               ) : null}
                             </div>
-                            <div className="text-sm text-gray-600 mt-2 line-clamp-3 whitespace-pre-wrap">
+                            <div className="hidden sm:block text-sm text-gray-600 mt-2 line-clamp-3 whitespace-pre-wrap">
                               {job.description}
                             </div>
                           </div>
 
-                          <div className="shrink-0 flex flex-col gap-2">
-                            <Button variant="outline" onClick={() => openDetail(job)}>
+                          <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
+                            <Button variant="outline" size="sm" onClick={() => openDetail(job)} className="text-xs">
                               Detail
                             </Button>
                             {isPengurus ? (
                               <>
-                                <Button onClick={() => onApprove(job.id)} className="flex items-center gap-2">
-                                  <Check size={16} />
+                                <Button onClick={() => onApprove(job.id)} size="sm" className="flex items-center justify-center gap-1 text-xs">
+                                  <Check size={14} />
                                   Approve
                                 </Button>
-                                <Button onClick={() => onReject(job.id)} variant="danger" className="flex items-center gap-2">
-                                  <X size={16} />
+                                <Button onClick={() => onReject(job.id)} variant="danger" size="sm" className="col-span-full flex items-center justify-center gap-1 text-xs">
+                                  <X size={14} />
                                   Reject
                                 </Button>
                               </>
                             ) : (
-                              <Button onClick={() => onDeleteMyJob(job.id)} variant="danger" className="flex items-center gap-2">
-                                <Trash2 size={16} />
+                              <Button onClick={() => confirmDeleteMyJob(job.id)} variant="danger" size="sm" className="flex items-center justify-center gap-1 text-xs">
+                                <Trash2 size={14} />
                                 Hapus
                               </Button>
                             )}
@@ -666,6 +677,16 @@ const Jobs = () => {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null })}
+        onConfirm={handleDeleteMyJob}
+        title="Hapus Lowongan"
+        message={isPengurus ? "Apakah Anda yakin ingin menghapus lowongan yang sudah dipublikasikan ini?" : "Apakah Anda yakin ingin menghapus lowongan yang belum disetujui ini?"}
+        confirmText="Hapus"
+        variant="danger"
+      />
     </div>
   )
 }

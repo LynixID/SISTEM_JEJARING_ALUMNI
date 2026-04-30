@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Home, Users, MessageCircle, Newspaper, UserPlus, Edit, ChevronDown, ChevronRight, FileText, CalendarCheck, MessageSquareText, BriefcaseBusiness, Clock, Bell } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { getJobs, getPendingJobs, getConnectionRequests, getUnreadNewsCount, getUnreadCount } from '../../services/api'
+import { getJobs, getPendingJobs, getConnectionRequests, getUnreadNewsCount, getUnreadCount, getConversations } from '../../services/api'
 import { getSocket } from '../../config/socket'
 
 const Sidebar = () => {
@@ -13,6 +13,20 @@ const Sidebar = () => {
   const [unreadNewsCount, setUnreadNewsCount] = useState(0)
   const [newApprovedJobsCount, setNewApprovedJobsCount] = useState(0) // alumni & pengurus: approved since last seen
   const [pendingJobsCount, setPendingJobsCount] = useState(0) // pengurus pending approvals
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+
+  // Close mobile menu on path change
+  useEffect(() => {
+    setIsMobileOpen(false)
+  }, [location.pathname])
+
+  // Listen to custom toggle event
+  useEffect(() => {
+    const handleToggle = () => setIsMobileOpen(prev => !prev)
+    window.addEventListener('toggleMobileMenu', handleToggle)
+    return () => window.removeEventListener('toggleMobileMenu', handleToggle)
+  }, [])
 
 
   // Fetch pending connections count
@@ -111,6 +125,41 @@ const Sidebar = () => {
     return () => clearInterval(interval)
   }, [isAuthenticated, user])
 
+  // Fetch unread messages count
+  useEffect(() => {
+    if (!isAuthenticated || user?.role === 'ADMIN') return
+
+    const fetchUnreadMessages = async () => {
+      try {
+        const response = await getConversations()
+        const responseData = response.data?.data || response.data
+        const conversations = responseData?.conversations || []
+        const totalUnread = conversations.reduce((acc, curr) => acc + (curr.unreadCount || 0), 0)
+        setUnreadMessagesCount(totalUnread)
+      } catch (error) {
+        console.error('Error fetching unread messages:', error)
+      }
+    }
+
+    fetchUnreadMessages()
+
+    const socket = getSocket()
+    const handleMessageUpdate = () => {
+      fetchUnreadMessages()
+    }
+
+    socket.on('newMessage', handleMessageUpdate)
+    socket.on('messagesRead', handleMessageUpdate)
+
+    const interval = setInterval(fetchUnreadMessages, 30000)
+
+    return () => {
+      socket.off('newMessage', handleMessageUpdate)
+      socket.off('messagesRead', handleMessageUpdate)
+      clearInterval(interval)
+    }
+  }, [isAuthenticated, user])
+
   const menuItems = [
     { icon: Home, label: 'Beranda', path: '/dashboard', disabled: false },
     { icon: Newspaper, label: 'Berita', path: '/berita', disabled: false },
@@ -128,7 +177,19 @@ const Sidebar = () => {
   ]
 
   return (
-    <aside className="hidden lg:block w-64 bg-white border-r border-gray-200 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto">
+    <>
+      {/* Overlay untuk mobile */}
+      <div 
+        className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ease-in-out ${
+          isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsMobileOpen(false)}
+      />
+
+      <aside className={`
+        fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200 z-50 lg:z-0 overflow-y-auto transition-transform duration-300
+        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
       <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
@@ -163,6 +224,8 @@ const Sidebar = () => {
             const showNewsBadge = item.path === '/berita' && unreadNewsCount > 0 && user?.role !== 'ADMIN'
             // Badge untuk Lowongan (angka) untuk alumni & pengurus
             const showLowonganBadge = item.path === '/lowongan' && newApprovedJobsCount > 0 && user?.role !== 'ADMIN'
+            // Badge untuk pesan
+            const showMessagesBadge = item.path === '/pesan' && unreadMessagesCount > 0 && user?.role !== 'ADMIN'
 
             return (
               <li key={item.path}>
@@ -191,6 +254,11 @@ const Sidebar = () => {
                   {showNewsBadge && (
                     <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {unreadNewsCount > 9 ? '9+' : unreadNewsCount}
+                    </span>
+                  )}
+                  {showMessagesBadge && (
+                    <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
                     </span>
                   )}
                 </Link>
@@ -261,7 +329,8 @@ const Sidebar = () => {
           )}
         </ul>
       </nav>
-    </aside>
+      </aside>
+    </>
   )
 }
 

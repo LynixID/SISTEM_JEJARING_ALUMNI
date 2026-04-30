@@ -217,7 +217,7 @@ const Berita = () => {
                     <p className="text-gray-500">Tidak ada pengumuman ditemukan</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6">
                     {announcements.map((announcement) => {
                       const isUnread = !readStatus.announcements[announcement.id]
                       return (
@@ -249,7 +249,7 @@ const Berita = () => {
                           <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full z-10 shadow-sm"></div>
                         )}
                         {announcement.image && (
-                          <div className="h-48 bg-gray-200 overflow-hidden relative">
+                          <div className="h-32 sm:h-48 bg-gray-200 overflow-hidden relative">
                             <img
                               src={getImageUrl(announcement.image)}
                               alt={announcement.title}
@@ -260,26 +260,27 @@ const Berita = () => {
                             />
                           </div>
                         )}
-                        <div className="p-5">
-                          <div className="flex items-center justify-end mb-3">
+                        <div className="p-3 sm:p-5 flex flex-col h-full">
+                          <div className="flex items-center justify-end mb-2 sm:mb-3">
                             <div className="flex items-center gap-1 text-xs text-gray-500">
                               <Eye size={14} />
                               {announcement.views || 0}
                             </div>
                           </div>
-                          <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                          <h3 className="font-bold text-sm sm:text-lg text-gray-900 mb-1 sm:mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                             {announcement.title}
                           </h3>
-                          <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                          <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-gray-500 mb-2 sm:mb-3">
                             <Calendar size={14} />
                             {formatDate(announcement.createdAt)}
                           </div>
                           {announcement.content && (
-                            <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                            <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 sm:line-clamp-3 mb-3 sm:mb-4">
                               {announcement.content.replace(/<[^>]*>/g, '').substring(0, 150)}...
                             </p>
                           )}
-                          <Button
+                          <div className="mt-auto">
+                            <Button
                             variant="outline"
                             size="sm"
                             onClick={(e) => {
@@ -288,8 +289,9 @@ const Berita = () => {
                             }}
                             className="w-full rounded-xl"
                           >
-                            Baca Selengkapnya
-                          </Button>
+                              Baca
+                            </Button>
+                          </div>
                         </div>
                       </div>
                       )
@@ -306,7 +308,7 @@ const Berita = () => {
                     <p className="text-gray-500">Tidak ada event ditemukan</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6">
                     {events.map((event) => {
                       const isUnread = !readStatus.events[event.id]
                       return (
@@ -338,7 +340,7 @@ const Berita = () => {
                           <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full z-10 shadow-sm"></div>
                         )}
                         {event.image && (
-                          <div className="h-48 bg-gray-200 overflow-hidden relative">
+                          <div className="h-32 sm:h-48 bg-gray-200 overflow-hidden relative">
                             <img
                               src={getImageUrl(event.image, 'events')}
                               alt={event.title}
@@ -349,9 +351,9 @@ const Berita = () => {
                             />
                           </div>
                         )}
-                        <div className="p-5">
-                          <div className="flex items-center justify-end mb-3">
-                            <div className={`text-xs px-3 py-1 rounded-full font-medium ${
+                        <div className="p-3 sm:p-5 flex flex-col h-full">
+                          <div className="flex items-center justify-end mb-2 sm:mb-3">
+                            <div className={`text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-medium ${
                               new Date(event.tanggal) > new Date() 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-gray-100 text-gray-800'
@@ -359,10 +361,10 @@ const Berita = () => {
                               {new Date(event.tanggal) > new Date() ? 'Akan datang' : 'Sudah lewat'}
                             </div>
                           </div>
-                          <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                          <h3 className="font-bold text-sm sm:text-lg text-gray-900 mb-1 sm:mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                             {event.title}
                           </h3>
-                          <div className="space-y-1 text-xs text-gray-600 mb-3">
+                          <div className="space-y-1 text-[10px] sm:text-xs text-gray-600 mb-2 sm:mb-3">
                             <div className="flex items-center gap-1">
                               <Calendar size={14} />
                               {formatDate(event.tanggal)}
@@ -375,11 +377,12 @@ const Berita = () => {
                             )}
                           </div>
                           {event.description && (
-                            <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                            <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 sm:line-clamp-3 mb-3 sm:mb-4">
                               {event.description.substring(0, 150)}...
                             </p>
                           )}
-                          <Button
+                          <div className="mt-auto">
+                            <Button
                             variant="outline"
                             size="sm"
                             onClick={(e) => {
@@ -388,8 +391,9 @@ const Berita = () => {
                             }}
                             className="w-full rounded-xl"
                           >
-                            Lihat Detail
-                          </Button>
+                              Detail
+                            </Button>
+                          </div>
                         </div>
                       </div>
                       )

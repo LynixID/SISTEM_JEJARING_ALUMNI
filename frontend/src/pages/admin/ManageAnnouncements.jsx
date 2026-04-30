@@ -10,6 +10,7 @@ import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import Input from '../../components/common/Input'
 import ImageLightbox from '../../components/common/ImageLightbox'
+import ConfirmModal from '../../components/common/ConfirmModal'
 import { getImageUrl } from '../../utils/imageUtils'
 
 const ManageAnnouncements = () => {
@@ -35,6 +36,7 @@ const ManageAnnouncements = () => {
     image: '',
     published: false
   })
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null })
 
   useEffect(() => {
     fetchAnnouncements()
@@ -121,13 +123,18 @@ const ManageAnnouncements = () => {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus berita ini?')) return
+  const confirmDelete = (id) => {
+    setDeleteModal({ isOpen: true, id })
+  }
+
+  const handleDelete = async () => {
+    if (!deleteModal.id) return
 
     try {
-      await api.delete(`/announcements/${id}`)
+      await api.delete(`/announcements/${deleteModal.id}`)
       alert('Berita berhasil dihapus')
       fetchAnnouncements()
+      setDeleteModal({ isOpen: false, id: null })
     } catch (error) {
       alert(error.response?.data?.error || 'Gagal menghapus berita')
     }
@@ -290,7 +297,7 @@ const ManageAnnouncements = () => {
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(announcement.id)}
+                        onClick={() => confirmDelete(announcement.id)}
                         className="text-red-600 hover:text-red-900"
                       >
                         <Trash2 size={18} />
@@ -478,6 +485,16 @@ const ManageAnnouncements = () => {
           </Card>
         </div>
       )}
+      
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null })}
+        onConfirm={handleDelete}
+        title="Hapus Berita"
+        message="Apakah Anda yakin ingin menghapus berita ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Hapus"
+        variant="danger"
+      />
     </>
   )
 }

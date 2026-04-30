@@ -46,10 +46,16 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }))
 
+// app.use(cors({
+//   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+//   credentials: true,
+// }))
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: '*',
   credentials: true,
 }))
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -94,7 +100,6 @@ app.use('/api/announcements', announcementRoutes)
 app.use('/api/events', eventRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/posts', postRoutes)
-// Comment routes: get/create di /api/posts/:postId/comments, update/delete di /api/comments/:id
 app.use('/api/posts', commentRoutes) // Untuk get dan create comments
 app.use('/api/comments', commentRoutes) // Untuk update dan delete comments
 app.use('/api', likeRoutes)

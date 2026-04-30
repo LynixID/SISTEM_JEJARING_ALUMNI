@@ -541,7 +541,7 @@ const CreateAnnouncement = () => {
                         <RichTextEditor
                           value={formData.content}
                           onChange={(content) => setFormData({ ...formData, content })}
-                          placeholder="Tulis konten pengumuman di sini..."
+                          placeholder=""
                         />
                         {formData.content && (
                           <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">

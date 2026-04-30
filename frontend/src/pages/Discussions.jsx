@@ -9,6 +9,7 @@ import Modal from '../components/common/Modal'
 import UserBadge from '../components/common/UserBadge'
 import { useAuth } from '../context/AuthContext'
 import { createDiscussion, getDiscussions } from '../services/api'
+import { getImageUrl } from '../utils/imageUtils'
 import { MessageSquareText, Plus, Search } from 'lucide-react'
 
 const Discussions = () => {
@@ -168,7 +169,7 @@ const Discussions = () => {
                         {t.image && (
                           <div className="mb-3">
                             <img
-                              src={t.image}
+                              src={getImageUrl(t.image, 'discussions')}
                               alt={t.title}
                               className="w-full max-h-56 object-cover rounded-xl border border-gray-200"
                               loading="lazy"

@@ -10,6 +10,7 @@ import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import Input from '../../components/common/Input'
 import AlertModal from '../../components/common/AlertModal'
+import ConfirmModal from '../../components/common/ConfirmModal'
 import ImageLightbox from '../../components/common/ImageLightbox'
 import UserBadge from '../../components/common/UserBadge'
 import { getImageUrl } from '../../utils/imageUtils'
@@ -44,6 +45,7 @@ const ManageEvents = () => {
     linkDaftar: '',
     published: false
   })
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null })
 
   useEffect(() => {
     fetchEvents()
@@ -126,16 +128,21 @@ const ManageEvents = () => {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus event ini?')) return
+  const confirmDelete = (id) => {
+    setDeleteModal({ isOpen: true, id })
+  }
+
+  const handleDelete = async () => {
+    if (!deleteModal.id) return
 
     try {
-      await api.delete(`/events/${id}`)
+      await api.delete(`/events/${deleteModal.id}`)
       setSuccessModal({ 
         isOpen: true, 
         message: 'Event berhasil dihapus' 
       })
       fetchEvents()
+      setDeleteModal({ isOpen: false, id: null })
     } catch (error) {
       setErrorModal({ 
         isOpen: true, 
@@ -340,14 +347,12 @@ const ManageEvents = () => {
                       >
                         <Edit size={18} />
                       </button>
-                      {isAdmin && (
-                        <button
-                          onClick={() => handleDelete(event.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => confirmDelete(event.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -639,6 +644,17 @@ const ManageEvents = () => {
         onClose={() => setLightboxImage({ isOpen: false, url: '', alt: '' })}
         imageUrl={lightboxImage.url}
         alt={lightboxImage.alt}
+      />
+
+      {/* Delete Confirm Modal */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null })}
+        onConfirm={handleDelete}
+        title="Hapus Event"
+        message="Apakah Anda yakin ingin menghapus event ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Hapus"
+        variant="danger"
       />
     </>
   )

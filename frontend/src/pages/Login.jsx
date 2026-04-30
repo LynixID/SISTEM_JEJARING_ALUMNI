@@ -72,10 +72,12 @@ const Login = () => {
         <Card className="p-8 shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mb-4 shadow-lg">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+            <div className="flex justify-center mb-6">
+              <img 
+                src="/icon_web.png" 
+                alt="Logo" 
+                className="w-24 h-24 object-contain"
+              />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Selamat Datang</h2>
             <p className="text-gray-600">

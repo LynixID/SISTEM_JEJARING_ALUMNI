@@ -55,11 +55,21 @@ const Header = () => {
               </div>
               
               {/* Profile Menu */}
-              <div className="relative">
+              <div className="relative flex items-center">
                 <button
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition"
+                  onClick={() => {
+                    window.dispatchEvent(new Event('toggleMobileMenu'))
+                  }}
+                  className="lg:hidden mr-2 p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
+                  <Menu size={24} />
+                </button>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition"
+                  >
                   {user?.profile?.fotoProfil ? (
                     <img
                       src={getImageUrl(user.profile.fotoProfil, 'profiles')}
@@ -130,6 +140,7 @@ const Header = () => {
                     </div>
                   </>
                 )}
+              </div>
               </div>
             </div>
           </div>

@@ -268,8 +268,8 @@ const LatestNewsSection = () => {
 const RightPanel = () => {
   return (
     <aside className="hidden xl:flex flex-col gap-4 w-72 flex-shrink-0">
-      {/* Sticky wrapper — panel tidak ikut scroll */}
-      <div className="sticky top-20 flex flex-col gap-4">
+      {/* Sticky wrapper — panel tidak ikut scroll pada layar besar */}
+      <div className="xl:sticky xl:top-20 flex flex-col gap-4">
         <NewUsersSection />
         <LatestNewsSection />
 

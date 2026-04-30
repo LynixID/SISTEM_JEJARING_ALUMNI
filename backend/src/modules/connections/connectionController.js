@@ -51,11 +51,6 @@ export const sendConnectionRequest = async (req, res) => {
     }
 
     // Buat connection request
-    console.log('=== Creating Connection Request ===')
-    console.log('Requester (userId):', userId)
-    console.log('Target (connectedUserId):', connectedUserId)
-    console.log('Message:', message)
-    
     const connection = await prisma.connection.create({
       data: {
         userId, // Requester (yang mengirim request)
@@ -78,14 +73,7 @@ export const sendConnectionRequest = async (req, res) => {
         }
       }
     })
-    
-    console.log('Connection created:', {
-      id: connection.id,
-      userId: connection.userId,
-      connectedUserId: connection.connectedUserId,
-      status: connection.status
-    })
-    console.log('=== End Creating Connection Request ===')
+
 
     // Buat notifikasi untuk user target
     try {

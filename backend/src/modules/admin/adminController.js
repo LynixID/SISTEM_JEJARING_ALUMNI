@@ -4,6 +4,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { getIO } from '../../config/socket.js'
 import ExcelJS from 'exceljs'
+import { getImagePath, extractFilename } from '../../utils/fileUtils.js'
 
 // Helper for building user where clause
 const buildUserFilter = (query) => {
@@ -89,8 +90,17 @@ export const getAllUsers = async (req, res) => {
       prisma.user.count({ where })
     ])
 
+    // Format image paths
+    const formattedUsers = users.map(user => ({
+      ...user,
+      profile: user.profile ? {
+        ...user.profile,
+        fotoProfil: user.profile.fotoProfil ? getImagePath(user.profile.fotoProfil, 'profiles') : null
+      } : null
+    }))
+
     res.json({
-      users,
+      users: formattedUsers,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -123,6 +133,7 @@ export const getUserById = async (req, res) => {
         role: true,
         verified: true,
         isSuspended: true,
+        suspendReason: true,
         createdAt: true,
         updatedAt: true,
         profile: {
@@ -146,7 +157,16 @@ export const getUserById = async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' })
     }
 
-    res.json({ user })
+    // Format image path
+    const formattedUser = {
+      ...user,
+      profile: user.profile ? {
+        ...user.profile,
+        fotoProfil: user.profile.fotoProfil ? getImagePath(user.profile.fotoProfil, 'profiles') : null
+      } : null
+    }
+
+    res.json({ user: formattedUser })
   } catch (error) {
     console.error('Get user by ID error:', error)
     res.status(500).json({ error: 'Terjadi kesalahan' })
@@ -464,8 +484,20 @@ export const getAllComments = async (req, res) => {
       prisma.comment.count({ where })
     ])
 
+    // Format results to include correct image paths
+    const formattedComments = comments.map(comment => ({
+      ...comment,
+      author: {
+        ...comment.author,
+        profile: comment.author.profile ? {
+          ...comment.author.profile,
+          fotoProfil: comment.author.profile.fotoProfil ? getImagePath(comment.author.profile.fotoProfil, 'profiles') : null
+        } : null
+      }
+    }))
+
     res.json({
-      comments,
+      comments: formattedComments,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -552,7 +584,8 @@ export const suspendUser = async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        isSuspended: true
+        isSuspended: true,
+        suspendReason: reason || 'Pelanggaran kebijakan komunitas'
       }
     })
 
@@ -606,7 +639,8 @@ export const unsuspendUser = async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        isSuspended: false
+        isSuspended: false,
+        suspendReason: null
       }
     })
 

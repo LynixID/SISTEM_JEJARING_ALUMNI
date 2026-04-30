@@ -23,30 +23,30 @@ export const createJobValidation = [
     .trim()
     .notEmpty()
     .withMessage('Deskripsi lowongan harus diisi')
-    .isLength({ min: 20, max: 20000 })
-    .withMessage('Deskripsi lowongan harus 20-20000 karakter'),
+    .isLength({ min: 10, max: 20000 })
+    .withMessage('Deskripsi lowongan harus 10-20000 karakter'),
   body('location')
-    .optional({ nullable: true })
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 120 })
     .withMessage('Lokasi maksimal 120 karakter'),
   body('employmentType')
-    .optional({ nullable: true })
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 80 })
     .withMessage('Employment type maksimal 80 karakter'),
   body('salaryRange')
-    .optional({ nullable: true })
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 80 })
     .withMessage('Salary range maksimal 80 karakter'),
   body('contact')
-    .optional({ nullable: true })
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 120 })
     .withMessage('Contact maksimal 120 karakter'),
   body('applyLink')
-    .optional({ nullable: true })
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 255 })
     .withMessage('Apply link maksimal 255 karakter'),
