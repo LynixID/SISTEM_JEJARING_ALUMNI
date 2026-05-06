@@ -246,7 +246,7 @@ const Berita = () => {
                       >
                         {/* Badge merah untuk item yang belum dibaca */}
                         {isUnread && (
-                          <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full z-10 shadow-sm"></div>
+                          <div className="absolute top-2 right-2 w-3 h-3 bg-blue-600 rounded-full z-10 shadow-sm"></div>
                         )}
                         {announcement.image && (
                           <div className="h-32 sm:h-48 bg-gray-200 overflow-hidden relative">
@@ -337,7 +337,7 @@ const Berita = () => {
                       >
                         {/* Badge merah untuk item yang belum dibaca */}
                         {isUnread && (
-                          <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full z-10 shadow-sm"></div>
+                          <div className="absolute top-2 right-2 w-3 h-3 bg-blue-600 rounded-full z-10 shadow-sm"></div>
                         )}
                         {event.image && (
                           <div className="h-32 sm:h-48 bg-gray-200 overflow-hidden relative">

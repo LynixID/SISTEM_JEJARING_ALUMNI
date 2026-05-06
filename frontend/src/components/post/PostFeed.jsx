@@ -3,7 +3,7 @@ import { getPosts } from '../../services/api'
 import PostCard from './PostCard'
 import { Loader } from 'lucide-react'
 
-const PostFeed = ({ userId, onPostDeleted, refreshKey = 0 }) => {
+const PostFeed = ({ userId, onPostDeleted, refreshKey = 0, searchQuery = '' }) => {
   // State management untuk posts dan pagination
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -15,10 +15,10 @@ const PostFeed = ({ userId, onPostDeleted, refreshKey = 0 }) => {
   const sentinelRef = useRef(null)
   const isLoadingRef = useRef(false)
 
-  // Load initial posts saat component mount atau userId/refreshKey berubah
+  // Load initial posts saat component mount atau userId/refreshKey/searchQuery berubah
   useEffect(() => {
     loadPosts(1, true)
-  }, [userId, refreshKey])
+  }, [userId, refreshKey, searchQuery])
 
   // Load posts dengan pagination dan duplicate prevention
   const loadPosts = useCallback(async (pageNum = 1, reset = false) => {
@@ -41,6 +41,7 @@ const PostFeed = ({ userId, onPostDeleted, refreshKey = 0 }) => {
       // Prepare API params
       const params = { page: pageNum, limit: 10 }
       if (userId) params.userId = userId
+      if (searchQuery) params.search = searchQuery
 
       // Fetch posts dari API
       const response = await getPosts(params)

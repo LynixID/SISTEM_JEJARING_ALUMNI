@@ -240,11 +240,15 @@ const Profile = () => {
       <Header />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1">
-          {/* Cover Photo & Profile Header */}
-          <div className="bg-white">
+        <main className="flex-1 min-w-0">
+          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
+
+
+          {/* Cover Photo & Profile Header Section (Unified Card) */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
             {/* Cover Photo */}
-            <div className="relative h-80 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600">
+            <div className="relative h-64 sm:h-80 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600">
+
               {coverPhoto ? (
                 <img
                   src={getImageUrl(coverPhoto, 'profiles')}
@@ -290,7 +294,8 @@ const Profile = () => {
                   
                   {/* User Info */}
                   <div className="flex-1 w-full">
-                    <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8 border border-gray-100">
+                    <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-6 sm:p-8 border border-white/50">
+
                       <div className="space-y-3">
                         <div>
                           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
@@ -424,10 +429,13 @@ const Profile = () => {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Tabs */}
-          <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 pb-12">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Tabs Header */}
+            <div className="bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8">
               <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {
                   const Icon = tab.icon
@@ -448,12 +456,15 @@ const Profile = () => {
                 })}
               </div>
             </div>
-          </div>
 
-          {/* Tab Content */}
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Tab Content Area */}
+            <div className="p-6 sm:p-8">
+
+
+
             {activeTab === 'about' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-8">
+              <div className="space-y-8">
+
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Informasi Pribadi</h2>
                   
@@ -604,7 +615,8 @@ const Profile = () => {
             )}
 
             {activeTab === 'portfolio' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+              <div className="">
+
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Portfolio</h2>
                 {profile.portfolio && Array.isArray(profile.portfolio) && profile.portfolio.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -653,7 +665,8 @@ const Profile = () => {
             )}
 
             {activeTab === 'experience' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+              <div className="">
+
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Pengalaman Kerja</h2>
                 {profile.experience && Array.isArray(profile.experience) && profile.experience.length > 0 ? (
                   <div className="space-y-6">
@@ -693,7 +706,8 @@ const Profile = () => {
             )}
 
             {activeTab === 'education' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+              <div className="">
+
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Pendidikan</h2>
                 {profile.education && Array.isArray(profile.education) && profile.education.length > 0 ? (
                   <div className="space-y-6">
@@ -727,7 +741,8 @@ const Profile = () => {
             )}
 
             {activeTab === 'certifications' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+              <div className="">
+
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Sertifikasi</h2>
                 {profile.certifications && Array.isArray(profile.certifications) && profile.certifications.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -771,13 +786,15 @@ const Profile = () => {
             )}
 
             {activeTab === 'posts' && (
-              <div>
+              <div className="space-y-6">
                 {loadingPosts && userPosts.length === 0 ? (
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                  <div className="p-12 text-center">
+
                     <div className="text-gray-500">Memuat postingan...</div>
                   </div>
                 ) : userPosts.length === 0 ? (
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                  <div className="p-12 text-center">
+
                     <Newspaper className="mx-auto text-gray-300 mb-4" size={48} />
                     <p className="text-gray-500">Belum ada postingan</p>
                   </div>
@@ -823,7 +840,13 @@ const Profile = () => {
             )}
 
           </div>
+        </div>
+      </div>
+
+
         </main>
+
+
       </div>
 
       {/* Connect Modal */}

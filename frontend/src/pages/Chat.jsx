@@ -799,9 +799,14 @@ const Chat = () => {
         <Header />
         <div className="flex">
           <Sidebar />
-          <main className="flex-1 p-6">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-gray-500">Memuat percakapan...</div>
+          <main className="flex-1 min-w-0">
+            <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 flex items-center justify-center h-[600px]">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader className="animate-spin text-blue-600" size={32} />
+                  <div className="text-gray-500 font-medium">Memuat percakapan...</div>
+                </div>
+              </div>
             </div>
           </main>
         </div>
@@ -814,7 +819,9 @@ const Chat = () => {
       <Header />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 flex h-[calc(100vh-64px)]">
+        <main className="flex-1 min-w-0">
+          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex h-[750px]">
           {/* Conversations List */}
           <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
             <div className="p-4 border-b border-gray-200">
@@ -860,7 +867,7 @@ const Chat = () => {
                           </div>
                         )}
                         {conv.unreadCount > 0 && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
                             {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
                           </div>
                         )}
@@ -1039,6 +1046,8 @@ const Chat = () => {
                 </div>
               </div>
             )}
+          </div>
+            </div>
           </div>
         </main>
       </div>

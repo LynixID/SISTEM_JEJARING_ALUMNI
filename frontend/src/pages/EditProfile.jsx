@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, User, Image as ImageIcon, X, Plus, Trash2, Edit2, FileText, Briefcase, GraduationCap, Award } from 'lucide-react'
+import { ArrowLeft, Save, User, Image as ImageIcon, X, Plus, Trash2, Edit2, FileText, Briefcase, GraduationCap, Award, Globe, Linkedin, Instagram, Twitter, Github } from 'lucide-react'
+
 import { useAuth } from '../context/AuthContext'
 import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
@@ -605,10 +606,11 @@ const EditProfile = () => {
       <Header />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1">
-          <div className="max-w-4xl mx-auto p-6">
+        <main className="flex-1 min-w-0">
+          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
             {/* Header */}
-            <div className="mb-6">
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
               <Button
                 variant="outline"
                 onClick={() => navigate(`/profil/${userId}`)}
@@ -628,47 +630,56 @@ const EditProfile = () => {
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="bg-white rounded-lg shadow-sm mb-6">
-              <div className="flex border-b border-gray-200 overflow-x-auto">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors whitespace-nowrap ${
-                        activeTab === tab.id
-                          ? 'border-blue-600 text-blue-600 font-medium'
-                          : 'border-transparent text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      {Icon && <Icon size={18} />}
-                      <span>{tab.label}</span>
-                    </button>
-                  )
-                })}
+
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Sidebar Tabs */}
+              <div className="w-full lg:w-64 flex-shrink-0">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 sticky top-24">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-1 ${
+                          activeTab === tab.id
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-200 font-medium'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600'
+                        }`}
+                      >
+                        {Icon && <Icon size={20} />}
+                        <span className="text-sm">{tab.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
-              <div className="p-6">
+              {/* Main Content Area */}
+              <div className="flex-1 min-w-0">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="p-6 sm:p-8">
+
                 {/* Tab: Basic Info */}
                 {activeTab === 'basic' && (
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900 mb-4">Informasi Dasar</h2>
                       <div className="space-y-4">
-                        <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100 mb-6">
-                          <input
-                            type="checkbox"
-                            id="allowEmailNotification"
-                            name="allowEmailNotification"
-                            checked={basicInfo.allowEmailNotification}
-                            onChange={(e) => setBasicInfo(prev => ({ ...prev, allowEmailNotification: e.target.checked }))}
-                            className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                          />
-                          <label htmlFor="allowEmailNotification" className="text-sm font-medium text-blue-900 cursor-pointer">
-                            Terima Notifikasi Berita & Pengumuman via Email
-                            <p className="text-xs text-blue-700 font-normal mt-0.5">Dapatkan update terbaru dari alumni langsung ke kotak masuk Anda.</p>
+                        <div className="flex items-start gap-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50 mb-8">
+                          <div className="flex items-center h-5 mt-1">
+                            <input
+                              type="checkbox"
+                              id="allowEmailNotification"
+                              name="allowEmailNotification"
+                              checked={basicInfo.allowEmailNotification}
+                              onChange={(e) => setBasicInfo(prev => ({ ...prev, allowEmailNotification: e.target.checked }))}
+                              className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                            />
+                          </div>
+                          <label htmlFor="allowEmailNotification" className="flex flex-col cursor-pointer">
+                            <span className="text-sm font-semibold text-blue-900">Terima Notifikasi via Email</span>
+                            <span className="text-xs text-blue-700 mt-1">Dapatkan update berita, pengumuman, dan lowongan kerja terbaru langsung ke email Anda.</span>
                           </label>
                         </div>
 
@@ -714,77 +725,70 @@ const EditProfile = () => {
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900 mb-4">Informasi Profil</h2>
                       
-                      {/* Foto Profil */}
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Foto Profil
-                        </label>
-                        <div className="flex items-center gap-4">
-                          {fotoProfilPreview && (
-                            <div className="relative">
-                              <img
-                                src={fotoProfilPreview}
-                                alt="Foto Profil"
-                                className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveImage('fotoProfil')}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          )}
-                          <label className="cursor-pointer">
-                            <div className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
-                              <ImageIcon size={18} />
-                              {fotoProfilPreview ? 'Ganti Foto' : 'Upload Foto'}
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleFileSelect('fotoProfil', e)}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                      </div>
-
                       {/* Cover Photo */}
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="mb-8">
+                        <label className="block text-sm font-bold text-gray-700 mb-3">
                           Cover Photo
                         </label>
-                        <div className="flex items-center gap-4">
-                          {coverPhotoPreview && (
-                            <div className="relative">
+                        <div className="relative group rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 hover:border-blue-400 transition-all aspect-[4/1]">
+                          {coverPhotoPreview ? (
+                            <>
                               <img
                                 src={coverPhotoPreview}
                                 alt="Cover Photo"
-                                className="w-48 h-24 object-cover rounded-lg border-2 border-gray-200"
+                                className="w-full h-full object-cover"
                               />
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveImage('coverPhoto')}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                <label className="cursor-pointer p-3 bg-white text-blue-600 rounded-full hover:bg-blue-50 transition-colors shadow-lg">
+                                  <Edit2 size={20} />
+                                  <input type="file" accept="image/*" onChange={(e) => handleFileSelect('coverPhoto', e)} className="hidden" />
+                                </label>
+                                <button type="button" onClick={() => handleRemoveImage('coverPhoto')} className="p-3 bg-white text-red-600 rounded-full hover:bg-red-50 transition-colors shadow-lg">
+                                  <Trash2 size={20} />
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+                              <ImageIcon size={32} className="text-gray-400 mb-2" />
+                              <span className="text-sm text-gray-500 font-medium">Upload Cover Photo</span>
+                              <input type="file" accept="image/*" onChange={(e) => handleFileSelect('coverPhoto', e)} className="hidden" />
+                            </label>
                           )}
-                          <label className="cursor-pointer">
-                            <div className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
-                              <ImageIcon size={18} />
-                              {coverPhotoPreview ? 'Ganti Cover' : 'Upload Cover'}
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleFileSelect('coverPhoto', e)}
-                              className="hidden"
-                            />
-                          </label>
+                        </div>
+                      </div>
+
+                      {/* Foto Profil */}
+                      <div className="mb-8 flex flex-col sm:flex-row items-center gap-6">
+                        <div className="relative group">
+                          <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100">
+                            {fotoProfilPreview ? (
+                              <img src={fotoProfilPreview} alt="Profil" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <User size={40} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                             <label className="cursor-pointer text-white">
+                               <Edit2 size={20} />
+                               <input type="file" accept="image/*" onChange={(e) => handleFileSelect('fotoProfil', e)} className="hidden" />
+                             </label>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-bold text-gray-700 mb-1">Foto Profil</h4>
+                          <p className="text-xs text-gray-500 mb-3">Gunakan foto formal agar terlihat lebih profesional. Maksimal 5MB.</p>
+                          <div className="flex gap-2">
+                             <label className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 cursor-pointer transition-colors">
+                                Ganti Foto
+                                <input type="file" accept="image/*" onChange={(e) => handleFileSelect('fotoProfil', e)} className="hidden" />
+                             </label>
+                             {fotoProfilPreview && (
+                               <button type="button" onClick={() => handleRemoveImage('fotoProfil')} className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl text-sm font-semibold transition-colors">Hapus</button>
+                             )}
+                          </div>
                         </div>
                       </div>
 
@@ -843,42 +847,68 @@ const EditProfile = () => {
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900 mb-4">Media Sosial</h2>
-                      <div className="space-y-4">
-                        <Input
-                          label="LinkedIn"
-                          value={profileInfo.sosialMedia.linkedin}
-                          onChange={(e) => handleSosialMediaChange(e)}
-                          name="linkedin"
-                          placeholder="username atau URL"
-                        />
-                        <Input
-                          label="Instagram"
-                          value={profileInfo.sosialMedia.instagram}
-                          onChange={(e) => handleSosialMediaChange(e)}
-                          name="instagram"
-                          placeholder="@username"
-                        />
-                        <Input
-                          label="Twitter"
-                          value={profileInfo.sosialMedia.twitter}
-                          onChange={(e) => handleSosialMediaChange(e)}
-                          name="twitter"
-                          placeholder="@username"
-                        />
-                        <Input
-                          label="GitHub"
-                          value={profileInfo.sosialMedia.github}
-                          onChange={(e) => handleSosialMediaChange(e)}
-                          name="github"
-                          placeholder="username"
-                        />
-                        <Input
-                          label="Website"
-                          value={profileInfo.sosialMedia.website}
-                          onChange={(e) => handleSosialMediaChange(e)}
-                          name="website"
-                          placeholder="https://..."
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Linkedin size={16} className="text-blue-500" />
+                            LinkedIn
+                          </label>
+                          <Input
+                            value={profileInfo.sosialMedia.linkedin}
+                            onChange={(e) => handleSosialMediaChange(e)}
+                            name="linkedin"
+                            placeholder="username / link profil"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Instagram size={16} className="text-pink-500" />
+                            Instagram
+                          </label>
+                          <Input
+                            value={profileInfo.sosialMedia.instagram}
+                            onChange={(e) => handleSosialMediaChange(e)}
+                            name="instagram"
+                            placeholder="username"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Twitter size={16} className="text-sky-500" />
+                            Twitter
+                          </label>
+                          <Input
+                            value={profileInfo.sosialMedia.twitter}
+                            onChange={(e) => handleSosialMediaChange(e)}
+                            name="twitter"
+                            placeholder="username"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Github size={16} className="text-gray-900" />
+                            GitHub
+                          </label>
+                          <Input
+                            value={profileInfo.sosialMedia.github}
+                            onChange={(e) => handleSosialMediaChange(e)}
+                            name="github"
+                            placeholder="username"
+                          />
+                        </div>
+                        <div className="flex flex-col md:col-span-2 gap-1.5">
+                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Globe size={16} className="text-blue-600" />
+                            Website Personal
+                          </label>
+
+                          <Input
+                            value={profileInfo.sosialMedia.website}
+                            onChange={(e) => handleSosialMediaChange(e)}
+                            name="website"
+                            placeholder="https://yourwebsite.com"
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="flex justify-end">
@@ -1178,10 +1208,13 @@ const EditProfile = () => {
                     </div>
                   </div>
                 )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </main>
+
       </div>
 
       {/* Modal: Portfolio */}

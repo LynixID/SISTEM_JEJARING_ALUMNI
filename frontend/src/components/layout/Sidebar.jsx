@@ -187,7 +187,8 @@ const Sidebar = () => {
       />
 
       <aside className={`
-        fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200 z-50 lg:z-0 overflow-y-auto transition-transform duration-300
+        fixed lg:sticky top-[5rem] left-0 h-[calc(100vh-6.5rem)] w-64 bg-white rounded-2xl shadow-sm border border-gray-100 z-50 lg:z-0 overflow-y-auto transition-transform duration-300
+        lg:ml-6 lg:mt-6
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
       <nav className="p-4">
@@ -242,22 +243,22 @@ const Sidebar = () => {
                     <span>{item.label}</span>
                   </div>
                   {showLowonganBadge && (
-                    <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="bg-blue-600 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {newApprovedJobsCount > 9 ? '9+' : newApprovedJobsCount}
                     </span>
                   )}
                   {showConnectionBadge && (
-                    <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="bg-blue-600 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {pendingConnectionsCount > 9 ? '9+' : pendingConnectionsCount}
                     </span>
                   )}
                   {showNewsBadge && (
-                    <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="bg-blue-600 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {unreadNewsCount > 9 ? '9+' : unreadNewsCount}
                     </span>
                   )}
                   {showMessagesBadge && (
-                    <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="bg-blue-600 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
                     </span>
                   )}
@@ -284,7 +285,7 @@ const Sidebar = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   {pendingJobsCount > 0 && (
-                    <span className="bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="bg-blue-600 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {pendingJobsCount > 9 ? '9+' : pendingJobsCount}
                     </span>
                   )}
@@ -315,7 +316,7 @@ const Sidebar = () => {
                           <SubIcon size={18} />
                           <span>{subItem.label}</span>
                           {subItem.path === '/pengurus/lowongan' && pendingJobsCount > 0 && (
-                            <span className="ml-auto bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                            <span className="ml-auto bg-blue-600 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                               {pendingJobsCount > 9 ? '9+' : pendingJobsCount}
                             </span>
                           )}

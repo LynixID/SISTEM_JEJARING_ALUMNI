@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import Card from '../components/common/Card'
-import { Eye, X } from 'lucide-react'
+
 import { GoogleLogin } from '@react-oauth/google'
 
 const Login = () => {
@@ -19,14 +19,7 @@ const Login = () => {
   const [error, setError] = useState('')
   const [suspendInfo, setSuspendInfo] = useState(location.state?.suspendInfo || null) // { reason, date }
   const [loading, setLoading] = useState(false)
-  const [showCredentials, setShowCredentials] = useState(false)
 
-  // Demo credentials dari seed
-  const demoCredentials = [
-    { role: 'Alumni', email: 'alumni@demo.com', password: 'password123' },
-    { role: 'Pengurus', email: 'pengurus@demo.com', password: 'password123' },
-    { role: 'Administrator', email: 'admin@demo.com', password: 'password123' }
-  ]
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -210,73 +203,6 @@ const Login = () => {
           </form>
         </Card>
 
-        {/* Credentials Button - Fixed position */}
-        <button
-          onClick={() => setShowCredentials(!showCredentials)}
-          className="absolute bottom-4 right-4 w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 z-10"
-          title="Lihat Demo Credentials"
-        >
-          <Eye size={18} />
-        </button>
-
-        {/* Credentials Modal */}
-        {showCredentials && (
-          <>
-            {/* Overlay */}
-            <div 
-              className="fixed inset-0 bg-black bg-opacity-50 z-40"
-              onClick={() => setShowCredentials(false)}
-            ></div>
-            
-            {/* Modal */}
-            <div className="fixed bottom-4 right-4 w-80 bg-white rounded-xl shadow-2xl z-50 border border-gray-200 animate-in slide-in-from-bottom-5">
-              <div className="p-5">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Demo Credentials</h3>
-                  <button
-                    onClick={() => setShowCredentials(false)}
-                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <X size={18} className="text-gray-500" />
-                  </button>
-                </div>
-
-                {/* Credentials List */}
-                <div className="space-y-3">
-                  {demoCredentials.map((cred, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                          {cred.role}
-                        </span>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 w-12">Email:</span>
-                          <span className="text-sm text-gray-900 font-mono">{cred.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 w-12">Pass:</span>
-                          <span className="text-sm text-gray-900 font-mono">{cred.password}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setFormData({ email: cred.email, password: cred.password })
-                          setShowCredentials(false)
-                        }}
-                        className="mt-2 w-full text-xs py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                      >
-                        Gunakan Credential Ini
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
       </div>
 
       <style>{`

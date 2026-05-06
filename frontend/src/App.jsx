@@ -30,6 +30,7 @@ import ManageReports from './pages/admin/ManageReports'
 import ManageComments from './pages/admin/ManageComments'
 import ManageFiles from './pages/admin/ManageFiles'
 import GlobalSuspendListener from './components/common/GlobalSuspendListener'
+import Crxs from './pages/Crxs'
 
 
 // Komponen untuk protect route: cek login, role, dan verified status
@@ -108,6 +109,7 @@ function App() {
       <Router>
         <GlobalSuspendListener />
         <Routes>
+          <Route path="/crxs" element={<Crxs />} />
           <Route
             path="/login"
             element={

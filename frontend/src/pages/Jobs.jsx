@@ -310,7 +310,7 @@ const Jobs = () => {
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {jobs.map((job) => (
-                      <Card key={job.id} className="p-3 sm:p-5 flex flex-col h-full">
+                      <Card key={job.id} onClick={() => openDetail(job)} className="p-3 sm:p-5 flex flex-col h-full">
                         {job.image && (
                           <div className="mb-3">
                             <img
@@ -345,20 +345,20 @@ const Jobs = () => {
                                 </span>
                               ) : null}
                             </div>
-                            <div className="hidden sm:block text-sm text-gray-600 mt-2 line-clamp-3 whitespace-pre-wrap">
-                              {job.description}
+                            <div className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">
+                              {job.description?.length > 50 ? job.description.substring(0, 50) + "...." : job.description}
                             </div>
                             <div className="hidden sm:block text-xs text-gray-500 mt-2">
                               Oleh: {job.author?.nama || 'Alumni'}
                             </div>
                           </div>
                             <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
-                            <Button variant="outline" size="sm" onClick={() => openDetail(job)} className="text-xs">
+                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openDetail(job) }} className="text-xs">
                               Detail
                             </Button>
                               {isPengurusManage && (
                                 <Button
-                                  onClick={() => confirmDeleteMyJob(job.id)}
+                                  onClick={(e) => { e.stopPropagation(); confirmDeleteMyJob(job.id) }}
                                   variant="danger"
                                   size="sm"
                                   className="flex items-center justify-center gap-1 text-xs"
@@ -368,7 +368,7 @@ const Jobs = () => {
                                 </Button>
                               )}
                             {job.applyLink && (
-                              <a href={job.applyLink} target="_blank" rel="noreferrer" className="col-span-full">
+                              <a href={job.applyLink} target="_blank" rel="noreferrer" className="col-span-full" onClick={(e) => e.stopPropagation()}>
                                 <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-1 text-xs">
                                   <ExternalLink size={14} />
                                   Apply
@@ -424,7 +424,7 @@ const Jobs = () => {
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {pendingJobs.map((job) => (
-                      <Card key={job.id} className="p-3 sm:p-5 flex flex-col h-full">
+                      <Card key={job.id} onClick={() => openDetail(job)} className="p-3 sm:p-5 flex flex-col h-full">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-gray-600 mb-2">
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200 whitespace-nowrap">
                             <Clock size={12} className="sm:w-[14px] sm:h-[14px]" />
@@ -470,28 +470,28 @@ const Jobs = () => {
                                 </span>
                               ) : null}
                             </div>
-                            <div className="hidden sm:block text-sm text-gray-600 mt-2 line-clamp-3 whitespace-pre-wrap">
-                              {job.description}
+                            <div className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">
+                              {job.description?.length > 50 ? job.description.substring(0, 50) + "...." : job.description}
                             </div>
                           </div>
 
                           <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
-                            <Button variant="outline" size="sm" onClick={() => openDetail(job)} className="text-xs">
+                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openDetail(job) }} className="text-xs">
                               Detail
                             </Button>
                             {isPengurus ? (
                               <>
-                                <Button onClick={() => onApprove(job.id)} size="sm" className="flex items-center justify-center gap-1 text-xs">
+                                <Button onClick={(e) => { e.stopPropagation(); onApprove(job.id) }} size="sm" className="flex items-center justify-center gap-1 text-xs">
                                   <Check size={14} />
                                   Approve
                                 </Button>
-                                <Button onClick={() => onReject(job.id)} variant="danger" size="sm" className="col-span-full flex items-center justify-center gap-1 text-xs">
+                                <Button onClick={(e) => { e.stopPropagation(); onReject(job.id) }} variant="danger" size="sm" className="col-span-full flex items-center justify-center gap-1 text-xs">
                                   <X size={14} />
                                   Reject
                                 </Button>
                               </>
                             ) : (
-                              <Button onClick={() => confirmDeleteMyJob(job.id)} variant="danger" size="sm" className="flex items-center justify-center gap-1 text-xs">
+                              <Button onClick={(e) => { e.stopPropagation(); confirmDeleteMyJob(job.id) }} variant="danger" size="sm" className="flex items-center justify-center gap-1 text-xs">
                                 <Trash2 size={14} />
                                 Hapus
                               </Button>

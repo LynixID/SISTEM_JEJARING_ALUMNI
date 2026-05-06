@@ -30,22 +30,18 @@ const deleteImageFile = (filename) => {
 // Get all posts (feed)
 export const getAllPosts = async (req, res) => {
   try {
-    const { page = 1, limit = 10, userId } = req.query
+    const { page = 1, limit = 10, userId, search } = req.query
     const skip = (parseInt(page) - 1) * parseInt(limit)
     const take = parseInt(limit)
     const currentUserId = req.user?.userId
 
-    const where = {}
+    let baseWhere = {}
     if (userId) {
-      where.authorId = userId
+      baseWhere.authorId = userId
       
       // Filter visibility berdasarkan status koneksi
       if (currentUserId) {
-        if (currentUserId === userId) {
-          // Jika melihat post sendiri, tampilkan semua
-          // Tidak perlu filter visibility
-        } else {
-          // Jika melihat post user lain, cek apakah user sudah terkoneksi
+        if (currentUserId !== userId) {
           const connection = await prisma.connection.findFirst({
             where: {
               OR: [
@@ -55,23 +51,16 @@ export const getAllPosts = async (req, res) => {
             }
           })
           
-          const isConnected = !!connection
-          
-          // Jika tidak terkoneksi, hanya tampilkan post PUBLIC
-          if (!isConnected) {
-            where.visibility = 'PUBLIC'
+          if (!connection) {
+            baseWhere.visibility = 'PUBLIC'
           }
-          // Jika terkoneksi, tampilkan semua (PUBLIC dan CONNECTIONS)
         }
       } else {
-        // Jika tidak login, hanya tampilkan post PUBLIC
-        where.visibility = 'PUBLIC'
+        baseWhere.visibility = 'PUBLIC'
       }
     } else {
       // Feed umum: filter berdasarkan visibility
       if (currentUserId) {
-        // Untuk feed umum, kita perlu filter berdasarkan koneksi
-        // Ambil semua post PUBLIC atau CONNECTIONS dimana user terkoneksi dengan author
         const userConnections = await prisma.connection.findMany({
           where: {
             OR: [
@@ -94,8 +83,7 @@ export const getAllPosts = async (req, res) => {
           }
         })
         
-        // Filter: PUBLIC atau (CONNECTIONS dan author terkoneksi) atau post milik sendiri
-        where.OR = [
+        baseWhere.OR = [
           { visibility: 'PUBLIC' },
           { 
             visibility: 'CONNECTIONS',
@@ -104,10 +92,23 @@ export const getAllPosts = async (req, res) => {
           { authorId: currentUserId }
         ]
       } else {
-        // Jika tidak login, hanya tampilkan PUBLIC
-        where.visibility = 'PUBLIC'
+        baseWhere.visibility = 'PUBLIC'
       }
     }
+
+    const where = search 
+      ? { 
+          AND: [
+            baseWhere,
+            {
+              OR: [
+                { content: { contains: search } },
+                { author: { nama: { contains: search } } }
+              ]
+            }
+          ]
+        }
+      : baseWhere
 
     const [posts, total] = await Promise.all([
       prisma.post.findMany({

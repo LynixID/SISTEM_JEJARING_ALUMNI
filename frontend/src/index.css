@@ -4,7 +4,14 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    background-color: #f4f8ff;
+    @apply text-gray-900 antialiased;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  /* Custom: Memberikan nuansa putih kebiruan (soft blue) pada background halaman */
+  .bg-gray-50 {
+    background-color: #f4f8ff !important;
   }
 }
 

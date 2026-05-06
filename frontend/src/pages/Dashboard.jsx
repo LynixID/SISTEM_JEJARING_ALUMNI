@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
@@ -8,11 +8,15 @@ import PostFeed from '../components/post/PostFeed'
 import RightPanel from '../components/dashboard/RightPanel'
 import Button from '../components/common/Button'
 import { initSocket, getSocket } from '../config/socket'
-import { Plus } from 'lucide-react'
+import { Plus, Image as ImageIcon, Calendar, FileText, BarChart2, Smile, BriefcaseBusiness } from 'lucide-react'
+import { getImageUrl } from '../utils/imageUtils'
 
 const Dashboard = () => {
   const { user, isAuthenticated, isLoading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  const searchQuery = searchParams.get('search') || ''
   const [refreshKey, setRefreshKey] = useState(0)
   const [showCreatePost, setShowCreatePost] = useState(false)
 
@@ -68,31 +72,82 @@ const Dashboard = () => {
 
             {/* ── Kolom tengah: feed utama ── */}
             <main className="flex-1 min-w-0">
-              {/* Welcome card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                      Selamat Datang, {user.nama}!
-                    </h1>
-                    <p className="text-gray-500 mt-1 text-sm sm:text-base">
-                      {isPengurus
-                        ? 'Dashboard Pengurus DPW IKA UII JATENG'
-                        : 'Dashboard Alumni DPW IKA UII JATENG'}
-                    </p>
-                  </div>
-                  <Button
+              {/* Welcome & Create Post Card */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 relative overflow-hidden">
+                {/* Decorative Background */}
+                <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-1/3 pointer-events-none rounded-r-2xl overflow-hidden">
+                  <div className="absolute -right-10 -top-24 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-2xl opacity-70"></div>
+                  <div className="absolute right-10 -bottom-20 w-48 h-48 bg-indigo-100 rounded-full mix-blend-multiply filter blur-xl opacity-60"></div>
+                  {/* Subtle Wave SVG */}
+                  <svg className="absolute right-0 top-0 h-full w-full object-cover opacity-30" viewBox="0 0 200 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#4f46e5" d="M0,100 C50,50 150,50 200,0 L200,100 Z" opacity="0.2"/>
+                    <path fill="#3b82f6" d="M50,100 C100,60 180,60 200,20 L200,100 Z" opacity="0.2"/>
+                  </svg>
+                </div>
+
+                <div className="relative z-10 mb-6">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
+                    Selamat Datang, {user.nama}! <span className="text-2xl">👋</span>
+                  </h1>
+                  <p className="text-gray-500 mt-1 text-sm sm:text-base">
+                    {isPengurus
+                      ? 'Dashboard Pengurus DPW IKA UII JATENG'
+                      : 'Dashboard Alumni DPW IKA UII JATENG'}
+                  </p>
+                </div>
+
+                <div className="relative z-10 flex gap-3 items-center mb-4">
+                  {user?.profile?.fotoProfil ? (
+                    <img
+                      src={getImageUrl(user.profile.fotoProfil, 'profiles')}
+                      alt={user?.nama || 'User'}
+                      className="w-12 h-12 rounded-full object-cover border border-gray-200 flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
+                      {user?.nama?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                  <button 
                     onClick={() => setShowCreatePost(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl shadow-sm hover:shadow transition-all whitespace-nowrap"
+                    className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-500 text-left px-5 py-3 rounded-full transition-colors text-sm sm:text-base font-medium shadow-sm"
                   >
-                    <Plus size={18} />
-                    Buat Postingan
-                  </Button>
+                    Apa yang ingin Anda bagikan hari ini?
+                  </button>
+                </div>
+                <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 px-1">
+                  <div className="flex flex-wrap gap-1 sm:gap-2">
+                    <button onClick={() => setShowCreatePost(true)} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold">
+                      <ImageIcon className="text-blue-500" size={20} />
+                      Foto
+                    </button>
+                    
+                    {isPengurus && (
+                      <>
+                        <button onClick={() => navigate('/pengurus/events/create')} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold">
+                          <Calendar className="text-orange-500" size={20} />
+                          Event
+                        </button>
+                        <button onClick={() => navigate('/pengurus/berita/create')} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold">
+                          <FileText className="text-red-500" size={20} />
+                          Pengumuman
+                        </button>
+                      </>
+                    )}
+
+                    <button onClick={() => navigate('/lowongan')} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold">
+                      <BriefcaseBusiness className="text-green-600" size={20} />
+                      Lowongan
+                    </button>
+                  </div>
+                  <button onClick={() => setShowCreatePost(true)} className="p-2 hover:bg-gray-50 rounded-full text-gray-500 hover:text-gray-700 transition-colors hidden sm:block">
+                    <Smile size={24} />
+                  </button>
                 </div>
               </div>
 
               {/* Feed postingan */}
-              <PostFeed key={refreshKey} />
+              <PostFeed key={`${refreshKey}-${searchQuery}`} searchQuery={searchQuery} />
             </main>
 
             {/* ── Kolom kanan: panel info (hidden di bawah xl) ── */}
