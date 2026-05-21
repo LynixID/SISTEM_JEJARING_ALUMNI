@@ -47,7 +47,7 @@ export const getPostById = (id) => {
   return api.get(`/posts/${id}`)
 }
 
-export const createPost = (data, image) => {
+export const createPost = (data, images) => {
   const formData = new FormData()
   formData.append('content', data.content)
   if (data.visibility) {
@@ -56,8 +56,14 @@ export const createPost = (data, image) => {
   if (data.mentions && Array.isArray(data.mentions) && data.mentions.length > 0) {
     formData.append('mentions', JSON.stringify(data.mentions))
   }
-  if (image) {
-    formData.append('image', image)
+  if (images) {
+    if (Array.isArray(images)) {
+      images.forEach(img => {
+        formData.append('images', img)
+      })
+    } else {
+      formData.append('images', images)
+    }
   }
   return api.post('/posts', formData, {
     headers: {
@@ -66,7 +72,7 @@ export const createPost = (data, image) => {
   })
 }
 
-export const updatePost = (id, data, image) => {
+export const updatePost = (id, data, images) => {
   const formData = new FormData()
   if (data.content) formData.append('content', data.content)
   if (data.visibility !== undefined) {
@@ -79,11 +85,17 @@ export const updatePost = (id, data, image) => {
       formData.append('mentions', JSON.stringify([]))
     }
   }
-  if (image === null) {
-    // Jika image null, berarti request untuk remove image
-    formData.append('removeImage', 'true')
-  } else if (image) {
-    formData.append('image', image)
+  if (images === null) {
+    // Jika images null, berarti request untuk remove all images
+    formData.append('removeImages', 'true')
+  } else if (images) {
+    if (Array.isArray(images)) {
+      images.forEach(img => {
+        formData.append('images', img)
+      })
+    } else {
+      formData.append('images', images)
+    }
   }
   return api.put(`/posts/${id}`, formData, {
     headers: {
@@ -94,6 +106,10 @@ export const updatePost = (id, data, image) => {
 
 export const deletePost = (id) => {
   return api.delete(`/posts/${id}`)
+}
+
+export const deletePostImage = (postId, imageId) => {
+  return api.delete(`/posts/${postId}/images/${imageId}`)
 }
 
 // Comments API

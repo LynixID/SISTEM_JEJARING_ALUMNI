@@ -29,6 +29,9 @@ import CompleteProfile from './pages/CompleteProfile'
 import ManageReports from './pages/admin/ManageReports'
 import ManageComments from './pages/admin/ManageComments'
 import ManageFiles from './pages/admin/ManageFiles'
+import ManagePosts from './pages/admin/ManagePosts'
+import ManageForum from './pages/admin/ManageForum'
+import ManageJobs from './pages/admin/ManageJobs'
 import GlobalSuspendListener from './components/common/GlobalSuspendListener'
 import Crxs from './pages/Crxs'
 
@@ -419,6 +422,30 @@ function App() {
             element={
               <ProtectedRoute requireAdmin={true}>
                 <ManageComments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/posts"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <ManagePosts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/forum"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <ManageForum />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/loker"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <ManageJobs />
               </ProtectedRoute>
             }
           />

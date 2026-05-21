@@ -11,7 +11,6 @@ import ConfirmModal from '../common/ConfirmModal'
 import UserBadge from '../common/UserBadge'
 import { Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2, Globe, Lock, User } from 'lucide-react'
 import CommentSection from '../comment/CommentSection'
-import EditPost from './EditPost'
 import LikesModal from './LikesModal'
 
 const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
@@ -19,6 +18,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   const navigate = useNavigate()
   
   // State management
+  const [localPost, setLocalPost] = useState(post)
   const [isLiked, setIsLiked] = useState(post.isLiked || false)
   const [likesCount, setLikesCount] = useState(post.likesCount || 0)
   const [commentsCount, setCommentsCount] = useState(post.commentsCount || 0)
@@ -36,53 +36,91 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
     onConfirm: () => {}
   })
 
-  // Setup Socket.io listener untuk real-time like updates
+  // Sync state if post prop changes from parent
+  useEffect(() => {
+    setLocalPost(post)
+    setIsLiked(post.isLiked || false)
+    setLikesCount(post.likesCount || 0)
+    setCommentsCount(post.commentsCount || 0)
+  }, [post])
+
+  const images = localPost.images || []
+
+  // Helper: render single image tile untuk grid (di feed TIDAK bisa klik untuk perbesar)
+  const renderImageTile = (img, idx, extraClass = '', overlayCount = null) => (
+    <div
+      key={img.id || idx}
+      className={`relative overflow-hidden bg-gray-100 group/tile ${extraClass}`}
+    >
+      <img
+        src={getImageUrl(img.imageUrl)}
+        alt={`Foto ${idx + 1}`}
+        className="w-full h-full object-cover"
+        draggable={false}
+      />
+      {/* More images overlay (+N) */}
+      {overlayCount !== null && (
+        <div className="absolute inset-0 bg-black bg-opacity-55 flex items-center justify-center">
+          <span className="text-white text-2xl font-bold">+{overlayCount}</span>
+        </div>
+      )}
+    </div>
+  )
+
+  // Setup Socket.io listener untuk real-time updates
   useEffect(() => {
     const socket = getSocket()
     
     const handlePostLiked = (data) => {
-      if (data.postId === post.id) {
+      if (data.postId === localPost.id) {
         setLikesCount(data.likesCount)
       }
     }
 
     const handleNewComment = (comment) => {
-      if (comment.postId === post.id) {
+      if (comment.postId === localPost.id) {
         setCommentsCount(prev => prev + 1)
       }
     }
 
     const handleCommentDeleted = (data) => {
-      if (data.postId === post.id) {
+      if (data.postId === localPost.id) {
         // Jika parent comment dihapus, semua replies juga ikut terhapus di backend
         const countToRemove = 1 + (data.repliesCount || 0)
         setCommentsCount(prev => Math.max(0, prev - countToRemove))
       }
     }
 
+    const handlePostUpdated = (updatedPost) => {
+      if (updatedPost.id === localPost.id) {
+        setLocalPost(updatedPost)
+        if (updatedPost.likesCount !== undefined) setLikesCount(updatedPost.likesCount)
+        if (updatedPost.commentsCount !== undefined) setCommentsCount(updatedPost.commentsCount)
+        if (onPostUpdated) {
+          onPostUpdated(updatedPost)
+        }
+      }
+    }
+
     socket.on('post_liked', handlePostLiked)
     socket.on('new_comment', handleNewComment)
     socket.on('comment_deleted', handleCommentDeleted)
+    socket.on('post_updated', handlePostUpdated)
 
     return () => {
       socket.off('post_liked', handlePostLiked)
       socket.off('new_comment', handleNewComment)
       socket.off('comment_deleted', handleCommentDeleted)
+      socket.off('post_updated', handlePostUpdated)
     }
-  }, [post.id])
-
-  // Debug: Log post data untuk troubleshooting
-  useEffect(() => {
-    if (post.mentions) {
-      console.log('Post ID:', post.id, 'Mentions:', post.mentions, 'Type:', typeof post.mentions, 'Is Array:', Array.isArray(post.mentions))
-    }
-  }, [post.id, post.mentions])
+  }, [localPost.id, onPostUpdated])
 
   // Check apakah post milik user saat ini
-  const isOwnPost = user?.id === post.author.id
+  const isOwnPost = user?.id === localPost.author?.id
 
   // Format date menjadi relative time
   const formatDate = (dateString) => {
+    if (!dateString) return ''
     const date = new Date(dateString)
     const now = new Date()
     const diff = now - date
@@ -108,7 +146,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
     setLikesCount(prev => newIsLiked ? prev + 1 : prev - 1)
 
     try {
-      await toggleLike(post.id)
+      await toggleLike(localPost.id)
     } catch (err) {
       // Revert optimistic update jika error
       setIsLiked(!newIsLiked)
@@ -128,8 +166,8 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
       variant: 'danger',
       onConfirm: async () => {
         try {
-          await deletePost(post.id)
-          if (onPostDeleted) onPostDeleted(post.id)
+          await deletePost(localPost.id)
+          if (onPostDeleted) onPostDeleted(localPost.id)
         } catch (err) {
           setAlertModal({
             isOpen: true,
@@ -147,7 +185,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
     if (navigator.share) {
       navigator.share({
         title: 'Lihat post ini',
-        text: post.content.substring(0, 100),
+        text: localPost.content?.substring(0, 100) || '',
         url: window.location.href
       })
     } else {
@@ -167,7 +205,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
     if (e.target.closest('button') || e.target.closest('a') || e.target.closest('[role="button"]')) {
       return
     }
-    navigate(`/posts/${post.id}`)
+    navigate(`/posts/${localPost.id}`)
   }
 
   return (
@@ -177,43 +215,43 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
         <div className="flex items-center gap-3">
           {/* Author avatar - clickable */}
           <button
-            onClick={() => navigate(`/profil/${post.author.id}`)}
+            onClick={() => navigate(`/profil/${localPost.author?.id}`)}
             className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 hover:ring-2 hover:ring-blue-300 transition-all cursor-pointer"
           >
-            {post.author?.fotoProfil ? (
+            {localPost.author?.fotoProfil ? (
               <img
-                src={getImageUrl(post.author.fotoProfil, 'profiles')}
-                alt={post.author.nama}
+                src={getImageUrl(localPost.author.fotoProfil, 'profiles')}
+                alt={localPost.author.nama}
                 className="w-10 h-10 rounded-full object-cover"
                 onError={(e) => { e.target.style.display = 'none' }}
               />
             ) : (
               <span className="text-blue-600 font-semibold">
-                {post.author?.nama?.charAt(0).toUpperCase()}
+                {localPost.author?.nama?.charAt(0).toUpperCase()}
               </span>
             )}
           </button>
           {/* Author name dan timestamp - clickable */}
           <div className="flex-1">
             <button
-              onClick={() => navigate(`/profil/${post.author.id}`)}
+              onClick={() => navigate(`/profil/${localPost.author?.id}`)}
               className="text-left hover:opacity-80 transition-opacity"
             >
               <p className="font-semibold text-gray-900 hover:text-blue-600">
-                {post.author?.nama}
-                <UserBadge role={post.author?.role} size="sm" />
+                {localPost.author?.nama}
+                <UserBadge role={localPost.author?.role} size="sm" />
               </p>
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+                <p className="text-sm text-gray-500">{formatDate(localPost.createdAt)}</p>
                 {/* Visibility badge di samping waktu */}
-                {post.visibility && (
+                {localPost.visibility && (
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
-                    post.visibility === 'PUBLIC' 
+                    localPost.visibility === 'PUBLIC' 
                       ? 'bg-blue-50 text-blue-600' 
                       : 'bg-gray-100 text-gray-700'
                   }`}>
-                    {post.visibility === 'PUBLIC' ? <Globe size={12} /> : <Lock size={12} />}
-                    {post.visibility === 'PUBLIC' ? 'Publik' : 'Hanya Koneksi'}
+                    {localPost.visibility === 'PUBLIC' ? <Globe size={12} /> : <Lock size={12} />}
+                    {localPost.visibility === 'PUBLIC' ? 'Publik' : 'Hanya Koneksi'}
                   </span>
                 )}
               </div>
@@ -233,9 +271,10 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
             {showMenu && (
               <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     setShowMenu(false)
-                    setShowEditModal(true)
+                    navigate(`/posts/${localPost.id}?edit=true`, { state: { openEdit: true } })
                   }}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                 >
@@ -259,32 +298,32 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
       </div>
 
       {/* Mentions */}
-      {post.mentions && Array.isArray(post.mentions) && post.mentions.length > 0 && (
+      {localPost.mentions && Array.isArray(localPost.mentions) && localPost.mentions.length > 0 && (
         <div className="mb-3 flex items-center gap-2 flex-wrap text-sm text-gray-600">
           <User size={14} className="text-gray-400 flex-shrink-0" />
           <span>bersama dengan</span>
-          {post.mentions.length === 1 ? (
+          {localPost.mentions.length === 1 ? (
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                navigate(`/profil/${post.mentions[0].id}`)
+                navigate(`/profil/${localPost.mentions[0].id}`)
               }}
               className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
             >
-              {post.mentions[0]?.nama || 'Seseorang'}
+              {localPost.mentions[0]?.nama || 'Seseorang'}
             </button>
           ) : (
             <>
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  navigate(`/profil/${post.mentions[0].id}`)
+                  navigate(`/profil/${localPost.mentions[0].id}`)
                 }}
                 className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
               >
-                {post.mentions[0]?.nama || 'Seseorang'}
+                {localPost.mentions[0]?.nama || 'Seseorang'}
               </button>
-              <span>dan {post.mentions.length - 1} lainnya</span>
+              <span>dan {localPost.mentions.length - 1} lainnya</span>
             </>
           )}
         </div>
@@ -292,18 +331,52 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
 
       {/* Post content text */}
       <div className="mb-3">
-        <p className="text-gray-900 whitespace-pre-wrap">{post.content}</p>
+        <p className="text-gray-900 whitespace-pre-wrap">{localPost.content}</p>
       </div>
 
-      {/* Post image jika ada */}
-      {post.media && (
-        <div className="mb-3 rounded-lg overflow-hidden">
-          <img
-            src={getImageUrl(post.media, 'posts')}
-            alt="Post"
-            className="w-full max-h-96 object-cover"
-            onError={(e) => { e.target.style.display = 'none' }}
-          />
+      {/* Post images — grid layout (di feed tidak bisa klik perbesar, klik card → detail) */}
+      {images.length > 0 && (
+        <div className="mb-3 rounded-xl overflow-hidden">
+
+          {/* 1 gambar: full width */}
+          {images.length === 1 && (
+            <div className="rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50">
+              {renderImageTile(images[0], 0, 'h-full w-full')}
+            </div>
+          )}
+
+          {/* 2 gambar: [1, 2] berdampingan */}
+          {images.length === 2 && (
+            <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50">
+              {renderImageTile(images[0], 0, 'h-full w-full')}
+              {renderImageTile(images[1], 1, 'h-full w-full')}
+            </div>
+          )}
+
+          {/* 3 gambar: [1] atas-kiri, [2] bawah-kiri | [3] kanan-full */}
+          {images.length === 3 && (
+            <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
+              {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
+              {renderImageTile(images[1], 1, 'col-start-1 row-start-2 w-full h-full')}
+              {renderImageTile(images[2], 2, 'col-start-2 row-start-1 row-span-2 w-full h-full')}
+            </div>
+          )}
+
+          {/* 4+ gambar: [1,2] / [3,4] grid simetris */}
+          {images.length >= 4 && (
+            <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
+              {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
+              {renderImageTile(images[1], 1, 'col-start-2 row-start-1 w-full h-full')}
+              {renderImageTile(images[2], 2, 'col-start-1 row-start-2 w-full h-full')}
+              {renderImageTile(
+                images[3],
+                3,
+                'col-start-2 row-start-2 w-full h-full',
+                images.length > 4 ? images.length - 4 : null
+              )}
+            </div>
+          )}
+
         </div>
       )}
 
@@ -343,27 +416,17 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
       </div>
 
       {/* Comments section (toggleable) */}
-      {showComments && post?.id && (
+      {showComments && localPost?.id && (
         <div className="mt-4 pt-4 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
           <CommentSection 
-            key={post.id} 
-            postId={post.id} 
+            key={localPost.id} 
+            postId={localPost.id} 
             onCommentAdded={() => setCommentsCount(prev => prev + 1)}
             onCommentDeleted={() => setCommentsCount(prev => Math.max(0, prev - 1))}
           />
         </div>
       )}
 
-      {/* Edit post modal */}
-      <EditPost
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        post={post}
-        onPostUpdated={() => {
-          setShowEditModal(false)
-          if (onPostUpdated) onPostUpdated()
-        }}
-      />
 
       {/* Alert Modal */}
       <AlertModal
@@ -388,7 +451,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
       <LikesModal
         isOpen={showLikesModal}
         onClose={() => setShowLikesModal(false)}
-        postId={post.id}
+        postId={localPost.id}
       />
     </Card>
   )

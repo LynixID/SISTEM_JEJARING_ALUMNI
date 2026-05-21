@@ -9,7 +9,8 @@ import {
   getPostById,
   createPost,
   updatePost,
-  deletePost
+  deletePost,
+  deletePostImage
 } from './postController.js'
 import { verifyToken, optionalAuth } from '../../middleware/auth.js'
 import { compressImage } from '../../middleware/imageCompress.js'
@@ -75,10 +76,11 @@ const handleMulterError = (err, req, res, next) => {
 router.get('/', optionalAuth, getAllPosts)
 router.get('/:id', optionalAuth, getPostById)
 // Urutan penting: multer harus SEBELUM validasi agar req.body tersedia
-router.post('/', verifyToken, upload.single('image'), handleMulterError, createPostValidation, compressImage, createPost)
+router.post('/', verifyToken, upload.array('images', 10), handleMulterError, createPostValidation, compressImage, createPost)
 // Upload optional untuk update (bisa update tanpa image)
-router.put('/:id', verifyToken, upload.single('image'), handleMulterError, updatePostValidation, compressImage, updatePost)
+router.put('/:id', verifyToken, upload.array('images', 10), handleMulterError, updatePostValidation, compressImage, updatePost)
 router.delete('/:id', verifyToken, deletePost)
+router.delete('/:id/images/:imageId', verifyToken, deletePostImage)
 
 export default router
 

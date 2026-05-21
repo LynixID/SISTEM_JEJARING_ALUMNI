@@ -8,7 +8,7 @@ import PostFeed from '../components/post/PostFeed'
 import RightPanel from '../components/dashboard/RightPanel'
 import Button from '../components/common/Button'
 import { initSocket, getSocket } from '../config/socket'
-import { Plus, Image as ImageIcon, Calendar, FileText, BarChart2, Smile, BriefcaseBusiness } from 'lucide-react'
+import { Plus, Image as ImageIcon, Calendar, FileText, BarChart2, Smile, BriefcaseBusiness, ArrowUp } from 'lucide-react'
 import { getImageUrl } from '../utils/imageUtils'
 
 const Dashboard = () => {
@@ -19,6 +19,7 @@ const Dashboard = () => {
   const searchQuery = searchParams.get('search') || ''
   const [refreshKey, setRefreshKey] = useState(0)
   const [showCreatePost, setShowCreatePost] = useState(false)
+  const [hasNewPosts, setHasNewPosts] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -27,9 +28,15 @@ const Dashboard = () => {
   }, [isAuthenticated, isLoading, navigate])
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated || !user) return
     const socket = initSocket()
-    socket.on('new_post', () => { setRefreshKey(prev => prev + 1) })
+    socket.on('new_post', (data) => { 
+      if (data && data.authorId === user.id) {
+        setRefreshKey(prev => prev + 1)
+      } else {
+        setHasNewPosts(true)
+      }
+    })
     socket.on('post_liked', () => {})
     socket.on('new_comment', () => {})
     return () => {
@@ -37,7 +44,7 @@ const Dashboard = () => {
       socket.off('post_liked')
       socket.off('new_comment')
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, user])
 
   if (isLoading) {
     return (
@@ -57,9 +64,27 @@ const Dashboard = () => {
   const isPengurus = user.role === 'PENGURUS'
   const handlePostCreated = () => { setRefreshKey(prev => prev + 1) }
 
+  const handleRefreshFeed = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setRefreshKey(prev => prev + 1)
+    setHasNewPosts(false)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+
+      {hasNewPosts && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce duration-1000">
+          <button
+            onClick={handleRefreshFeed}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 text-sm font-semibold tracking-wide border border-blue-400"
+          >
+            <ArrowUp size={16} className="animate-pulse" />
+            Ada Postingan Baru! Klik untuk melihat
+          </button>
+        </div>
+      )}
 
       {/* Wrapper utama: Sidebar + konten */}
       <div className="flex">

@@ -37,7 +37,8 @@ export const verifyOTPRateLimiter = rateLimit({
 // Rate limiter untuk login (prevent brute force)
 export const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 menit
-  max: 5, // Maksimal 5 percobaan login per 15 menit per IP
+  max: 10, // Maksimal 10 percobaan login gagal per 15 menit per IP
+  skipSuccessfulRequests: true, // <--- Ini kuncinya! Login berhasil tidak akan dihitung
   message: {
     error: 'Terlalu banyak percobaan login. Silakan coba lagi setelah 15 menit.'
   },

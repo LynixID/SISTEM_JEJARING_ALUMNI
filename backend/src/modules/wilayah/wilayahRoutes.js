@@ -2,7 +2,7 @@ import express from 'express'
 
 const router = express.Router()
 
-const WILAYAH_BASE_URL = 'https://wilayah.id/api'
+const WILAYAH_BASE_URL = 'https://emsifa.github.io/api-wilayah-indonesia/api'
 
 router.get('/provinces', async (req, res) => {
   try {
@@ -11,7 +11,11 @@ router.get('/provinces', async (req, res) => {
       return res.status(502).json({ error: 'Gagal mengambil data provinsi' })
     }
     const json = await upstream.json()
-    res.json({ data: json?.data || [] })
+    const formattedData = Array.isArray(json) ? json.map(item => ({
+      code: item.id,
+      name: item.name
+    })) : []
+    res.json({ data: formattedData })
   } catch (e) {
     console.error('Wilayah provinces proxy error:', e)
     res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data provinsi' })
@@ -28,7 +32,11 @@ router.get('/regencies/:provinceCode', async (req, res) => {
       return res.status(502).json({ error: 'Gagal mengambil data kabupaten/kota' })
     }
     const json = await upstream.json()
-    res.json({ data: json?.data || [] })
+    const formattedData = Array.isArray(json) ? json.map(item => ({
+      code: item.id,
+      name: item.name
+    })) : []
+    res.json({ data: formattedData })
   } catch (e) {
     console.error('Wilayah regencies proxy error:', e)
     res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data kabupaten/kota' })

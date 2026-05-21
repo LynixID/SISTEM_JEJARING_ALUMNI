@@ -1,8 +1,0 @@
-Aplikasi ketika ada post baru, maka feed orang lain akan ke blink ke post baru tersebut dengan menuju ke post paling atas, jadi jika ia berada di post ke 7 maka akan kembali lagi, harusnya ditambahkan notifikasi jika ada post baru, ketika itu di klik baru akan me refresh feed (UX Problem)
-
-Baru bisa upload 1 foto postingan (Problem)
-
-Ketika di Share nanti tampilan untuk user yang tidak login bagaimana? (UX Problem)
-
-tampilan nya belum speenuhnya responsive (Problem)
-

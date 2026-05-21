@@ -8,8 +8,8 @@ import { Image as ImageIcon, X, Loader, Users, Globe, Lock } from 'lucide-react'
 const CreatePost = ({ isOpen, onClose, onPostCreated }) => {
   const { user } = useAuth()
   const [content, setContent] = useState('')
-  const [image, setImage] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [images, setImages] = useState([]) // Array of File objects
+  const [imagePreviews, setImagePreviews] = useState([]) // Array of DataURL strings
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [visibility, setVisibility] = useState('PUBLIC')
@@ -67,44 +67,61 @@ const CreatePost = ({ isOpen, onClose, onPostCreated }) => {
   }
 
   const handleImageChange = async (e) => {
-    const file = e.target.files[0]
-    if (file) {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    // Limit to 10 images max
+    if (images.length + files.length > 10) {
+      setError('Maksimal 10 gambar yang dapat diunggah sekaligus')
+      return
+    }
+
+    const newImages = [...images]
+    const newPreviews = [...imagePreviews]
+
+    for (const file of files) {
       if (file.size > 5 * 1024 * 1024) {
-        setError('Ukuran gambar maksimal 5MB')
-        return
+        setError(`Ukuran gambar "${file.name}" melebihi batas maksimal 5MB`)
+        continue
       }
 
-      // Set preview dulu untuk immediate feedback
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result)
-      }
-      reader.readAsDataURL(file)
+      // Generate preview for immediate feedback
+      const previewUrl = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result)
+        reader.readAsDataURL(file)
+      })
+
+      newPreviews.push(previewUrl)
 
       // Compress image jika lebih dari 1MB
       let processedFile = file
       if (file.size > 1024 * 1024) {
         try {
           processedFile = await compressImage(file)
-          // Update preview dengan compressed file
-          const compressedReader = new FileReader()
-          compressedReader.onloadend = () => {
-            setImagePreview(compressedReader.result)
-          }
-          compressedReader.readAsDataURL(processedFile)
         } catch (err) {
           console.error('Error compressing image:', err)
         }
       }
 
-      setImage(processedFile)
-      setError('')
+      newImages.push(processedFile)
     }
+
+    setImages(newImages)
+    setImagePreviews(newPreviews)
+    setError('')
   }
 
-  const removeImage = () => {
-    setImage(null)
-    setImagePreview(null)
+  const removeImage = (index) => {
+    const newImages = [...images]
+    const newPreviews = [...imagePreviews]
+    newImages.splice(index, 1)
+    newPreviews.splice(index, 1)
+    setImages(newImages)
+    setImagePreviews(newPreviews)
+    if (newImages.length === 0) {
+      setError('')
+    }
   }
 
   // Fetch connected users untuk mention
@@ -126,8 +143,8 @@ const CreatePost = ({ isOpen, onClose, onPostCreated }) => {
   useEffect(() => {
     if (!isOpen) {
       setContent('')
-      setImage(null)
-      setImagePreview(null)
+      setImages([])
+      setImagePreviews([])
       setVisibility('PUBLIC')
       setSelectedMentions([])
       setMentionSearch('')
@@ -187,10 +204,10 @@ const CreatePost = ({ isOpen, onClose, onPostCreated }) => {
         content: content.trim(), 
         visibility,
         mentions 
-      }, image)
+      }, images)
       setContent('')
-      setImage(null)
-      setImagePreview(null)
+      setImages([])
+      setImagePreviews([])
       setVisibility('PUBLIC')
       setSelectedMentions([])
       setMentionSearch('')
@@ -264,21 +281,28 @@ const CreatePost = ({ isOpen, onClose, onPostCreated }) => {
               </div>
             </div>
 
-            {/* Preview Image */}
-            {imagePreview && (
-              <div className="relative mb-4 rounded-lg overflow-hidden border border-gray-200">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full max-h-96 object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-colors"
-                >
-                  <X size={20} />
-                </button>
+            {/* Preview Images */}
+            {imagePreviews.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {imagePreviews.map((preview, idx) => (
+                  <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 group bg-gray-50 flex-shrink-0 shadow-sm">
+                    <img
+                      src={preview}
+                      alt={`Preview ${idx + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full p-0.5 hover:bg-red-600 hover:scale-110 transition-all shadow-sm transform"
+                    >
+                      <X size={12} />
+                    </button>
+                    <span className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white px-1 py-0.5 rounded text-[8px] font-bold leading-none">
+                      {idx + 1}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -427,10 +451,11 @@ const CreatePost = ({ isOpen, onClose, onPostCreated }) => {
             <div className="flex items-center justify-between pt-4 border-t border-gray-200">
               <label className="flex items-center gap-2 text-gray-600 cursor-pointer hover:text-gray-800 transition-colors">
                 <ImageIcon size={20} />
-                <span className="text-sm font-medium">Tambah Foto</span>
+                <span className="text-sm font-medium">Tambah Foto (Maks 10)</span>
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleImageChange}
                   className="hidden"
                 />

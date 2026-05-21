@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2, Globe, Lock, User } from 'lucide-react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { ArrowLeft, Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2, Globe, Lock, User, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPostById, toggleLike, deletePost } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
@@ -20,6 +20,7 @@ import LikesModal from '../components/post/LikesModal'
 const PostDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   
   // State management
@@ -42,6 +43,77 @@ const PostDetail = () => {
   })
   const [reportModal, setReportModal] = useState(false)
   const [showLikesModal, setShowLikesModal] = useState(false)
+
+  // Lightbox Carousel States & Methods
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const images = post?.images || []
+
+  const openLightbox = (index) => {
+    setLightboxIndex(index)
+    setIsLightboxOpen(true)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const closeLightbox = () => {
+    setIsLightboxOpen(false)
+    document.body.style.overflow = 'unset'
+  }
+
+  const nextImage = (e) => {
+    if (e) e.stopPropagation()
+    setLightboxIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
+  }
+
+  const prevImage = (e) => {
+    if (e) e.stopPropagation()
+    setLightboxIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowRight') nextImage()
+    if (e.key === 'ArrowLeft') prevImage()
+    if (e.key === 'Escape') closeLightbox()
+  }
+
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [])
+
+  // Handle auto-open edit modal if state or query param is set
+  useEffect(() => {
+    if (post && (location.state?.openEdit || new URLSearchParams(location.search).get('edit') === 'true')) {
+      setShowEditModal(true)
+      // Bersihkan state/search param agar tidak memicu pop-up lagi saat reload
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [post, location, navigate])
+
+  // Helper: render single image tile untuk grid (di detail BISA klik untuk perbesar lightbox)
+  const renderImageTile = (img, idx, extraClass = '', overlayCount = null) => (
+    <div
+      key={img.id || idx}
+      className={`relative overflow-hidden bg-gray-100 cursor-zoom-in group/tile ${extraClass}`}
+      onClick={() => openLightbox(idx)}
+    >
+      <img
+        src={getImageUrl(img.imageUrl)}
+        alt={`Foto ${idx + 1}`}
+        className="w-full h-full object-cover transition-transform duration-300 group-hover/tile:scale-[1.02]"
+        draggable={false}
+      />
+      {/* Hover overlay shimmer */}
+      <div className="absolute inset-0 bg-black opacity-0 group-hover/tile:opacity-10 transition-opacity duration-300" />
+      {/* More images overlay (+N) */}
+      {overlayCount !== null && (
+        <div className="absolute inset-0 bg-black bg-opacity-55 flex items-center justify-center">
+          <span className="text-white text-2xl font-bold">+{overlayCount}</span>
+        </div>
+      )}
+    </div>
+  )
 
   // Redirect ke login jika belum authenticated
   useEffect(() => {
@@ -86,16 +158,35 @@ const PostDetail = () => {
       }
     }
 
+    const handlePostUpdated = (updatedPost) => {
+      if (updatedPost.id === post.id) {
+        setPost(updatedPost)
+        if (updatedPost.likesCount !== undefined) setLikesCount(updatedPost.likesCount)
+        if (updatedPost.commentsCount !== undefined) setCommentsCount(updatedPost.commentsCount)
+        
+        // Safety cap for lightbox index if images were removed
+        const numImages = updatedPost.images?.length || 0
+        setLightboxIndex(prev => {
+          if (numImages === 0) return 0
+          if (prev >= numImages) return numImages - 1
+          return prev
+        })
+      }
+    }
+
     socket.on('post_liked', handlePostLiked)
     socket.on('new_comment', handleNewComment)
     socket.on('comment_deleted', handleCommentDeleted)
+    socket.on('post_updated', handlePostUpdated)
 
     return () => {
       socket.off('post_liked', handlePostLiked)
       socket.off('new_comment', handleNewComment)
       socket.off('comment_deleted', handleCommentDeleted)
+      socket.off('post_updated', handlePostUpdated)
     }
   }, [post, user])
+
 
   // Fetch post dari API
   const fetchPost = async () => {
@@ -396,15 +487,49 @@ const PostDetail = () => {
                   </p>
                 </div>
 
-                {/* Post image jika ada */}
-                {post.media && (
-                  <div className="mb-4 rounded-lg overflow-hidden">
-                    <img
-                      src={getImageUrl(post.media, 'posts')}
-                      alt="Post"
-                      className="w-full max-h-[600px] object-cover rounded-lg"
-                      onError={(e) => { e.target.style.display = 'none' }}
-                    />
+                {/* Post images — smart adaptive grid layout (klik untuk perbesar) */}
+                {images.length > 0 && (
+                  <div className="mb-4 rounded-xl overflow-hidden">
+
+                    {/* 1 gambar: full width */}
+                    {images.length === 1 && (
+                      <div className="rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50">
+                        {renderImageTile(images[0], 0, 'h-full w-full')}
+                      </div>
+                    )}
+
+                    {/* 2 gambar: [1, 2] berdampingan */}
+                    {images.length === 2 && (
+                      <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50">
+                        {renderImageTile(images[0], 0, 'h-full w-full')}
+                        {renderImageTile(images[1], 1, 'h-full w-full')}
+                      </div>
+                    )}
+
+                    {/* 3 gambar: [1] atas-kiri, [2] bawah-kiri | [3] kanan-full */}
+                    {images.length === 3 && (
+                      <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
+                        {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
+                        {renderImageTile(images[1], 1, 'col-start-1 row-start-2 w-full h-full')}
+                        {renderImageTile(images[2], 2, 'col-start-2 row-start-1 row-span-2 w-full h-full')}
+                      </div>
+                    )}
+
+                    {/* 4+ gambar: [1,2] / [3,4] grid simetris */}
+                    {images.length >= 4 && (
+                      <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
+                        {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
+                        {renderImageTile(images[1], 1, 'col-start-2 row-start-1 w-full h-full')}
+                        {renderImageTile(images[2], 2, 'col-start-1 row-start-2 w-full h-full')}
+                        {renderImageTile(
+                          images[3],
+                          3,
+                          'col-start-2 row-start-2 w-full h-full',
+                          images.length > 4 ? images.length - 4 : null
+                        )}
+                      </div>
+                    )}
+
                   </div>
                 )}
 
@@ -516,6 +641,104 @@ const PostDetail = () => {
         onClose={() => setShowLikesModal(false)}
         postId={post?.id}
       />
+
+      {/* Lightbox Modal */}
+      {isLightboxOpen && images.length > 0 && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black bg-opacity-97 flex flex-col outline-none"
+          onClick={closeLightbox}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          ref={(el) => el && el.focus()}
+        >
+          {/* Top Bar */}
+          <div className="flex justify-between items-center px-4 py-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {post.author?.fotoProfil ? (
+                  <img src={getImageUrl(post.author.fotoProfil, 'profiles')} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-blue-600 text-xs font-bold">{post.author?.nama?.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <span className="text-white text-sm font-medium select-none">{post.author?.nama}</span>
+              <span className="text-gray-500 text-xs select-none">•</span>
+              <span className="bg-white bg-opacity-15 text-white text-xs px-2.5 py-0.5 rounded-full font-medium select-none">
+                {lightboxIndex + 1} / {images.length}
+              </span>
+            </div>
+            <button 
+              onClick={closeLightbox}
+              className="text-gray-400 hover:text-white bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full p-2 transition-all"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Main Image Area */}
+          <div className="flex-1 flex items-center justify-center relative w-full select-none min-h-0">
+            {/* Left arrow */}
+            {images.length > 1 && (
+              <button 
+                onClick={prevImage}
+                className="absolute left-3 sm:left-5 z-10 text-white bg-white bg-opacity-10 hover:bg-opacity-25 p-2.5 rounded-full transition-all border border-white border-opacity-10 hover:border-opacity-30"
+              >
+                <ChevronLeft size={22} />
+              </button>
+            )}
+
+            {/* Current Image */}
+            <div 
+              className="max-w-[92vw] max-h-[75vh] flex items-center justify-center" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img 
+                src={getImageUrl(images[lightboxIndex]?.imageUrl)} 
+                alt={`Foto ${lightboxIndex + 1}`}
+                className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
+                draggable={false}
+              />
+            </div>
+
+            {/* Right arrow */}
+            {images.length > 1 && (
+              <button 
+                onClick={nextImage}
+                className="absolute right-3 sm:right-5 z-10 text-white bg-white bg-opacity-10 hover:bg-opacity-25 p-2.5 rounded-full transition-all border border-white border-opacity-10 hover:border-opacity-30"
+              >
+                <ChevronRight size={22} />
+              </button>
+            )}
+          </div>
+
+          {/* Bottom: Thumbnail strip (hanya jika > 1 gambar) */}
+          {images.length > 1 && (
+            <div 
+              className="flex-shrink-0 flex items-center justify-center gap-2 py-3 px-4 overflow-x-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {images.map((img, idx) => (
+                <button
+                  key={img.id || idx}
+                  onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx) }}
+                  className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                    lightboxIndex === idx 
+                      ? 'border-blue-400 scale-110 shadow-lg shadow-blue-500/30' 
+                      : 'border-transparent opacity-50 hover:opacity-80'
+                  }`}
+                >
+                  <img 
+                    src={getImageUrl(img.imageUrl)} 
+                    alt={`Thumbnail ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

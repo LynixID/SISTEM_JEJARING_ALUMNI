@@ -5,6 +5,10 @@ import { fileURLToPath } from 'url'
 import { getIO } from '../../config/socket.js'
 import ExcelJS from 'exceljs'
 import { getImagePath, extractFilename } from '../../utils/fileUtils.js'
+import { sendUserApprovalEmail } from '../../services/emailService.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Helper for building user where clause
 const buildUserFilter = (query) => {
@@ -197,9 +201,20 @@ export const verifyUser = async (req, res) => {
         id: true,
         email: true,
         nama: true,
-        verified: true
+        nim: true,
+        prodi: true,
+        angkatan: true,
+        verified: true,
+        createdAt: true
       }
     })
+
+    // Kirim email notifikasi ke user (non-blocking)
+    try {
+      await sendUserApprovalEmail(updatedUser.email, updatedUser)
+    } catch (emailError) {
+      console.error(`Error sending approval email to user ${updatedUser.email}:`, emailError)
+    }
 
     res.json({
       message: 'User berhasil diverifikasi',
@@ -786,8 +801,6 @@ export const exportUsers = async (req, res) => {
 
 // ─── FILE MANAGEMENT ─────────────────────────────────────────────────────────
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads/images')
 const TRASH_DIR = path.join(__dirname, '../../../uploads_trash')
 
@@ -910,8 +923,8 @@ const getFilenamesFromDB = async (category) => {
       const profiles = await prisma.profile.findMany({ select: { fotoProfil: true, coverPhoto: true } })
       return [...profiles.map(p => p.fotoProfil), ...profiles.map(p => p.coverPhoto)].filter(Boolean)
     case 'posts':
-      const posts = await prisma.post.findMany({ select: { media: true } })
-      return posts.map(p => p.media).filter(Boolean)
+      const postImages = await prisma.postImage.findMany({ select: { imageUrl: true } })
+      return postImages.map(img => img.imageUrl).filter(Boolean)
     case 'messages':
       const messages = await prisma.message.findMany({ select: { media: true } })
       return messages.map(m => m.media).filter(Boolean)
@@ -1167,3 +1180,399 @@ export const getUserFilterOptions = async (req, res) => {
     res.status(500).json({ error: 'Gagal memuat opsi filter' })
   }
 }
+
+// ─── ADMIN POST MANAGEMENT ─────────────────────────────────────────────────
+
+// Get all posts by admin
+export const getAllPostsByAdmin = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const take = parseInt(limit)
+
+    const where = search 
+      ? {
+          OR: [
+            { content: { contains: search } },
+            { author: { nama: { contains: search } } },
+            { author: { email: { contains: search } } }
+          ]
+        }
+      : {}
+
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          images: true,
+          author: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+              nim: true,
+              role: true,
+              profile: {
+                select: {
+                  fotoProfil: true
+                }
+              }
+            }
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true
+            }
+          }
+        }
+      }),
+      prisma.post.count({ where })
+    ])
+
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      images: post.images ? post.images.map(img => ({
+        id: img.id,
+        imageUrl: getImagePath(img.imageUrl, 'posts')
+      })) : [],
+      likesCount: post._count.likes,
+      commentsCount: post._count.comments,
+      author: {
+        ...post.author,
+        fotoProfil: post.author.profile?.fotoProfil ? getImagePath(post.author.profile.fotoProfil, 'profiles') : null
+      }
+    }))
+
+    res.json({
+      posts: formattedPosts,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    })
+  } catch (error) {
+    console.error('Get all posts by admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data postingan' })
+  }
+}
+
+// Delete post by admin
+export const deletePostByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: { images: true }
+    })
+
+    if (!post) {
+      return res.status(404).json({ error: 'Postingan tidak ditemukan' })
+    }
+
+    // Delete image files from filesystem if they exist
+    if (post.images && post.images.length > 0) {
+      try {
+        const postsUploadDir = path.join(__dirname, '../../../uploads/images/posts')
+        post.images.forEach(img => {
+          const filePath = path.join(postsUploadDir, img.imageUrl)
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath)
+            console.log(`Deleted image: ${img.imageUrl}`)
+          }
+        })
+      } catch (fileError) {
+        console.error('Error deleting post image files:', fileError)
+      }
+    }
+
+    await prisma.post.delete({
+      where: { id }
+    })
+
+    res.json({ message: 'Postingan berhasil dihapus oleh admin' })
+  } catch (error) {
+    console.error('Delete post by admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat menghapus postingan' })
+  }
+}
+
+// ─── ADMIN DISCUSSION THREAD MANAGEMENT ────────────────────────────────────
+
+// Get all threads by admin
+export const getAllThreadsByAdmin = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const take = parseInt(limit)
+
+    const where = search 
+      ? {
+          OR: [
+            { title: { contains: search } },
+            { content: { contains: search } },
+            { author: { nama: { contains: search } } }
+          ]
+        }
+      : {}
+
+    const [threads, total] = await Promise.all([
+      prisma.discussionThread.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          author: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+              role: true,
+              profile: {
+                select: {
+                  fotoProfil: true
+                }
+              }
+            }
+          },
+          _count: {
+            select: {
+              members: true,
+              messages: true
+            }
+          }
+        }
+      }),
+      prisma.discussionThread.count({ where })
+    ])
+
+    const formattedThreads = threads.map(thread => ({
+      ...thread,
+      image: thread.image ? getImagePath(thread.image, 'discussions') : null,
+      membersCount: thread._count.members,
+      messagesCount: thread._count.messages,
+      author: {
+        ...thread.author,
+        fotoProfil: thread.author.profile?.fotoProfil ? getImagePath(thread.author.profile.fotoProfil, 'profiles') : null
+      }
+    }))
+
+    res.json({
+      threads: formattedThreads,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    })
+  } catch (error) {
+    console.error('Get all threads by admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data forum thread' })
+  }
+}
+
+// Delete discussion thread by admin
+export const deleteThreadByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const thread = await prisma.discussionThread.findUnique({
+      where: { id }
+    })
+
+    if (!thread) {
+      return res.status(404).json({ error: 'Forum thread tidak ditemukan' })
+    }
+
+    // Delete image file from filesystem if exists
+    if (thread.image) {
+      try {
+        const discussionsUploadDir = path.join(__dirname, '../../../uploads/images/discussions')
+        const filePath = path.join(discussionsUploadDir, thread.image)
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath)
+          console.log(`Deleted discussion image: ${thread.image}`)
+        }
+      } catch (fileError) {
+        console.error('Error deleting thread image file:', fileError)
+      }
+    }
+
+    await prisma.discussionThread.delete({
+      where: { id }
+    })
+
+    res.json({ message: 'Forum thread berhasil dihapus oleh admin' })
+  } catch (error) {
+    console.error('Delete thread by admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat menghapus forum thread' })
+  }
+}
+
+// ─── ADMIN JOB LISTING MANAGEMENT ──────────────────────────────────────────
+
+// Get all jobs by admin
+export const getAllJobsByAdmin = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '', status = 'all' } = req.query
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const take = parseInt(limit)
+
+    const where = {}
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search } },
+        { company: { contains: search } },
+        { location: { contains: search } },
+        { users: { nama: { contains: search } } }
+      ]
+    }
+
+    if (status !== 'all') {
+      where.status = status.toUpperCase()
+    }
+
+    const [jobsList, total] = await Promise.all([
+      prisma.jobs.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          users: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+              role: true
+            }
+          }
+        }
+      }),
+      prisma.jobs.count({ where })
+    ])
+
+    const formattedJobs = jobsList.map(job => ({
+      ...job,
+      image: job.image ? getImagePath(job.image, 'jobs') : null,
+      author: job.users
+    }))
+
+    res.json({
+      jobs: formattedJobs,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    })
+  } catch (error) {
+    console.error('Get all jobs by admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data lowongan pekerjaan' })
+  }
+}
+
+// Approve job
+export const approveJobByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const job = await prisma.jobs.findUnique({
+      where: { id }
+    })
+
+    if (!job) {
+      return res.status(404).json({ error: 'Lowongan tidak ditemukan' })
+    }
+
+    const updatedJob = await prisma.jobs.update({
+      where: { id },
+      data: { status: 'APPROVED', updatedAt: new Date() }
+    })
+
+    res.json({
+      message: 'Lowongan pekerjaan berhasil disetujui',
+      job: updatedJob
+    })
+  } catch (error) {
+    console.error('Approve job error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat menyetujui lowongan' })
+  }
+}
+
+// Reject job
+export const rejectJobByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const job = await prisma.jobs.findUnique({
+      where: { id }
+    })
+
+    if (!job) {
+      return res.status(404).json({ error: 'Lowongan tidak ditemukan' })
+    }
+
+    const updatedJob = await prisma.jobs.update({
+      where: { id },
+      data: { status: 'REJECTED', updatedAt: new Date() }
+    })
+
+    res.json({
+      message: 'Lowongan pekerjaan berhasil ditolak',
+      job: updatedJob
+    })
+  } catch (error) {
+    console.error('Reject job error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat menolak lowongan' })
+  }
+}
+
+// Delete job by admin
+export const deleteJobByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const job = await prisma.jobs.findUnique({
+      where: { id }
+    })
+
+    if (!job) {
+      return res.status(404).json({ error: 'Lowongan tidak ditemukan' })
+    }
+
+    // Delete image if exists
+    if (job.image) {
+      try {
+        const jobsUploadDir = path.join(__dirname, '../../../uploads/images/jobs')
+        const filePath = path.join(jobsUploadDir, job.image)
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath)
+          console.log(`Deleted job image: ${job.image}`)
+        }
+      } catch (fileError) {
+        console.error('Error deleting job image file:', fileError)
+      }
+    }
+
+    await prisma.jobs.delete({
+      where: { id }
+    })
+
+    res.json({ message: 'Lowongan pekerjaan berhasil dihapus oleh admin' })
+  } catch (error) {
+    console.error('Delete job error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat menghapus lowongan' })
+  }
+}
+

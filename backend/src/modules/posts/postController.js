@@ -110,12 +110,10 @@ export const getAllPosts = async (req, res) => {
         }
       : baseWhere
 
-    const [posts, total] = await Promise.all([
+    // Ambil semua posts yang sesuai kueri tanpa skip/take agar bisa di-sort dan mix secara global
+    const [allPosts, total] = await Promise.all([
       prisma.post.findMany({
         where,
-        skip,
-        take,
-        orderBy: { createdAt: 'desc' },
         include: {
           author: {
             select: {
@@ -129,6 +127,9 @@ export const getAllPosts = async (req, res) => {
               }
             }
           },
+          images: {
+            orderBy: { order: 'asc' }
+          },
           _count: {
             select: {
               likes: true,
@@ -140,9 +141,42 @@ export const getAllPosts = async (req, res) => {
       prisma.post.count({ where })
     ])
 
-    // Check if current user liked each post and get mentions
+    // Hitung Skor Campuran (Blended Score) & Mix
+    const now = new Date()
+    const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000)
+
+    allPosts.forEach(post => {
+      const likesCount = post._count?.likes || 0
+      const commentsCount = post._count?.comments || 0
+      const totalEngagement = likesCount + commentsCount
+      const createdAtTime = new Date(post.createdAt).getTime()
+      
+      // Sangat Baru: postingan < 12 jam
+      const isVeryNew = new Date(post.createdAt) >= twelveHoursAgo
+      
+      if (isVeryNew) {
+        // Sangat Baru dijamin berada paling atas (skor dasar sangat tinggi)
+        post.score = 10000000000000 + createdAtTime
+      } else {
+        // Populer & Relevan: 1 interaksi setara dengan 6 jam recency (6 * 3600 * 1000 = 21600000 ms)
+        post.score = totalEngagement * 21600000 + createdAtTime
+      }
+    })
+
+    // Urutkan berdasarkan skor secara menurun (descending) jika melihat feed umum.
+    // Jika melihat profile spesifik (userId tersedia), urutkan murni kronologis.
+    if (!userId) {
+      allPosts.sort((a, b) => b.score - a.score)
+    } else {
+      allPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    }
+
+    // Lakukan pagination secara manual
+    const paginatedPosts = allPosts.slice(skip, skip + take)
+
+    // Check if current user liked each post and get mentions (Hanya untuk 10 post terpaginasi)
     const postsWithLikes = await Promise.all(
-      posts.map(async (post) => {
+      paginatedPosts.map(async (post) => {
         let isLiked = false
         if (currentUserId) {
           const like = await prisma.like.findUnique({
@@ -176,7 +210,10 @@ export const getAllPosts = async (req, res) => {
 
         return {
           ...post,
-          media: post.media ? getImagePath(post.media, 'posts') : null,
+          images: post.images ? post.images.map(img => ({
+            id: img.id,
+            imageUrl: getImagePath(img.imageUrl, 'posts')
+          })) : [],
           likesCount: post._count.likes,
           commentsCount: post._count.comments,
           isLiked,
@@ -231,6 +268,9 @@ export const getPostById = async (req, res) => {
             }
           }
         },
+        images: {
+          orderBy: { order: 'asc' }
+        },
         _count: {
           select: {
             likes: true,
@@ -280,7 +320,10 @@ export const getPostById = async (req, res) => {
     res.json({
       post: {
         ...post,
-        media: post.media ? getImagePath(post.media, 'posts') : null,
+        images: post.images ? post.images.map(img => ({
+          id: img.id,
+          imageUrl: getImagePath(img.imageUrl, 'posts')
+        })) : [],
         likesCount: post._count.likes,
         commentsCount: post._count.comments,
         isLiked,
@@ -293,6 +336,7 @@ export const getPostById = async (req, res) => {
         author: {
           id: post.author.id,
           nama: post.author.nama,
+          role: post.author.role,
           fotoProfil: post.author.profile?.fotoProfil ? getImagePath(post.author.profile.fotoProfil, 'profiles') : null
         }
       }
@@ -377,8 +421,9 @@ export const createPost = async (req, res) => {
       })
     }
     const authorId = req.user.userId
-    // Simpan hanya filename di database
-    const media = req.file ? req.file.filename : null
+    
+    // Ambil berkas-berkas gambar dari req.files jika ada
+    const fileNames = req.files ? req.files.map(file => file.filename) : []
     
     // Validasi visibility
     const postVisibility = visibility === 'CONNECTIONS' ? 'CONNECTIONS' : 'PUBLIC'
@@ -386,9 +431,11 @@ export const createPost = async (req, res) => {
     const post = await prisma.post.create({
       data: {
         content,
-        media,
         authorId,
-        visibility: postVisibility
+        visibility: postVisibility,
+        images: {
+          create: fileNames.map((name, index) => ({ imageUrl: name, order: index }))
+        }
       },
       include: {
         author: {
@@ -402,6 +449,9 @@ export const createPost = async (req, res) => {
               }
             }
           }
+        },
+        images: {
+          orderBy: { order: 'asc' }
         },
         _count: {
           select: {
@@ -489,12 +539,18 @@ export const createPost = async (req, res) => {
       // Jangan gagalkan post creation jika mention error
     }
 
+    // Format post images path untuk Socket.io dan response
+    const formattedImages = post.images ? post.images.map(img => ({
+      id: img.id,
+      imageUrl: getImagePath(img.imageUrl, 'posts')
+    })) : []
+
     // Emit Socket.io event untuk real-time update
     try {
       const io = getIO()
       io.emit('new_post', {
         ...post,
-        media: post.media ? getImagePath(post.media, 'posts') : null,
+        images: formattedImages,
         likesCount: 0,
         commentsCount: 0,
         isLiked: false,
@@ -513,13 +569,14 @@ export const createPost = async (req, res) => {
       message: 'Post berhasil dibuat',
       post: {
         ...post,
-        media: post.media ? getImagePath(post.media, 'posts') : null,
+        images: formattedImages,
         likesCount: 0,
         commentsCount: 0,
         isLiked: false,
         author: {
           id: post.author.id,
           nama: post.author.nama,
+          role: post.author.role,
           fotoProfil: post.author.profile?.fotoProfil ? getImagePath(post.author.profile.fotoProfil, 'profiles') : null
         }
       }
@@ -555,7 +612,8 @@ export const updatePost = async (req, res) => {
 
     // Cek apakah post ada dan user adalah author
     const existingPost = await prisma.post.findUnique({
-      where: { id }
+      where: { id },
+      include: { images: true }
     })
 
     if (!existingPost) {
@@ -566,31 +624,37 @@ export const updatePost = async (req, res) => {
       return res.status(403).json({ error: 'Anda tidak memiliki akses untuk mengupdate post ini' })
     }
 
-    // Handle image update jika ada
-    // Simpan hanya filename di database
-    let media = existingPost.media
-    const oldImageFilename = existingPost.media
-    
-    // Jika ada file baru atau request untuk remove image
-    if (req.file) {
-      // Hapus gambar lama jika ada
-      if (oldImageFilename) {
-        deleteImageFile(oldImageFilename)
+    // Handle image update
+    const newFiles = req.files ? req.files.map(file => file.filename) : []
+    const shouldRemoveAll = req.body.removeImages === 'true'
+
+    if (shouldRemoveAll) {
+      // Hapus semua gambar lama secara fisik dan dari database
+      if (existingPost.images && existingPost.images.length > 0) {
+        existingPost.images.forEach(img => deleteImageFile(img.imageUrl))
       }
-      media = req.file.filename
-    } else if (req.body.removeImage === 'true' || req.body.media === null) {
-      // Jika request untuk remove image
-      if (oldImageFilename) {
-        deleteImageFile(oldImageFilename)
-      }
-      media = null
+      await prisma.postImage.deleteMany({ where: { postId: id } })
+    }
+
+    // Jika ada file baru, TAMBAHKAN ke database (tidak hapus yang lama kecuali removeAll)
+    if (newFiles.length > 0) {
+      const existingImages = await prisma.postImage.findMany({
+        where: { postId: id }
+      })
+      const maxOrder = existingImages.length > 0 ? Math.max(...existingImages.map(img => img.order)) : -1
+      await prisma.postImage.createMany({
+        data: newFiles.map((name, index) => ({
+          postId: id,
+          imageUrl: name,
+          order: maxOrder + 1 + index
+        }))
+      })
     }
 
     const updatedPost = await prisma.post.update({
       where: { id },
       data: {
-        content: content || existingPost.content,
-        media
+        content: content || existingPost.content
       },
       include: {
         author: {
@@ -604,6 +668,9 @@ export const updatePost = async (req, res) => {
               }
             }
           }
+        },
+        images: {
+          orderBy: { order: 'asc' }
         },
         _count: {
           select: {
@@ -671,19 +738,36 @@ export const updatePost = async (req, res) => {
       }
     }
 
+    const formattedPost = {
+      ...updatedPost,
+      images: updatedPost.images ? updatedPost.images.map(img => ({
+        id: img.id,
+        imageUrl: getImagePath(img.imageUrl, 'posts')
+      })) : [],
+      likesCount: updatedPost._count.likes,
+      commentsCount: updatedPost._count.comments,
+      author: {
+        id: updatedPost.author.id,
+        nama: updatedPost.author.nama,
+        role: updatedPost.author.role,
+        fotoProfil: updatedPost.author.profile?.fotoProfil ? getImagePath(updatedPost.author.profile.fotoProfil, 'profiles') : null
+      }
+    }
+
+    // Emit Socket.io event untuk real-time update
+    try {
+      const io = getIO()
+      io.emit('post_updated', {
+        postId: id,
+        post: formattedPost
+      })
+    } catch (socketError) {
+      console.error('Socket.io error on post update:', socketError)
+    }
+
     res.json({
       message: 'Post berhasil diupdate',
-      post: {
-        ...updatedPost,
-        media: updatedPost.media ? getImagePath(updatedPost.media, 'posts') : null,
-        likesCount: updatedPost._count.likes,
-        commentsCount: updatedPost._count.comments,
-        author: {
-          id: updatedPost.author.id,
-          nama: updatedPost.author.nama,
-          fotoProfil: updatedPost.author.profile?.fotoProfil ? getImagePath(updatedPost.author.profile.fotoProfil, 'profiles') : null
-        }
-      }
+      post: formattedPost
     })
   } catch (error) {
     console.error('Update post error:', error)
@@ -699,7 +783,8 @@ export const deletePost = async (req, res) => {
 
     // Cek apakah post ada dan user adalah author
     const existingPost = await prisma.post.findUnique({
-      where: { id }
+      where: { id },
+      include: { images: true }
     })
 
     if (!existingPost) {
@@ -710,9 +795,11 @@ export const deletePost = async (req, res) => {
       return res.status(403).json({ error: 'Anda tidak memiliki akses untuk menghapus post ini' })
     }
 
-    // Hapus gambar jika ada sebelum delete post
-    if (existingPost.media) {
-      deleteImageFile(existingPost.media)
+    // Hapus berkas gambar secara fisik jika ada sebelum delete post
+    if (existingPost.images && existingPost.images.length > 0) {
+      existingPost.images.forEach(img => {
+        deleteImageFile(img.imageUrl)
+      })
     }
 
     await prisma.post.delete({
@@ -726,4 +813,101 @@ export const deletePost = async (req, res) => {
   }
 }
 
+// Delete single post image
+export const deletePostImage = async (req, res) => {
+  try {
+    const { id: postId, imageId } = req.params
+    const userId = req.user.userId
 
+    // Cek post milik user
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true }
+    })
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post tidak ditemukan' })
+    }
+
+    if (post.authorId !== userId) {
+      return res.status(403).json({ error: 'Anda tidak memiliki akses' })
+    }
+
+    // Cari image
+    const image = await prisma.postImage.findUnique({
+      where: { id: imageId }
+    })
+
+    if (!image || image.postId !== postId) {
+      return res.status(404).json({ error: 'Gambar tidak ditemukan' })
+    }
+
+    // Hapus file fisik
+    deleteImageFile(image.imageUrl)
+
+    // Hapus dari database
+    await prisma.postImage.delete({ where: { id: imageId } })
+
+    // Fetch updated post to emit socket event
+    const updatedPost = await prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            nama: true,
+            role: true,
+            profile: {
+              select: {
+                fotoProfil: true
+              }
+            }
+          }
+        },
+        images: {
+          orderBy: { order: 'asc' }
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true
+          }
+        }
+      }
+    })
+
+    if (updatedPost) {
+      const formattedPost = {
+        ...updatedPost,
+        images: updatedPost.images ? updatedPost.images.map(img => ({
+          id: img.id,
+          imageUrl: getImagePath(img.imageUrl, 'posts')
+        })) : [],
+        likesCount: updatedPost._count.likes,
+        commentsCount: updatedPost._count.comments,
+        author: {
+          id: updatedPost.author.id,
+          nama: updatedPost.author.nama,
+          role: updatedPost.author.role,
+          fotoProfil: updatedPost.author.profile?.fotoProfil ? getImagePath(updatedPost.author.profile.fotoProfil, 'profiles') : null
+        }
+      }
+
+      // Emit Socket.io event untuk real-time update
+      try {
+        const io = getIO()
+        io.emit('post_updated', {
+          postId,
+          post: formattedPost
+        })
+      } catch (socketError) {
+        console.error('Socket.io error on delete post image:', socketError)
+      }
+    }
+
+    res.json({ message: 'Gambar berhasil dihapus' })
+  } catch (error) {
+    console.error('Delete post image error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat menghapus gambar' })
+  }
+}

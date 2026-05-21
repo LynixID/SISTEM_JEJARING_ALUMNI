@@ -2,14 +2,15 @@ import { useState } from 'react'
 import { 
   LayoutDashboard, Users, LogOut, User, Menu, X, Settings, 
   Newspaper, Calendar, ChevronDown, ChevronRight, FileText, 
-  CalendarCheck, ShieldAlert, MessageSquare, FolderOpen 
+  CalendarCheck, ShieldAlert, MessageSquare, FolderOpen, Briefcase 
 } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import ConfirmModal from '../common/ConfirmModal'
 
 const AdminSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [kelolaBeritaOpen, setKelolaBeritaOpen] = useState(true)
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const location = useLocation()
   const { user, logout, isLoading } = useAuth()
   const navigate = useNavigate()
@@ -43,7 +44,10 @@ const AdminSidebar = () => {
       title: 'KONTEN & BERITA',
       items: [
         { icon: FileText, label: 'Pengumuman', path: '/admin/announcements' },
-        { icon: CalendarCheck, label: 'Event', path: '/admin/events' }
+        { icon: CalendarCheck, label: 'Event', path: '/admin/events' },
+        { icon: Newspaper, label: 'Manajemen Postingan', path: '/admin/posts' },
+        { icon: MessageSquare, label: 'Manajemen Forum', path: '/admin/forum' },
+        { icon: Briefcase, label: 'Manajemen Loker', path: '/admin/loker' }
       ]
     },
     {
@@ -136,7 +140,7 @@ const AdminSidebar = () => {
 
         {/* Logout */}
         <button
-          onClick={handleLogout}
+          onClick={() => setIsLogoutConfirmOpen(true)}
           className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-4 py-2 rounded-lg text-red-400 hover:bg-red-900 hover:bg-opacity-20 hover:text-red-300 transition-colors`}
           title={isCollapsed ? 'Logout' : ''}
         >
@@ -144,9 +148,19 @@ const AdminSidebar = () => {
           {!isCollapsed && <span>Logout</span>}
         </button>
       </div>
+
+      <ConfirmModal
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={handleLogout}
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin keluar dari panel admin?"
+        confirmText="Logout"
+        cancelText="Batal"
+        variant="danger"
+      />
     </aside>
   )
 }
 
 export default AdminSidebar
-

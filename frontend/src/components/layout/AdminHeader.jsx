@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { Bell, LogOut } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import ConfirmModal from '../common/ConfirmModal'
 
 const AdminHeader = () => {
   const { user, logout } = useAuth()
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -41,7 +44,7 @@ const AdminHeader = () => {
                 <p className="text-xs text-gray-500">Root Administrator</p>
               </div>
               <button
-                onClick={handleLogout}
+                onClick={() => setIsLogoutConfirmOpen(true)}
                 className="ml-2 text-gray-600 hover:text-red-600 transition"
                 title="Logout"
               >
@@ -51,6 +54,17 @@ const AdminHeader = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={handleLogout}
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin keluar dari panel admin?"
+        confirmText="Logout"
+        cancelText="Batal"
+        variant="danger"
+      />
     </header>
   )
 }

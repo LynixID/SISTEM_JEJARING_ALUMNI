@@ -8,22 +8,22 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  password      String
-  nim           String?   @unique
-  nama          String
-  prodi         String?
+  id            String    @id @default(uuid()) @db.VarChar(36)
+  email         String    @unique @db.VarChar(50)
+  password      String    @db.VarChar(60)
+  nim           String?   @unique @db.VarChar(20)
+  nama          String    @db.VarChar(100)
+  prodi         String?   @db.VarChar(100)
   angkatan      Int?
-  domisili      String?
-  whatsapp      String?
+  domisili      String?   @db.VarChar(100)
+  whatsapp      String?   @db.VarChar(20)
   role          Role      @default(ALUMNI)
   verified      Boolean   @default(false)
   emailVerified Boolean   @default(false)
   allowEmailNotification Boolean @default(true)
   isSuspended   Boolean   @default(false)
   suspendReason String?   @db.Text
-  otp           String?
+  otp           String?   @db.VarChar(10)
   otpExpiry     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -56,14 +56,14 @@ model User {
 }
 
 model Profile {
-  id            String   @id @default(uuid())
-  userId        String   @unique
-  fotoProfil    String?
-  coverPhoto    String?
-  profesi       String?
-  perusahaan    String?
-  jabatan       String?
-  skill         String?
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  userId        String   @unique @db.VarChar(36)
+  fotoProfil    String?  @db.VarChar(100)
+  coverPhoto    String?  @db.VarChar(100)
+  profesi       String?  @db.VarChar(100)
+  perusahaan    String?  @db.VarChar(100)
+  jabatan       String?  @db.VarChar(100)
+  skill         String?  @db.VarChar(100)
   sosialMedia   Json?
   portfolio     Json?
   experience    Json?
@@ -79,9 +79,9 @@ model Profile {
 }
 
 model Post {
-  id        String       @id @default(uuid())
+  id        String       @id @default(uuid()) @db.VarChar(36)
   content   String       @db.Text
-  authorId  String
+  authorId  String       @db.VarChar(36)
   visibility PostVisibility @default(PUBLIC)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @default(now()) @updatedAt
@@ -99,10 +99,9 @@ model Post {
 }
 
 model PostImage {
-  id        String   @id @default(uuid())
-  postId    String
-  imageUrl  String
-  order     Int      @default(0)
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  postId    String   @db.VarChar(36)
+  imageUrl  String   @db.VarChar(100)
   createdAt DateTime @default(now())
 
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -112,9 +111,9 @@ model PostImage {
 }
 
 model PostMention {
-  id        String   @id @default(uuid())
-  postId    String
-  userId    String
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  postId    String   @db.VarChar(36)
+  userId    String   @db.VarChar(36)
   createdAt DateTime @default(now())
 
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -127,11 +126,11 @@ model PostMention {
 }
 
 model Comment {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.VarChar(36)
   content   String   @db.Text
-  postId    String
-  authorId  String
-  parentId  String?  // ID komentar parent (null untuk top-level comment)
+  postId    String   @db.VarChar(36)
+  authorId  String   @db.VarChar(36)
+  parentId  String?  @db.VarChar(36) // ID komentar parent (null untuk top-level comment)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -146,9 +145,9 @@ model Comment {
 }
 
 model Like {
-  id        String   @id @default(uuid())
-  postId    String
-  userId    String
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  postId    String   @db.VarChar(36)
+  userId    String   @db.VarChar(36)
   createdAt DateTime @default(now())
 
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -160,13 +159,13 @@ model Like {
 }
 
 model Message {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.VarChar(36)
   content   String   @db.Text
-  senderId  String
-  receiverId String
-  media     String?
+  senderId  String   @db.VarChar(36)
+  receiverId String  @db.VarChar(36)
+  media     String?  @db.VarChar(100)
   read      Boolean  @default(false)
-  parentId  String?
+  parentId  String?  @db.VarChar(36)
   createdAt DateTime @default(now())
 
   sender    User     @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
@@ -181,9 +180,9 @@ model Message {
 }
 
 model Connection {
-  id          String         @id @default(uuid())
-  userId      String
-  connectedUserId String
+  id          String         @id @default(uuid()) @db.VarChar(36)
+  userId      String         @db.VarChar(36)
+  connectedUserId String     @db.VarChar(36)
   status      ConnectionStatus @default(PENDING)
   message     String?        @db.Text  // Pesan saat request koneksi
   createdAt   DateTime       @default(now())
@@ -199,14 +198,14 @@ model Connection {
 }
 
 model Announcement {
-  id        String   @id @default(uuid())
-  title     String
-  slug      String   @unique
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  title     String   @db.VarChar(150)
+  slug      String   @unique @db.VarChar(150)
   content   String   @db.Text
-  image     String?
+  image     String?  @db.VarChar(100)
   published Boolean  @default(false)
   views     Int      @default(0)
-  authorId  String?
+  authorId  String?  @db.VarChar(36)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -218,15 +217,15 @@ model Announcement {
 }
 
 model Event {
-  id          String   @id @default(uuid())
-  title       String
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  title       String   @db.VarChar(150)
   description String   @db.Text
-  image       String?
+  image       String?  @db.VarChar(100)
   tanggal     DateTime
-  lokasi      String?
-  linkDaftar  String?
+  lokasi      String?  @db.VarChar(100)
+  linkDaftar  String?  @db.VarChar(100)
   published   Boolean  @default(false)
-  authorId    String?
+  authorId    String?  @db.VarChar(36)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -239,9 +238,9 @@ model Event {
 }
 
 model EventParticipant {
-  id        String   @id @default(uuid())
-  eventId   String
-  userId    String
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  eventId   String   @db.VarChar(36)
+  userId    String   @db.VarChar(36)
   createdAt DateTime @default(now())
 
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -270,13 +269,13 @@ enum PostVisibility {
 }
 
 model Notification {
-  id          String   @id @default(uuid())
-  userId      String   // Penerima notifikasi
-  triggeredBy String?  // User ID yang trigger notifikasi (untuk like/comment)
-  type        String   // LIKE, COMMENT, REPLY, ANNOUNCEMENT, EVENT
-  message     String
-  relatedId   String?  // ID dari post/event/announcement
-  relatedType String?  // post/event/announcement
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  userId      String   @db.VarChar(36)
+  triggeredBy String?  @db.VarChar(36)
+  type        String   @db.VarChar(50) // LIKE, COMMENT, REPLY, ANNOUNCEMENT, EVENT
+  message     String   @db.VarChar(100)
+  relatedId   String?  @db.VarChar(36)
+  relatedType String?  @db.VarChar(50) // post/event/announcement
   read        Boolean  @default(false)
   createdAt   DateTime @default(now())
 
@@ -291,10 +290,10 @@ model Notification {
 }
 
 model AdminNotification {
-  id        String   @id @default(uuid())
-  type      String
-  message   String
-  userId    String?
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  type      String   @db.VarChar(50)
+  message   String   @db.VarChar(100)
+  userId    String?  @db.VarChar(36)
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -304,12 +303,12 @@ model AdminNotification {
 }
 
 model Setting {
-  id          String      @id @default(uuid())
-  key         String      @unique
-  category    String
+  id          String      @id @default(uuid()) @db.VarChar(36)
+  key         String      @unique @db.VarChar(100)
+  category    String      @db.VarChar(100)
   value       String      @db.Text
   type        SettingType @default(STRING)
-  label       String
+  label       String      @db.VarChar(100)
   description String?     @db.Text
   isPublic    Boolean     @default(false)
   order       Int         @default(0)
@@ -329,19 +328,19 @@ enum SettingType {
 }
 
 model jobs {
-  id             String      @id
-  title          String
-  slug           String      @unique
+  id             String      @id @db.VarChar(36)
+  title          String      @db.VarChar(150)
+  slug           String      @unique @db.VarChar(150)
   description    String      @db.Text
-  company        String
-  location       String?
-  employmentType String?
-  salaryRange    String?
-  contact        String?
-  applyLink      String?
-  image          String?
+  company        String      @db.VarChar(100)
+  location       String?     @db.VarChar(100)
+  employmentType String?     @db.VarChar(50)
+  salaryRange    String?     @db.VarChar(100)
+  contact        String?     @db.VarChar(100)
+  applyLink      String?     @db.VarChar(100)
+  image          String?     @db.VarChar(100)
   status         jobs_status @default(PENDING)
-  authorId       String
+  authorId       String      @db.VarChar(36)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime
 
@@ -359,9 +358,9 @@ enum jobs_status {
 }
 
 model AnnouncementRead {
-  id            String   @id @default(uuid())
-  announcementId String
-  userId        String
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  announcementId String  @db.VarChar(36)
+  userId        String   @db.VarChar(36)
   readAt        DateTime @default(now())
 
   announcement  Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
@@ -374,9 +373,9 @@ model AnnouncementRead {
 }
 
 model EventRead {
-  id        String   @id @default(uuid())
-  eventId   String
-  userId    String
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  eventId   String   @db.VarChar(36)
+  userId    String   @db.VarChar(36)
   readAt    DateTime @default(now())
 
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -389,13 +388,13 @@ model EventRead {
 }
 
 model DiscussionThread {
-  id          String           @id @default(uuid())
-  title       String
+  id          String           @id @default(uuid()) @db.VarChar(36)
+  title       String           @db.VarChar(200)
   content     String           @db.Text
-  image       String?
+  image       String?          @db.VarChar(100)
   visibility  DiscussionVisibility @default(PUBLIC)
   status      DiscussionStatus @default(OPEN)
-  authorId    String
+  authorId    String           @db.VarChar(36)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -411,9 +410,9 @@ model DiscussionThread {
 }
 
 model DiscussionMember {
-  id        String              @id @default(uuid())
-  threadId  String
-  userId    String
+  id        String              @id @default(uuid()) @db.VarChar(36)
+  threadId  String              @db.VarChar(36)
+  userId    String              @db.VarChar(36)
   role      DiscussionMemberRole @default(MEMBER)
   joinedAt  DateTime            @default(now())
 
@@ -428,12 +427,12 @@ model DiscussionMember {
 }
 
 model DiscussionMessage {
-  id        String           @id @default(uuid())
-  threadId  String
-  senderId  String
+  id        String           @id @default(uuid()) @db.VarChar(36)
+  threadId  String           @db.VarChar(36)
+  senderId  String           @db.VarChar(36)
   content   String           @db.Text
-  media     String?
-  parentId  String?
+  media     String?          @db.VarChar(100)
+  parentId  String?          @db.VarChar(36)
   createdAt DateTime         @default(now())
 
   thread    DiscussionThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
@@ -466,10 +465,10 @@ enum DiscussionMemberRole {
 // ─── Report / Content Moderation ───────────────────────────────────────────
 
 model Report {
-  id          String           @id @default(uuid())
-  reporterId  String
+  id          String           @id @default(uuid()) @db.VarChar(36)
+  reporterId  String           @db.VarChar(36)
   targetType  ReportTargetType
-  targetId    String
+  targetId    String           @db.VarChar(36)
   reason      ReportReason
   description String?          @db.Text
   status      ReportStatus     @default(PENDING)
@@ -511,11 +510,11 @@ enum ReportStatus {
 }
 
 model MailQueue {
-  id        String   @id @default(uuid())
-  userId    String
-  subject   String
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  userId    String   @db.VarChar(36)
+  subject   String   @db.VarChar(150)
   content   String   @db.Text
-  status    String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  status    String   @default("PENDING") @db.VarChar(20) // PENDING, PROCESSING, COMPLETED, FAILED
   attempts  Int      @default(0)
   error     String?  @db.Text
   createdAt DateTime @default(now())

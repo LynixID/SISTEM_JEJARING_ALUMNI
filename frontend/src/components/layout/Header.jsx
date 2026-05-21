@@ -4,10 +4,12 @@ import { useAuth } from '../../context/AuthContext'
 import { getImageUrl } from '../../utils/imageUtils'
 import { LogOut, User, Settings, Menu, Search, UserPlus } from 'lucide-react'
 import NotificationBell from '../common/NotificationBell'
+import ConfirmModal from '../common/ConfirmModal'
 
 const Header = () => {
   const { user, logout, isAuthenticated } = useAuth()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
 
@@ -168,7 +170,10 @@ const Header = () => {
                     <div className="border-t border-gray-100 my-1"></div>
                     
                     <button
-                      onClick={handleLogout}
+                      onClick={() => {
+                        setShowProfileMenu(false)
+                        setIsLogoutConfirmOpen(true)
+                      }}
                       className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <LogOut size={16} />
@@ -181,6 +186,17 @@ const Header = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={handleLogout}
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin keluar dari akun Anda?"
+        confirmText="Logout"
+        cancelText="Batal"
+        variant="danger"
+      />
     </header>
   )
 }

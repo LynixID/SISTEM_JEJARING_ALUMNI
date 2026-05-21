@@ -23,7 +23,15 @@ import {
   listTrash,
   restoreFromTrash,
   emptyTrash,
-  deleteTrashFile
+  deleteTrashFile,
+  getAllPostsByAdmin,
+  deletePostByAdmin,
+  getAllThreadsByAdmin,
+  deleteThreadByAdmin,
+  getAllJobsByAdmin,
+  approveJobByAdmin,
+  rejectJobByAdmin,
+  deleteJobByAdmin
 } from './adminController.js'
 import { verifyToken, requireRole } from '../../middleware/auth.js'
 
@@ -44,10 +52,25 @@ router.patch('/users/:id/verify', verifyUser)
 router.patch('/users/:id/reject', rejectUser)
 router.patch('/users/:id/role', updateUserRole)
 
+// Post Management
+router.get('/posts', getAllPostsByAdmin)
+router.delete('/posts/:id', deletePostByAdmin)
+
+// Forum Management
+router.get('/threads', getAllThreadsByAdmin)
+router.delete('/threads/:id', deleteThreadByAdmin)
+
+// Job Management
+router.get('/jobs', getAllJobsByAdmin)
+router.patch('/jobs/:id/approve', approveJobByAdmin)
+router.patch('/jobs/:id/reject', rejectJobByAdmin)
+router.delete('/jobs/:id', deleteJobByAdmin)
+
 // Comment Management
 router.get('/comments', getAllComments)
 router.delete('/comments/:id', deleteCommentByAdmin)
 router.delete('/comments', bulkDeleteCommentsByAdmin)
+
 // User Suspension
 router.patch('/users/:id/suspend', suspendUser)
 router.patch('/users/:id/unsuspend', unsuspendUser)
