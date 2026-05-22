@@ -520,9 +520,40 @@ model MailQueue {
   error     String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([status])
   @@map("mail_queues")
+}
+
+// ─── Display Home Page Configuration ───────────────────────────────────────
+model DisplayHomePage {
+  id          String                    @id @default(uuid())
+  kategori    DisplayHomePageKategori
+  idTarget    String?                   // ID user/announcement/event, null untuk EMAIL
+  value       String?                   // Untuk kategori EMAIL/PHONE/etc, simpan value
+  urutan      Int                       @default(0) // Untuk mengurutkan tampilan
+  isActive    Boolean                   @default(true)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  @@index([kategori])
+  @@index([isActive])
+  @@index([urutan])
+  @@map("display_home_pages")
+}
+
+enum DisplayHomePageKategori {
+  ALUMNI
+  PROGRAM
+  EMAIL
+  YOUTUBE
+  TELEPHONE
+  ALUMNI_COUNT
+  EVENT_COUNT
+  CITY_COUNT
+  HERO_IMAGE
+  ABOUT_IMAGE
+  NAVBAR_LOGO
 }

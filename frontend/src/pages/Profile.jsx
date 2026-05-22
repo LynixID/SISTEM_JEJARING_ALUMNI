@@ -6,7 +6,7 @@ import Sidebar from '../components/layout/Sidebar'
 import { getUserProfile, getConnectionStatus, acceptConnection, rejectConnection, getPosts } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
 import UserBadge from '../components/common/UserBadge'
-import { Edit, User, Briefcase, Award, GraduationCap, FileText, Globe, MapPin, Mail, Phone, Calendar, UserPlus, MessageCircle, Check, Clock, X, Newspaper } from 'lucide-react'
+import { Edit, User, Briefcase, Award, GraduationCap, FileText, Globe, MapPin, Mail, Phone, Calendar, UserPlus, MessageCircle, Check, Clock, X, Newspaper, Flag } from 'lucide-react'
 import Button from '../components/common/Button'
 import ConnectModal from '../components/connection/ConnectModal'
 import PostCard from '../components/post/PostCard'
@@ -247,8 +247,7 @@ const Profile = () => {
           {/* Cover Photo & Profile Header Section (Unified Card) */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
             {/* Cover Photo */}
-            <div className="relative h-64 sm:h-80 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600">
-
+            <div className="relative h-48 sm:h-80 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600">
               {coverPhoto ? (
                 <img
                   src={getImageUrl(coverPhoto, 'profiles')}
@@ -262,168 +261,173 @@ const Profile = () => {
               {isOwnProfile && (
                 <button
                   onClick={handleEditProfile}
-                  className="absolute top-6 right-6 px-5 py-2.5 bg-white/90 backdrop-blur-sm text-gray-700 rounded-xl hover:bg-white transition-all flex items-center gap-2 shadow-sm font-medium"
+                  className="absolute top-4 right-4 sm:top-6 sm:right-6 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-white/90 backdrop-blur-sm text-gray-700 rounded-xl hover:bg-white transition-all flex items-center gap-2 shadow-sm font-medium text-xs sm:text-sm"
                 >
-                  <Edit size={18} />
-                  Edit Profil
+                  <Edit size={16} />
+                  <span>Edit Profil</span>
                 </button>
               )}
+
             </div>
             
             {/* Profile Info Section */}
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="relative -mt-24 pb-8">
-                <div className="flex flex-col sm:flex-row items-start gap-6">
-                  {/* Profile Picture */}
-                  <div className="relative flex-shrink-0">
-                    <div className="w-40 h-40 sm:w-44 sm:h-44">
-                      {fotoProfil ? (
-                        <img
-                          src={getImageUrl(fotoProfil, 'profiles')}
-                          alt={user.nama}
-                          className="w-full h-full rounded-2xl border-4 border-white object-cover shadow-sm"
-                          onError={(e) => { e.target.style.display = 'none' }}
-                        />
-                      ) : (
-                        <div className="w-full h-full rounded-2xl border-4 border-white bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-4xl sm:text-5xl font-bold shadow-sm">
-                          {user.nama?.charAt(0) || 'U'}
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 sm:pb-8">
+              <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                {/* Profile Picture */}
+                <div className="relative flex-shrink-0 mx-auto sm:mx-0">
+                  <div className="w-32 h-32 sm:w-44 sm:h-44 relative -mt-16 sm:-mt-24">
+                    {fotoProfil ? (
+                      <img
+                        src={getImageUrl(fotoProfil, 'profiles')}
+                        alt={user.nama}
+                        className="w-full h-full rounded-2xl border-4 border-white object-cover shadow-md"
+                        onError={(e) => { e.target.style.display = 'none' }}
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-2xl border-4 border-white bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-3xl sm:text-5xl font-bold shadow-md">
+                        {user.nama?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                    {!isOwnProfile && (
+                      <button
+                        onClick={() => setReportModal(true)}
+                        className="sm:hidden absolute -right-14 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/95 text-gray-400 hover:text-red-600 border border-gray-200 rounded-xl shadow-sm transition-all flex items-center justify-center hover:scale-105 active:scale-95 backdrop-blur-sm"
+                        title="Laporkan pengguna ini"
+                      >
+                        <Flag size={18} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                
+                {/* User Info */}
+                <div className="flex-1 w-full text-center sm:text-left mt-3 sm:mt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1.5 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2">
+                        <span>{user.nama}</span>
+                        <span className="inline-flex">
+                          <UserBadge role={user.role} size="md" />
+                        </span>
+                      </h1>
+                      {profile.profesi && (
+                        <p className="text-base sm:text-xl text-blue-600 font-semibold">{profile.profesi}</p>
+                      )}
+                      {profile.perusahaan && profile.jabatan && (
+                        <p className="text-sm sm:text-base text-gray-600 mt-1">
+                          {profile.jabatan} di <span className="font-semibold text-gray-800">{profile.perusahaan}</span>
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 pt-3 border-t border-gray-100 text-sm">
+                      {user.domisili && (
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <MapPin size={15} className="text-gray-400" />
+                          <span className="font-medium">{user.domisili}</span>
+                        </div>
+                      )}
+                      {user.angkatan && (
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <Calendar size={15} className="text-gray-400" />
+                          <span className="font-medium">Angkatan {user.angkatan}</span>
+                        </div>
+                      )}
+                      {user.prodi && (
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <GraduationCap size={15} className="text-gray-400" />
+                          <span className="font-medium">{user.prodi}</span>
                         </div>
                       )}
                     </div>
-                  </div>
-                  
-                  {/* User Info */}
-                  <div className="flex-1 w-full">
-                    <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-6 sm:p-8 border border-white/50">
 
-                      <div className="space-y-3">
-                        <div>
-                          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-                          {user.nama}
-                          <UserBadge role={user.role} size="md" />
-                        </h1>
-                          {profile.profesi && (
-                            <p className="text-lg sm:text-xl text-gray-700 font-medium">{profile.profesi}</p>
-                          )}
-                          {profile.perusahaan && profile.jabatan && (
-                            <p className="text-base text-gray-600 mt-1">
-                              {profile.jabatan} di <span className="font-semibold">{profile.perusahaan}</span>
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-gray-100">
-                          {user.domisili && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <MapPin size={16} className="text-gray-400" />
-                              <span className="text-sm font-medium">{user.domisili}</span>
-                            </div>
-                          )}
-                          {user.angkatan && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Calendar size={16} className="text-gray-400" />
-                              <span className="text-sm font-medium">Angkatan {user.angkatan}</span>
-                            </div>
-                          )}
-                          {user.prodi && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <GraduationCap size={16} className="text-gray-400" />
-                              <span className="text-sm font-medium">{user.prodi}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Action buttons untuk non-own profile */}
-                        {!isOwnProfile && (
-                          <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                            {connectionStatus === null && (
-                              <Button
-                                variant="primary"
-                                className="flex items-center gap-2 rounded-xl"
-                                onClick={() => setShowConnectModal(true)}
-                                disabled={loadingConnection}
-                              >
-                                <UserPlus size={18} />
-                                Koneksikan
-                              </Button>
-                            )}
-                            {connectionStatus === 'PENDING' && connectionInfo?.isRequester && (
-                              <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-xl border border-yellow-200">
-                                <Clock size={18} />
-                                <span className="text-sm font-medium">Request Dikirim</span>
-                              </div>
-                            )}
-                            {connectionStatus === 'PENDING' && !connectionInfo?.isRequester && (
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="primary"
-                                  size="sm"
-                                  onClick={handleAcceptConnection}
-                                  disabled={processingConnection}
-                                  className="flex items-center gap-2 rounded-xl"
-                                >
-                                  <Check size={18} />
-                                  {processingConnection ? 'Memproses...' : 'Terima'}
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={handleRejectConnection}
-                                  disabled={processingConnection}
-                                  className="flex items-center gap-2 rounded-xl text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                                >
-                                  <X size={18} />
-                                  Tolak
-                                </Button>
-                              </div>
-                            )}
-                            {connectionStatus === 'ACCEPTED' && (
-                              <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl border border-green-200">
-                                <Check size={18} />
-                                <span className="text-sm font-medium">Terkoneksi</span>
-                              </div>
-                            )}
-                            {connectionStatus === 'REJECTED' && (
-                              <Button
-                                variant="outline"
-                                className="flex items-center gap-2 rounded-xl"
-                                onClick={() => setShowConnectModal(true)}
-                                disabled={loadingConnection}
-                              >
-                                <UserPlus size={18} />
-                                Koneksikan Lagi
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              className="flex items-center gap-2 rounded-xl"
-                              onClick={() => navigate(`/pesan/${user.id}`, {
-                                state: {
-                                  userInfo: {
-                                    id: user.id,
-                                    nama: user.nama,
-                                    email: user.email,
-                                    fotoProfil: user.profile?.fotoProfil || null
-                                  }
-                                }
-                              })}
-                            >
-                              <MessageCircle size={18} />
-                              Kirim Pesan
-                            </Button>
-
-                            {/* Tombol Laporkan Pengguna */}
-                            <button
-                              onClick={() => setReportModal(true)}
-                              className="ml-auto flex items-center gap-1.5 text-gray-400 hover:text-red-500 transition-colors text-sm px-3 py-2 rounded-xl hover:bg-red-50"
-                              title="Laporkan pengguna ini"
-                            >
-                              🚩 Laporkan
-                            </button>
+                    {/* Action buttons untuk non-own profile */}
+                    {!isOwnProfile && (
+                      <div className="flex items-center gap-3 pt-4 border-t border-gray-100 w-full">
+                        {connectionStatus === null && (
+                          <Button
+                            variant="primary"
+                            className="flex items-center justify-center gap-2 rounded-xl flex-1 px-5 py-2.5 text-sm"
+                            onClick={() => setShowConnectModal(true)}
+                            disabled={loadingConnection}
+                          >
+                            <UserPlus size={18} />
+                            Koneksikan
+                          </Button>
+                        )}
+                        {connectionStatus === 'PENDING' && connectionInfo?.isRequester && (
+                          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-50 text-yellow-700 rounded-xl border border-yellow-200 text-sm font-medium flex-1">
+                            <Clock size={18} />
+                            <span>Request Dikirim</span>
                           </div>
                         )}
+                        {connectionStatus === 'PENDING' && !connectionInfo?.isRequester && (
+                          <div className="flex items-center gap-2 flex-1">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={handleAcceptConnection}
+                              disabled={processingConnection}
+                              className="flex items-center justify-center gap-2 rounded-xl flex-1"
+                            >
+                              <Check size={18} />
+                              {processingConnection ? 'Memproses...' : 'Terima'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleRejectConnection}
+                              disabled={processingConnection}
+                              className="flex items-center justify-center gap-2 rounded-xl text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 flex-1"
+                            >
+                              <X size={18} />
+                              Tolak
+                            </Button>
+                          </div>
+                        )}
+                        {connectionStatus === 'ACCEPTED' && (
+                          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 text-green-700 rounded-xl border border-green-200 text-sm font-medium flex-1">
+                            <Check size={18} />
+                            <span>Terkoneksi</span>
+                          </div>
+                        )}
+                        {connectionStatus === 'REJECTED' && (
+                          <Button
+                            variant="outline"
+                            className="flex items-center justify-center gap-2 rounded-xl flex-1 px-5 py-2.5 text-sm"
+                            onClick={() => setShowConnectModal(true)}
+                            disabled={loadingConnection}
+                          >
+                            <UserPlus size={18} />
+                            Koneksikan Lagi
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          className="flex items-center justify-center gap-2 rounded-xl flex-1 px-5 py-2.5 text-sm"
+                          onClick={() => navigate(`/pesan/${user.id}`, {
+                            state: {
+                              userInfo: {
+                                id: user.id,
+                                nama: user.nama,
+                                email: user.email,
+                                fotoProfil: user.profile?.fotoProfil || null
+                              }
+                            }
+                          })}
+                        >
+                          <MessageCircle size={18} />
+                          Kirim Pesan
+                        </Button>
+                        <button
+                          onClick={() => setReportModal(true)}
+                          className="hidden sm:flex items-center justify-center h-10 w-10 sm:h-[42px] sm:w-[42px] bg-white hover:bg-red-50 text-gray-400 hover:text-red-600 border border-gray-200 hover:border-red-100 rounded-xl transition-all shadow-sm hover:scale-105 active:scale-95 flex-shrink-0"
+                          title="Laporkan pengguna ini"
+                        >
+                          <Flag size={18} />
+                        </button>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -641,16 +645,6 @@ const Profile = () => {
                               </span>
                             ))}
                           </div>
-                        )}
-                        {item.link && (
-                          <a
-                            href={item.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-700 font-medium text-sm inline-flex items-center gap-1"
-                          >
-                            Lihat Project →
-                          </a>
                         )}
                       </div>
                     ))}

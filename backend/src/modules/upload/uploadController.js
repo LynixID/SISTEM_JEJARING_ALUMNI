@@ -79,12 +79,32 @@ export const uploadImage = async (req, res) => {
     let finalFileSize = 0
 
     try {
-      // sharp().toFile() mengembalikan metadata file yang sangat berguna
-      const info = await sharp(tempFilePath)
-        .resize(1920, 1920, {
+      const uploadType = req.body.type || ''
+      let sharpInstance = sharp(tempFilePath)
+
+      if (uploadType === 'hero') {
+        sharpInstance = sharpInstance.resize(700, 576, {
           fit: 'inside',
           withoutEnlargement: true
         })
+      } else if (uploadType === 'about') {
+        sharpInstance = sharpInstance.resize(656, 545, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+      } else if (uploadType === 'logo') {
+        sharpInstance = sharpInstance.resize(300, 80, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+      } else {
+        sharpInstance = sharpInstance.resize(1920, 1920, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+      }
+
+      const info = await sharpInstance
         .webp({ quality: 85 })
         .toFile(finalFilePath)
 

@@ -609,39 +609,38 @@ const EditProfile = () => {
         <main className="flex-1 min-w-0">
           <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
             {/* Header */}
-            <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-
+            <div className="mb-6 sm:mb-8 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-100 rounded-xl flex-shrink-0">
+                  <User className="text-blue-600" size={22} />
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Edit Profil</h1>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Perbarui informasi profil Anda</p>
+                </div>
+              </div>
               <Button
                 variant="outline"
                 onClick={() => navigate(`/profil/${userId}`)}
-                className="flex items-center gap-2 mb-4"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 text-sm rounded-xl"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={16} />
                 Kembali ke Profil
               </Button>
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <User className="text-blue-600" size={24} />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Edit Profil</h1>
-                  <p className="text-gray-600 mt-1">Perbarui informasi profil Anda</p>
-                </div>
-              </div>
             </div>
 
 
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Sidebar Tabs */}
               <div className="w-full lg:w-64 flex-shrink-0">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 sticky top-24">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 lg:sticky lg:top-24 flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible scrollbar-hide gap-1 lg:gap-0 whitespace-nowrap">
                   {tabs.map((tab) => {
                     const Icon = tab.icon
                     return (
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-1 ${
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all flex-shrink-0 lg:flex-shrink lg:w-full mb-0 lg:mb-1 ${
                           activeTab === tab.id
                             ? 'bg-blue-600 text-white shadow-md shadow-blue-200 font-medium'
                             : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600'
@@ -658,7 +657,7 @@ const EditProfile = () => {
               {/* Main Content Area */}
               <div className="flex-1 min-w-0">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="p-6 sm:p-8">
+                  <div className="p-4 sm:p-8">
 
                 {/* Tab: Basic Info */}
                 {activeTab === 'basic' && (
@@ -706,11 +705,11 @@ const EditProfile = () => {
                         />
                       </div>
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end mt-6">
                       <Button
                         onClick={handleSaveBasicInfo}
                         disabled={saving}
-                        className="flex items-center gap-2"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl"
                       >
                         <Save size={18} />
                         {saving ? 'Menyimpan...' : 'Simpan'}
@@ -730,7 +729,7 @@ const EditProfile = () => {
                         <label className="block text-sm font-bold text-gray-700 mb-3">
                           Cover Photo
                         </label>
-                        <div className="relative group rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 hover:border-blue-400 transition-all aspect-[4/1]">
+                        <div className="relative group rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 hover:border-blue-400 transition-all aspect-[2.5/1] sm:aspect-[4/1] h-32 sm:h-auto">
                           {coverPhotoPreview ? (
                             <>
                               <img
@@ -759,9 +758,9 @@ const EditProfile = () => {
                       </div>
 
                       {/* Foto Profil */}
-                      <div className="mb-8 flex flex-col sm:flex-row items-center gap-6">
+                      <div className="mb-8 flex flex-col sm:flex-row items-center text-center sm:text-left gap-6">
                         <div className="relative group">
-                          <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100">
+                          <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100 mx-auto">
                             {fotoProfilPreview ? (
                               <img src={fotoProfilPreview} alt="Profil" className="w-full h-full object-cover" />
                             ) : (
@@ -780,7 +779,7 @@ const EditProfile = () => {
                         <div className="flex-1">
                           <h4 className="text-sm font-bold text-gray-700 mb-1">Foto Profil</h4>
                           <p className="text-xs text-gray-500 mb-3">Gunakan foto formal agar terlihat lebih profesional. Maksimal 5MB.</p>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                              <label className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 cursor-pointer transition-colors">
                                 Ganti Foto
                                 <input type="file" accept="image/*" onChange={(e) => handleFileSelect('fotoProfil', e)} className="hidden" />
@@ -829,11 +828,11 @@ const EditProfile = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end mt-6">
                       <Button
                         onClick={handleSaveProfile}
                         disabled={saving}
-                        className="flex items-center gap-2"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl"
                       >
                         <Save size={18} />
                         {saving ? 'Menyimpan...' : 'Simpan Profil'}
@@ -911,11 +910,11 @@ const EditProfile = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end mt-6">
                       <Button
                         onClick={handleSaveProfile}
                         disabled={saving}
-                        className="flex items-center gap-2"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl"
                       >
                         <Save size={18} />
                         {saving ? 'Menyimpan...' : 'Simpan'}
@@ -927,11 +926,11 @@ const EditProfile = () => {
                 {/* Tab: Portfolio */}
                 {activeTab === 'portfolio' && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                       <h2 className="text-xl font-semibold text-gray-900">Portfolio</h2>
                       <Button
                         onClick={handleAddPortfolio}
-                        className="flex items-center gap-2"
+                        className="flex items-center justify-center gap-2 rounded-xl text-sm w-full sm:w-auto px-4 py-2"
                       >
                         <Plus size={18} />
                         Tambah Portfolio
@@ -940,36 +939,38 @@ const EditProfile = () => {
                     {profileInfo.portfolio.length > 0 ? (
                       <div className="space-y-4">
                         {profileInfo.portfolio.map((item, index) => (
-                          <div key={item.id || index} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900">{item.title}</h3>
+                          <div key={item.id || index} className="border border-gray-100 hover:border-blue-100 rounded-2xl p-4 sm:p-5 transition-all bg-gray-50/20 hover:bg-blue-50/5 group">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-gray-900 text-base sm:text-lg group-hover:text-blue-600 transition-colors">{item.title}</h3>
                                 {item.description && (
-                                  <p className="text-gray-600 text-sm mt-1">{item.description}</p>
+                                  <p className="text-gray-600 text-sm mt-2 leading-relaxed">{item.description}</p>
                                 )}
                                 {item.technologies && item.technologies.length > 0 && (
-                                  <div className="flex flex-wrap gap-2 mt-2">
+                                  <div className="flex flex-wrap gap-1.5 mt-3">
                                     {item.technologies.map((tech, i) => (
-                                      <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded">
+                                      <span key={i} className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg">
                                         {tech}
                                       </span>
                                     ))}
                                   </div>
                                 )}
                                 {item.year && (
-                                  <p className="text-xs text-gray-500 mt-2">Tahun: {item.year}</p>
+                                  <p className="text-xs text-gray-400 font-medium mt-3">Tahun: {item.year}</p>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 ml-4">
+                              <div className="flex items-center gap-2 self-end sm:self-start border-t sm:border-t-0 border-gray-100/80 pt-3 sm:pt-0 w-full sm:w-auto justify-end">
                                 <button
                                   onClick={() => handleEditPortfolio(index)}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                                  className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-gray-200/60 sm:border-transparent hover:border-blue-100"
+                                  title="Edit"
                                 >
                                   <Edit2 size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDeletePortfolio(index)}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-gray-200/60 sm:border-transparent hover:border-red-100"
+                                  title="Hapus"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -981,11 +982,11 @@ const EditProfile = () => {
                     ) : (
                       <p className="text-gray-500 text-center py-8">Belum ada portfolio. Klik "Tambah Portfolio" untuk menambahkan.</p>
                     )}
-                    <div className="flex justify-end">
+                    <div className="flex justify-end mt-6">
                       <Button
                         onClick={handleSaveProfile}
                         disabled={saving}
-                        className="flex items-center gap-2"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl"
                       >
                         <Save size={18} />
                         {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
@@ -997,11 +998,11 @@ const EditProfile = () => {
                 {/* Tab: Experience */}
                 {activeTab === 'experience' && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                       <h2 className="text-xl font-semibold text-gray-900">Pengalaman Kerja</h2>
                       <Button
                         onClick={handleAddExperience}
-                        className="flex items-center gap-2"
+                        className="flex items-center justify-center gap-2 rounded-xl text-sm w-full sm:w-auto px-4 py-2"
                       >
                         <Plus size={18} />
                         Tambah Pengalaman
@@ -1010,40 +1011,42 @@ const EditProfile = () => {
                     {profileInfo.experience.length > 0 ? (
                       <div className="space-y-4">
                         {profileInfo.experience.map((exp, index) => (
-                          <div key={exp.id || index} className="border-l-4 border-blue-600 pl-4 py-2">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900">{exp.position}</h3>
-                                <p className="text-gray-700">{exp.company}</p>
+                          <div key={exp.id || index} className="border-l-4 border-blue-500 bg-gray-50/20 hover:bg-blue-50/5 rounded-r-2xl p-4 sm:p-5 transition-all hover:border-l-5 group">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-gray-900 text-base sm:text-lg group-hover:text-blue-600 transition-colors">{exp.position}</h3>
+                                <p className="text-gray-700 font-semibold text-sm sm:text-base mt-1">{exp.company}</p>
                                 {exp.location && (
-                                  <p className="text-sm text-gray-500">{exp.location}</p>
+                                  <p className="text-sm text-gray-500 mt-1">{exp.location}</p>
                                 )}
-                                <p className="text-sm text-gray-500">
+                                <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">
                                   {exp.startDate} - {exp.endDate || 'Present'} • {exp.employmentType}
                                 </p>
                                 {exp.description && (
-                                  <p className="text-gray-600 text-sm mt-2">{exp.description}</p>
+                                  <p className="text-gray-600 text-sm mt-3 leading-relaxed">{exp.description}</p>
                                 )}
                                 {exp.skills && exp.skills.length > 0 && (
-                                  <div className="flex flex-wrap gap-2 mt-2">
+                                  <div className="flex flex-wrap gap-1.5 mt-3">
                                     {exp.skills.map((skill, i) => (
-                                      <span key={i} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                                      <span key={i} className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
                                         {skill}
                                       </span>
                                     ))}
                                   </div>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 ml-4">
+                              <div className="flex items-center gap-2 self-end sm:self-start border-t sm:border-t-0 border-gray-100/80 pt-3 sm:pt-0 w-full sm:w-auto justify-end">
                                 <button
                                   onClick={() => handleEditExperience(index)}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                                  className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-gray-200/60 sm:border-transparent hover:border-blue-100"
+                                  title="Edit"
                                 >
                                   <Edit2 size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteExperience(index)}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-gray-200/60 sm:border-transparent hover:border-red-100"
+                                  title="Hapus"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -1055,11 +1058,11 @@ const EditProfile = () => {
                     ) : (
                       <p className="text-gray-500 text-center py-8">Belum ada pengalaman kerja. Klik "Tambah Pengalaman" untuk menambahkan.</p>
                     )}
-                    <div className="flex justify-end">
+                    <div className="flex justify-end mt-6">
                       <Button
                         onClick={handleSaveProfile}
                         disabled={saving}
-                        className="flex items-center gap-2"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl"
                       >
                         <Save size={18} />
                         {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
@@ -1071,11 +1074,11 @@ const EditProfile = () => {
                 {/* Tab: Education */}
                 {activeTab === 'education' && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                       <h2 className="text-xl font-semibold text-gray-900">Pendidikan</h2>
                       <Button
                         onClick={handleAddEducation}
-                        className="flex items-center gap-2"
+                        className="flex items-center justify-center gap-2 rounded-xl text-sm w-full sm:w-auto px-4 py-2"
                       >
                         <Plus size={18} />
                         Tambah Pendidikan
@@ -1084,34 +1087,36 @@ const EditProfile = () => {
                     {profileInfo.education.length > 0 ? (
                       <div className="space-y-4">
                         {profileInfo.education.map((edu, index) => (
-                          <div key={edu.id || index} className="border-l-4 border-green-600 pl-4 py-2">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900">{edu.school}</h3>
-                                <p className="text-gray-700">{edu.degree} {edu.fieldOfStudy && `- ${edu.fieldOfStudy}`}</p>
-                                <p className="text-sm text-gray-500">
+                          <div key={edu.id || index} className="border-l-4 border-green-500 bg-gray-50/20 hover:bg-blue-50/5 rounded-r-2xl p-4 sm:p-5 transition-all hover:border-l-5 group">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-gray-900 text-base sm:text-lg group-hover:text-green-600 transition-colors">{edu.school}</h3>
+                                <p className="text-gray-700 font-semibold text-sm sm:text-base mt-1">{edu.degree} {edu.fieldOfStudy && `• ${edu.fieldOfStudy}`}</p>
+                                <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">
                                   {edu.startYear} - {edu.endYear || 'Present'}
                                 </p>
                                 {edu.grade && (
-                                  <p className="text-sm text-gray-600 mt-1">IPK/GPA: {edu.grade}</p>
+                                  <p className="text-sm text-green-600 font-semibold mt-2">IPK/GPA: {edu.grade}</p>
                                 )}
                                 {edu.activities && (
-                                  <p className="text-sm text-gray-600 mt-1">Kegiatan: {edu.activities}</p>
+                                  <p className="text-sm text-gray-600 mt-2 font-medium">Kegiatan: <span className="text-gray-500 font-normal">{edu.activities}</span></p>
                                 )}
                                 {edu.description && (
-                                  <p className="text-gray-600 text-sm mt-2">{edu.description}</p>
+                                  <p className="text-gray-600 text-sm mt-3 leading-relaxed">{edu.description}</p>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 ml-4">
+                              <div className="flex items-center gap-2 self-end sm:self-start border-t sm:border-t-0 border-gray-100/80 pt-3 sm:pt-0 w-full sm:w-auto justify-end">
                                 <button
                                   onClick={() => handleEditEducation(index)}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                                  className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all border border-gray-200/60 sm:border-transparent hover:border-green-100"
+                                  title="Edit"
                                 >
                                   <Edit2 size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteEducation(index)}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-gray-200/60 sm:border-transparent hover:border-red-100"
+                                  title="Hapus"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -1123,11 +1128,11 @@ const EditProfile = () => {
                     ) : (
                       <p className="text-gray-500 text-center py-8">Belum ada riwayat pendidikan. Klik "Tambah Pendidikan" untuk menambahkan.</p>
                     )}
-                    <div className="flex justify-end">
+                    <div className="flex justify-end mt-6">
                       <Button
                         onClick={handleSaveProfile}
                         disabled={saving}
-                        className="flex items-center gap-2"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl"
                       >
                         <Save size={18} />
                         {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
@@ -1139,11 +1144,11 @@ const EditProfile = () => {
                 {/* Tab: Certifications */}
                 {activeTab === 'certifications' && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                       <h2 className="text-xl font-semibold text-gray-900">Sertifikasi</h2>
                       <Button
                         onClick={handleAddCertification}
-                        className="flex items-center gap-2"
+                        className="flex items-center justify-center gap-2 rounded-xl text-sm w-full sm:w-auto px-4 py-2"
                       >
                         <Plus size={18} />
                         Tambah Sertifikasi
@@ -1152,39 +1157,41 @@ const EditProfile = () => {
                     {profileInfo.certifications.length > 0 ? (
                       <div className="space-y-4">
                         {profileInfo.certifications.map((cert, index) => (
-                          <div key={cert.id || index} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900">{cert.name}</h3>
-                                <p className="text-gray-700">{cert.issuingOrganization}</p>
-                                <p className="text-sm text-gray-500">
+                          <div key={cert.id || index} className="border border-gray-100 hover:border-yellow-100 rounded-2xl p-4 sm:p-5 transition-all bg-gray-50/20 hover:bg-yellow-50/5 group">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-gray-900 text-base sm:text-lg group-hover:text-yellow-600 transition-colors">{cert.name}</h3>
+                                <p className="text-gray-700 font-semibold text-sm sm:text-base mt-1">{cert.issuingOrganization}</p>
+                                <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">
                                   Diterbitkan: {cert.issueDate}
                                   {cert.expirationDate && ` - Berlaku hingga: ${cert.expirationDate}`}
                                 </p>
                                 {cert.credentialId && (
-                                  <p className="text-sm text-gray-600 mt-1">ID: {cert.credentialId}</p>
+                                  <p className="text-xs sm:text-sm text-gray-500 font-medium mt-2">Credential ID: <span className="text-gray-600 font-normal">{cert.credentialId}</span></p>
                                 )}
                                 {cert.credentialUrl && (
                                   <a
                                     href={cert.credentialUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline text-sm mt-2 inline-block"
+                                    className="text-blue-600 hover:text-blue-700 font-semibold text-xs sm:text-sm mt-3 inline-flex items-center gap-1 hover:underline"
                                   >
                                     Lihat Sertifikat →
                                   </a>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 ml-4">
+                              <div className="flex items-center gap-2 self-end sm:self-start border-t sm:border-t-0 border-gray-100/80 pt-3 sm:pt-0 w-full sm:w-auto justify-end">
                                 <button
                                   onClick={() => handleEditCertification(index)}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                                  className="p-2 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-xl transition-all border border-gray-200/60 sm:border-transparent hover:border-yellow-100"
+                                  title="Edit"
                                 >
                                   <Edit2 size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteCertification(index)}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-gray-200/60 sm:border-transparent hover:border-red-100"
+                                  title="Hapus"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -1196,11 +1203,11 @@ const EditProfile = () => {
                     ) : (
                       <p className="text-gray-500 text-center py-8">Belum ada sertifikasi. Klik "Tambah Sertifikasi" untuk menambahkan.</p>
                     )}
-                    <div className="flex justify-end">
+                    <div className="flex justify-end mt-6">
                       <Button
                         onClick={handleSaveProfile}
                         disabled={saving}
-                        className="flex items-center gap-2"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl"
                       >
                         <Save size={18} />
                         {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
@@ -1219,8 +1226,8 @@ const EditProfile = () => {
 
       {/* Modal: Portfolio */}
       {showPortfolioModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
+          <div className="bg-white rounded-2xl p-5 sm:p-7 w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 transition-all">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               {editingIndex !== null ? 'Edit Portfolio' : 'Tambah Portfolio'}
             </h3>
@@ -1279,17 +1286,18 @@ const EditProfile = () => {
                 onChange={(e) => setPortfolioForm(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
               />
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="grid grid-cols-2 sm:flex sm:justify-end gap-3 mt-6">
               <Button
                 variant="outline"
                 onClick={() => {
                   setShowPortfolioModal(false)
                   setEditingIndex(null)
                 }}
+                className="w-full sm:w-auto"
               >
                 Batal
               </Button>
-              <Button onClick={handleSavePortfolio}>
+              <Button onClick={handleSavePortfolio} className="w-full sm:w-auto">
                 Simpan
               </Button>
             </div>
@@ -1299,8 +1307,8 @@ const EditProfile = () => {
 
       {/* Modal: Experience */}
       {showExperienceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
+          <div className="bg-white rounded-2xl p-5 sm:p-7 w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 transition-all">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               {editingIndex !== null ? 'Edit Pengalaman' : 'Tambah Pengalaman'}
             </h3>
@@ -1323,7 +1331,7 @@ const EditProfile = () => {
                 onChange={(e) => setExperienceForm(prev => ({ ...prev, location: e.target.value }))}
                 placeholder="Kota, Negara"
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Tanggal Mulai"
                   type="month"
@@ -1369,17 +1377,18 @@ const EditProfile = () => {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="grid grid-cols-2 sm:flex sm:justify-end gap-3 mt-6">
               <Button
                 variant="outline"
                 onClick={() => {
                   setShowExperienceModal(false)
                   setEditingIndex(null)
                 }}
+                className="w-full sm:w-auto"
               >
                 Batal
               </Button>
-              <Button onClick={handleSaveExperience}>
+              <Button onClick={handleSaveExperience} className="w-full sm:w-auto">
                 Simpan
               </Button>
             </div>
@@ -1389,8 +1398,8 @@ const EditProfile = () => {
 
       {/* Modal: Education */}
       {showEducationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
+          <div className="bg-white rounded-2xl p-5 sm:p-7 w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 transition-all">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               {editingIndex !== null ? 'Edit Pendidikan' : 'Tambah Pendidikan'}
             </h3>
@@ -1414,7 +1423,7 @@ const EditProfile = () => {
                 onChange={(e) => setEducationForm(prev => ({ ...prev, fieldOfStudy: e.target.value }))}
                 placeholder="Teknik Informatika"
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Tahun Mulai"
                   type="number"
@@ -1451,17 +1460,18 @@ const EditProfile = () => {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="grid grid-cols-2 sm:flex sm:justify-end gap-3 mt-6">
               <Button
                 variant="outline"
                 onClick={() => {
                   setShowEducationModal(false)
                   setEditingIndex(null)
                 }}
+                className="w-full sm:w-auto"
               >
                 Batal
               </Button>
-              <Button onClick={handleSaveEducation}>
+              <Button onClick={handleSaveEducation} className="w-full sm:w-auto">
                 Simpan
               </Button>
             </div>
@@ -1471,8 +1481,8 @@ const EditProfile = () => {
 
       {/* Modal: Certification */}
       {showCertificationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
+          <div className="bg-white rounded-2xl p-5 sm:p-7 w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 transition-all">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               {editingIndex !== null ? 'Edit Sertifikasi' : 'Tambah Sertifikasi'}
             </h3>
@@ -1489,7 +1499,7 @@ const EditProfile = () => {
                 onChange={(e) => setCertificationForm(prev => ({ ...prev, issuingOrganization: e.target.value }))}
                 required
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Tanggal Diterbitkan"
                   type="month"
@@ -1517,17 +1527,18 @@ const EditProfile = () => {
                 placeholder="https://..."
               />
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="grid grid-cols-2 sm:flex sm:justify-end gap-3 mt-6">
               <Button
                 variant="outline"
                 onClick={() => {
                   setShowCertificationModal(false)
                   setEditingIndex(null)
                 }}
+                className="w-full sm:w-auto"
               >
                 Batal
               </Button>
-              <Button onClick={handleSaveCertification}>
+              <Button onClick={handleSaveCertification} className="w-full sm:w-auto">
                 Simpan
               </Button>
             </div>

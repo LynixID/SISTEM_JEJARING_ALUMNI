@@ -7,7 +7,7 @@ import Sidebar from '../components/layout/Sidebar'
 import { getConversations, getMessages, sendMessage, markMessagesAsRead, getConnections } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
 import UserBadge from '../components/common/UserBadge'
-import { MessageCircle, Send, Image as ImageIcon, X, Reply, Loader, Plus, Search } from 'lucide-react'
+import { MessageCircle, Send, Image as ImageIcon, X, Reply, Loader, Plus, Search, ArrowLeft } from 'lucide-react'
 import Button from '../components/common/Button'
 
 const Chat = () => {
@@ -702,6 +702,11 @@ const Chat = () => {
     setReplyingTo(null)
   }
 
+  const handleBackToConversations = () => {
+    setSelectedConversation(null)
+    navigate('/pesan')
+  }
+
   const handleStartNewMessage = async () => {
     try {
       setLoadingConnections(true)
@@ -823,7 +828,7 @@ const Chat = () => {
           <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex h-[750px]">
           {/* Conversations List */}
-          <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+          <div className={`${selectedConversation?.partner ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-white border-r border-gray-200 flex flex-col`}>
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900">Pesan</h2>
@@ -905,11 +910,17 @@ const Chat = () => {
           </div>
 
           {/* Chat Window */}
-          <div className="flex-1 flex flex-col bg-white">
+          <div className={`${selectedConversation?.partner ? 'flex' : 'hidden md:flex'} flex-1 flex flex-col bg-white`}>
             {selectedConversation?.partner ? (
               <>
                 {/* Chat Header */}
-                <div className="p-4 border-b border-gray-200 flex items-center gap-3">
+                <div className="p-4 border-b border-gray-200 flex items-center gap-3 bg-white sticky top-16 md:static z-20 shadow-sm md:shadow-none">
+                  <button
+                    onClick={handleBackToConversations}
+                    className="md:hidden p-1 mr-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ArrowLeft size={24} />
+                  </button>
                   {selectedConversation.partner.fotoProfil ? (
                     <img
                       src={getImageUrl(selectedConversation.partner.fotoProfil, 'profiles')}

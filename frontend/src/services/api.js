@@ -28,7 +28,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      if (window.location.pathname !== '/login') {
+      // Jangan redirect jika di landing page atau halaman public
+      const publicPaths = ['/', '/login', '/register', '/verify-otp']
+      if (!publicPaths.includes(window.location.pathname)) {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
         window.location.href = '/login'
@@ -461,6 +463,35 @@ export const updateDiscussionMessage = (threadId, messageId, content) => {
 
 export const deleteDiscussionMessage = (threadId, messageId) => {
   return api.delete(`/discussions/${threadId}/messages/${messageId}`)
+}
+
+// Display Home Page API
+export const getAllDisplayItems = (params = {}) => {
+  return api.get('/display-home-page', { params })
+}
+
+export const getDisplayItemsByKategori = (kategori) => {
+  return api.get(`/display-home-page/kategori/${kategori}`)
+}
+
+export const createDisplayItem = (data) => {
+  return api.post('/display-home-page', data)
+}
+
+export const updateDisplayItem = (id, data) => {
+  return api.put(`/display-home-page/${id}`, data)
+}
+
+export const deleteDisplayItem = (id) => {
+  return api.delete(`/display-home-page/${id}`)
+}
+
+export const reorderDisplayItems = (items) => {
+  return api.post('/display-home-page/reorder', { items })
+}
+
+export const getActiveEmail = () => {
+  return api.get('/display-home-page/email/active')
 }
 
 export default api

@@ -56,37 +56,37 @@ const Header = () => {
         <div className="flex items-center justify-between h-16 gap-4">
           
           {/* Left: Logo & Mobile Menu */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               onClick={() => {
                 window.dispatchEvent(new Event('toggleMobileMenu'))
               }}
-              className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="lg:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <Menu size={24} />
             </button>
-            <Link to="/dashboard" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm group-hover:shadow transition-shadow">
+            <Link to="/dashboard" className="flex items-center gap-2 sm:gap-3 group">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-sm group-hover:shadow transition-shadow">
                 <img src="/icon_web.png" alt="UII Connect Logo" className="w-full h-full object-cover" />
               </div>
-              <div className="text-xl font-extrabold text-blue-900 tracking-tight hidden sm:block">UII CONNECT</div>
+              <div className="text-lg sm:text-xl font-extrabold text-blue-900 tracking-tight hidden md:block">UII CONNECT</div>
             </Link>
           </div>
 
-          {/* Center: Search Bar */}
-          <div className="flex-1 max-w-2xl px-2 hidden md:block">
+          {/* Center/Right-aligned: Search Bar */}
+          <div className="flex-1 max-w-[140px] xs:max-w-[200px] sm:max-w-xl md:max-w-2xl px-1 sm:px-2 block ml-auto">
             <form onSubmit={handleSearch} className="relative w-full group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+              <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+                <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-11 pr-12 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                placeholder="Cari sesuatu di UII Connect..."
+                className="block w-full pl-8 sm:pl-10 pr-3 sm:pr-4 md:pr-12 py-1.5 sm:py-2 border border-gray-200 rounded-xl bg-gray-50 text-xs sm:text-sm placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                placeholder="Cari..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none hidden md:flex">
                 <span className="text-[10px] text-gray-400 font-medium border border-gray-200 rounded px-1.5 py-0.5 bg-white">⌘ K</span>
               </div>
             </form>

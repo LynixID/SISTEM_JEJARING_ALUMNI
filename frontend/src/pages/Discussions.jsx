@@ -164,7 +164,7 @@ const Discussions = () => {
               <div className="space-y-4">
                 {threads.map((t) => (
                   <Card key={t.id} className="p-5">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                       <div className="min-w-0">
                         {t.image && (
                           <div className="mb-3">
@@ -202,9 +202,9 @@ const Discussions = () => {
                           )}
                         </div>
                       </div>
-                      <div className="shrink-0">
-                        <Link to={`/diskusi/${t.id}`}>
-                          <Button variant="outline">Buka</Button>
+                      <div className="shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                        <Link to={`/diskusi/${t.id}`} className="w-full sm:w-auto block">
+                          <Button variant="outline" className="w-full sm:w-auto text-center justify-center">Buka</Button>
                         </Link>
                       </div>
                     </div>

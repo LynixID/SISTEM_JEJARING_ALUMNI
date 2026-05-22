@@ -267,66 +267,69 @@ const Notifications = () => {
       <Header />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-6">
+        <main className="flex-1 min-w-0 p-4 sm:p-6">
           <div className="max-w-6xl mx-auto">
             {/* Header */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Notifikasi</h1>
-                  <p className="text-gray-600 mt-1">
-                    {unreadCount > 0 ? `${unreadCount} notifikasi belum dibaca` : 'Semua notifikasi sudah dibaca'}
-                  </p>
+              <div className="mb-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Notifikasi</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">
+                  {unreadCount > 0 ? `${unreadCount} notifikasi belum dibaca` : 'Semua notifikasi sudah dibaca'}
+                </p>
+              </div>
+
+              {/* Search & Mark Read Row (1 Baris on Mobile) */}
+              <div className="flex items-center gap-2 mb-4 w-full">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="text"
+                    placeholder="Cari notifikasi..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
                 </div>
                 {unreadCount > 0 && (
                   <Button
                     onClick={handleMarkAllAsRead}
                     disabled={markingAsRead}
-                    className="flex items-center gap-2"
+                    className="flex-shrink-0 flex items-center justify-center gap-1 px-2.5 py-2 text-xs font-semibold rounded-lg shadow-sm"
+                    title="Tandai semua sudah dibaca"
                   >
-                    <CheckCheck size={18} />
-                    {markingAsRead ? 'Memproses...' : 'Tandai Semua Sudah Dibaca'}
+                    <CheckCheck size={15} />
+                    <span>{markingAsRead ? '...' : 'Tandai Baca'}</span>
                   </Button>
                 )}
               </div>
 
-              {/* Search Bar */}
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  placeholder="Cari notifikasi..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={18} />
-                  </button>
-                )}
-              </div>
-
-              {/* Filters */}
-              <div className="flex flex-col gap-4 mb-4">
+              {/* Filters (1 Baris on Mobile) */}
+              <div className="flex flex-col gap-3 mb-4">
                 {/* Category Filter */}
-                <div className="flex items-center gap-2">
-                  <Filter size={18} className="text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Kategori:</span>
-                  <div className="flex gap-2 flex-wrap">
+                <div className="flex items-center gap-2 w-full overflow-hidden">
+                  <div className="flex items-center gap-1 text-gray-700 flex-shrink-0">
+                    <Filter size={16} className="text-gray-500" />
+                    <span className="text-sm font-medium">Kategori:</span>
+                  </div>
+                  <div className="flex-1 flex gap-2 overflow-x-auto flex-nowrap scrollbar-none pb-1.5 -mr-4 pr-4 sm:mr-0 sm:pr-0">
                     {categories.map(category => {
                       const Icon = category.icon
                       const isActive = selectedCategory === category.value
                       const colorClasses = {
-                        red: isActive ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                        blue: isActive ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                        green: isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                        purple: isActive ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                        orange: isActive ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                        gray: isActive ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        red: isActive ? 'bg-red-100 text-red-700' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                        blue: isActive ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                        green: isActive ? 'bg-green-100 text-green-700' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                        purple: isActive ? 'bg-purple-100 text-purple-700' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                        orange: isActive ? 'bg-orange-100 text-orange-700' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                        gray: isActive ? 'bg-gray-200 text-gray-800' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                       }
                       return (
                         <button
@@ -335,11 +338,11 @@ const Notifications = () => {
                             setSelectedCategory(category.value)
                             setPage(1)
                           }}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors font-medium ${
+                          className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-colors font-medium ${
                             colorClasses[category.color] || colorClasses.gray
                           }`}
                         >
-                          <Icon size={16} />
+                          <Icon size={14} />
                           {category.label}
                         </button>
                       )
@@ -348,9 +351,9 @@ const Notifications = () => {
                 </div>
 
                 {/* Status Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Status:</span>
-                  <div className="flex gap-2">
+                <div className="flex items-center gap-2 w-full overflow-hidden">
+                  <span className="text-sm font-medium text-gray-700 flex-shrink-0">Status:</span>
+                  <div className="flex-1 flex gap-2 overflow-x-auto flex-nowrap scrollbar-none pb-1.5 -mr-4 pr-4 sm:mr-0 sm:pr-0">
                     {statusOptions.map(status => {
                       const isActive = selectedStatus === status.value
                       return (
@@ -360,10 +363,10 @@ const Notifications = () => {
                             setSelectedStatus(status.value)
                             setPage(1)
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                          className={`flex-shrink-0 px-3 py-1 rounded-full text-xs transition-colors font-medium ${
                             isActive
-                              ? 'bg-blue-100 text-blue-700 font-medium'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                           }`}
                         >
                           {status.label}
@@ -378,9 +381,9 @@ const Notifications = () => {
             {/* Notifications List */}
             <Card className="p-0 overflow-hidden">
               {filteredNotifications.length === 0 ? (
-                <div className="p-12 text-center">
+                <div className="p-8 sm:p-12 text-center">
                   <Bell size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-500 text-base sm:text-lg">
                     {searchQuery || selectedCategory !== 'ALL' || selectedStatus !== 'ALL'
                       ? 'Tidak ada notifikasi yang sesuai dengan filter'
                       : 'Tidak ada notifikasi'}
@@ -409,7 +412,7 @@ const Notifications = () => {
                       return (
                         <div
                           key={notification.id}
-                          className={`p-4 transition-colors ${
+                          className={`p-3 sm:p-4 transition-colors ${
                             notification.type && notification.type.startsWith('SYSTEM_')
                               ? 'bg-red-50 border-l-4 border-red-500 hover:bg-red-100'
                               : !notification.read
@@ -417,9 +420,9 @@ const Notifications = () => {
                               : 'hover:bg-gray-50'
                           }`}
                         >
-                          <div className="flex items-start gap-4">
+                          <div className="flex items-start gap-3 sm:gap-4">
                             {/* Icon */}
-                            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                            <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
                               notification.type && notification.type.startsWith('SYSTEM_') ? 'bg-red-100 text-red-600' :
                               notification.type === 'LIKE' ? 'bg-red-100 text-red-600' :
                               notification.type === 'COMMENT' ? 'bg-blue-100 text-blue-600' :
@@ -431,7 +434,8 @@ const Notifications = () => {
                               notification.type === 'CONNECTION_REQUEST' || notification.type === 'CONNECTION_ACCEPTED' ? 'bg-indigo-100 text-indigo-600' :
                               'bg-gray-100 text-gray-600'
                             }`}>
-                              <Icon size={20} />
+                              <Icon size={18} className="block sm:hidden" />
+                              <Icon size={20} className="hidden sm:block" />
                             </div>
 
                             {/* Content */}
@@ -459,7 +463,7 @@ const Notifications = () => {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                               {/* Tombol tandai baca hanya untuk notifikasi non-sistem */}
                               {!notification.read && !(notification.type && notification.type.startsWith('SYSTEM_')) && (
                                 <button
@@ -467,19 +471,21 @@ const Notifications = () => {
                                     e.stopPropagation()
                                     handleMarkAsRead(notification.id)
                                   }}
-                                  className="p-2 rounded-lg hover:bg-gray-200 transition-colors"
+                                  className="p-1 sm:p-2 rounded-lg hover:bg-gray-200 transition-colors"
                                   title="Tandai sudah dibaca"
                                 >
-                                  <Check size={18} className="text-gray-600" />
+                                  <Check size={16} className="sm:hidden" />
+                                  <Check size={18} className="hidden sm:block" />
                                 </button>
                               )}
                               {/* Tombol hapus disembunyikan untuk notifikasi sistem */}
                               {notification.type && notification.type.startsWith('SYSTEM_') ? (
                                 <div
-                                  className="p-2 rounded-lg cursor-not-allowed"
+                                  className="p-1 sm:p-2 rounded-lg cursor-not-allowed"
                                   title="Notifikasi sistem tidak dapat dihapus"
                                 >
-                                  <Lock size={18} className="text-red-400" />
+                                  <Lock size={16} className="text-red-400 sm:hidden" />
+                                  <Lock size={18} className="text-red-400 hidden sm:block" />
                                 </div>
                               ) : (
                                 <button
@@ -487,10 +493,11 @@ const Notifications = () => {
                                     e.stopPropagation()
                                     handleDelete(notification.id)
                                   }}
-                                  className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                                  className="p-1 sm:p-2 rounded-lg hover:bg-red-50 transition-colors"
                                   title="Hapus notifikasi"
                                 >
-                                  <Trash2 size={18} className="text-gray-600 hover:text-red-600" />
+                                  <Trash2 size={16} className="text-gray-600 hover:text-red-600 sm:hidden" />
+                                  <Trash2 size={18} className="text-gray-600 hover:text-red-600 hidden sm:block" />
                                 </button>
                               )}
                             </div>
@@ -502,20 +509,22 @@ const Notifications = () => {
 
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="p-4 border-t border-gray-200 flex items-center justify-between">
-                      <p className="text-sm text-gray-600">
+                    <div className="p-3 sm:p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <p className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                         Menampilkan {((page - 1) * 20) + 1} - {Math.min(page * 20, total)} dari {total} notifikasi
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
                         <Button
                           onClick={() => setPage(prev => Math.max(1, prev - 1))}
                           disabled={page === 1}
                           variant="outline"
                           size="sm"
+                          className="px-2 sm:px-3"
                         >
-                          Sebelumnya
+                          <span className="hidden sm:inline">Sebelumnya</span>
+                          <span className="sm:hidden">&larr;</span>
                         </Button>
-                        <span className="px-4 py-2 text-sm text-gray-700">
+                        <span className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 text-center whitespace-nowrap">
                           Halaman {page} dari {totalPages}
                         </span>
                         <Button
@@ -523,8 +532,10 @@ const Notifications = () => {
                           disabled={page === totalPages}
                           variant="outline"
                           size="sm"
+                          className="px-2 sm:px-3"
                         >
-                          Selanjutnya
+                          <span className="hidden sm:inline">Selanjutnya</span>
+                          <span className="sm:hidden">&rarr;</span>
                         </Button>
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2, Globe, Lock, User, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -44,52 +44,51 @@ const PostDetail = () => {
   const [reportModal, setReportModal] = useState(false)
   const [showLikesModal, setShowLikesModal] = useState(false)
 
-  // Lightbox Carousel States & Methods
+  // Lightbox swipe state — paksa snap 1 gambar per swipe (mobile)
+  const [lightboxDragging, setLightboxDragging] = useState(false)
+  const lightboxStartX = useRef(0)
+  const lightboxCurrentTranslate = useRef(0)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const images = post?.images || []
 
-  const openLightbox = (index) => {
-    setLightboxIndex(index)
-    setIsLightboxOpen(true)
-    document.body.style.overflow = 'hidden'
-  }
+  // ── In-page image slider state (horizontal swipe) ──
+  const [currentSliderIndex, setCurrentSliderIndex] = useState(0)
+  const sliderStartX = useRef(0)
+  const sliderIsDragging = useRef(false)
 
-  const closeLightbox = () => {
-    setIsLightboxOpen(false)
-    document.body.style.overflow = 'unset'
-  }
-
-  const nextImage = (e) => {
-    if (e) e.stopPropagation()
-    setLightboxIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
-  }
-
-  const prevImage = (e) => {
-    if (e) e.stopPropagation()
-    setLightboxIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
-  }
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'ArrowRight') nextImage()
-    if (e.key === 'ArrowLeft') prevImage()
-    if (e.key === 'Escape') closeLightbox()
-  }
-
+  // Reset slider index saat post berubah
   useEffect(() => {
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [])
+    setCurrentSliderIndex(0)
+  }, [post?.id])
 
-  // Handle auto-open edit modal if state or query param is set
-  useEffect(() => {
-    if (post && (location.state?.openEdit || new URLSearchParams(location.search).get('edit') === 'true')) {
-      setShowEditModal(true)
-      // Bersihkan state/search param agar tidak memicu pop-up lagi saat reload
-      navigate(location.pathname, { replace: true, state: {} })
+  // Slider handlers — touch/swipe di mobile
+  const handleSliderTouchStart = (e) => {
+    sliderStartX.current = e.touches[0].clientX
+    sliderIsDragging.current = false
+  }
+
+  const handleSliderTouchMove = (e) => {
+    const deltaX = e.touches[0].clientX - sliderStartX.current
+    // Jika bergerak cukup jauh, tandai sebagai drag
+    if (Math.abs(deltaX) > 5) {
+      sliderIsDragging.current = true
     }
-  }, [post, location, navigate])
+    // Efek geser tidak perlu diimplement di track, cukup deteksi arah swipe
+  }
+
+  const handleSliderTouchEnd = (e) => {
+    if (!sliderIsDragging.current) return
+    const deltaX = e.changedTouches[0].clientX - sliderStartX.current
+    if (deltaX < -50) {
+      // Swipe kiri → next
+      setCurrentSliderIndex((prev) => Math.min(prev + 1, images.length - 1))
+    } else if (deltaX > 50) {
+      // Swipe kanan → prev
+      setCurrentSliderIndex((prev) => Math.max(prev - 1, 0))
+    }
+    sliderIsDragging.current = false
+  }
 
   // Helper: render single image tile untuk grid (di detail BISA klik untuk perbesar lightbox)
   const renderImageTile = (img, idx, extraClass = '', overlayCount = null) => (
@@ -114,6 +113,48 @@ const PostDetail = () => {
       )}
     </div>
   )
+
+  const openLightbox = (index) => {
+    setLightboxIndex(index)
+    setIsLightboxOpen(true)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const closeLightbox = () => {
+    setIsLightboxOpen(false)
+    document.body.style.overflow = 'unset'
+  }
+
+  const nextImage = (e) => {
+    if (e) e.stopPropagation()
+    setLightboxIndex((prev) => Math.min(prev + 1, images.length - 1))
+  }
+
+  const prevImage = (e) => {
+    if (e) e.stopPropagation()
+    setLightboxIndex((prev) => Math.max(prev - 1, 0))
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowRight') nextImage()
+    if (e.key === 'ArrowLeft') prevImage()
+    if (e.key === 'Escape') closeLightbox()
+  }
+
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [])
+
+  // Handle auto-open edit modal if state or query param is set
+  useEffect(() => {
+    if (post && (location.state?.openEdit || new URLSearchParams(location.search).get('edit') === 'true')) {
+      setShowEditModal(true)
+      // Bersihkan state/search param agar tidak memicu pop-up lagi saat reload
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [post, location, navigate])
 
   // Redirect ke login jika belum authenticated
   useEffect(() => {
@@ -487,49 +528,136 @@ const PostDetail = () => {
                   </p>
                 </div>
 
-                {/* Post images — smart adaptive grid layout (klik untuk perbesar) */}
+                {/* Post images — mobile: horizontal swipe slider | desktop: adaptive grid */}
                 {images.length > 0 && (
-                  <div className="mb-4 rounded-xl overflow-hidden">
+                  <div className="mb-4">
 
-                    {/* 1 gambar: full width */}
-                    {images.length === 1 && (
-                      <div className="rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50">
-                        {renderImageTile(images[0], 0, 'h-full w-full')}
-                      </div>
-                    )}
+                    {/* ── Mobile (< md): horizontal swipeable slider ── */}
+                    {images.length > 1 ? (
+                      <div
+                        className="md:hidden relative overflow-hidden"
+                        onTouchStart={handleSliderTouchStart}
+                        onTouchMove={handleSliderTouchMove}
+                        onTouchEnd={handleSliderTouchEnd}
+                      >
+                        <div
+                          className="flex transition-transform duration-300 ease-out"
+                          style={{ transform: `translateX(-${currentSliderIndex * 100}%)` }}
+                        >
+                          {images.map((img, idx) => (
+                            <div
+                              key={img.id || idx}
+                              className="w-full flex-shrink-0 flex items-center justify-center bg-gray-100 cursor-zoom-in"
+                              style={{ aspectRatio: 'auto' }}
+                              onClick={() => openLightbox(idx)}
+                            >
+                              <img
+                                src={getImageUrl(img.imageUrl)}
+                                alt={`Foto ${idx + 1}`}
+                                className="max-w-full max-h-[70vh] w-auto object-contain"
+                                draggable={false}
+                              />
+                            </div>
+                          ))}
+                        </div>
 
-                    {/* 2 gambar: [1, 2] berdampingan */}
-                    {images.length === 2 && (
-                      <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50">
-                        {renderImageTile(images[0], 0, 'h-full w-full')}
-                        {renderImageTile(images[1], 1, 'h-full w-full')}
-                      </div>
-                    )}
+                        {/* Dot indicators */}
+                        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                          {images.map((_, idx) => (
+                            <span
+                              key={idx}
+                              className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                                idx === currentSliderIndex
+                                  ? 'bg-blue-500 w-4'
+                                  : 'bg-white bg-opacity-60'
+                              }`}
+                            />
+                          ))}
+                        </div>
 
-                    {/* 3 gambar: [1] atas-kiri, [2] bawah-kiri | [3] kanan-full */}
-                    {images.length === 3 && (
-                      <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
-                        {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
-                        {renderImageTile(images[1], 1, 'col-start-1 row-start-2 w-full h-full')}
-                        {renderImageTile(images[2], 2, 'col-start-2 row-start-1 row-span-2 w-full h-full')}
-                      </div>
-                    )}
-
-                    {/* 4+ gambar: [1,2] / [3,4] grid simetris */}
-                    {images.length >= 4 && (
-                      <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
-                        {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
-                        {renderImageTile(images[1], 1, 'col-start-2 row-start-1 w-full h-full')}
-                        {renderImageTile(images[2], 2, 'col-start-1 row-start-2 w-full h-full')}
-                        {renderImageTile(
-                          images[3],
-                          3,
-                          'col-start-2 row-start-2 w-full h-full',
-                          images.length > 4 ? images.length - 4 : null
+                        {/* Swipe hint arrows — prev/next */}
+                        {currentSliderIndex > 0 && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setCurrentSliderIndex(p => p - 1) }}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 hover:bg-opacity-60 text-white rounded-full p-1.5 transition-all"
+                          >
+                            <ChevronLeft size={18} />
+                          </button>
+                        )}
+                        {currentSliderIndex < images.length - 1 && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setCurrentSliderIndex(p => p + 1) }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-40 hover:bg-opacity-60 text-white rounded-full p-1.5 transition-all"
+                          >
+                            <ChevronRight size={18} />
+                          </button>
                         )}
                       </div>
+                    ) : (
+                      /* Single image mobile: constrain by orientation */
+                      <div
+                        className="md:hidden flex items-center justify-center bg-gray-100 cursor-zoom-in"
+                        onClick={() => openLightbox(0)}
+                      >
+                        <img
+                          src={getImageUrl(images[0].imageUrl)}
+                          alt="Foto 1"
+                          className="max-w-full max-h-[70vh] w-auto object-contain"
+                          draggable={false}
+                        />
+                      </div>
                     )}
 
+                    {/* ── Desktop (md+): grid layout ── */}
+                    <div className="hidden md:block rounded-xl overflow-hidden">
+
+                      {/* 1 gambar: full width */}
+                      {images.length === 1 && (
+                        <div className="rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50 cursor-zoom-in"
+                          onClick={() => openLightbox(0)}
+                        >
+                          <img
+                            src={getImageUrl(images[0].imageUrl)}
+                            alt="Foto 1"
+                            className="h-full w-full object-cover hover:scale-[1.02] transition-transform duration-300"
+                            draggable={false}
+                          />
+                        </div>
+                      )}
+
+                      {/* 2 gambar: [1, 2] berdampingan */}
+                      {images.length === 2 && (
+                        <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50">
+                          {renderImageTile(images[0], 0, 'h-full w-full')}
+                          {renderImageTile(images[1], 1, 'h-full w-full')}
+                        </div>
+                      )}
+
+                      {/* 3 gambar: [1] atas-kiri, [2] bawah-kiri | [3] kanan-full */}
+                      {images.length === 3 && (
+                        <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
+                          {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
+                          {renderImageTile(images[1], 1, 'col-start-1 row-start-2 w-full h-full')}
+                          {renderImageTile(images[2], 2, 'col-start-2 row-start-1 row-span-2 w-full h-full')}
+                        </div>
+                      )}
+
+                      {/* 4+ gambar: [1,2] / [3,4] grid simetris */}
+                      {images.length >= 4 && (
+                        <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
+                          {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
+                          {renderImageTile(images[1], 1, 'col-start-2 row-start-1 w-full h-full')}
+                          {renderImageTile(images[2], 2, 'col-start-1 row-start-2 w-full h-full')}
+                          {renderImageTile(
+                            images[3],
+                            3,
+                            'col-start-2 row-start-2 w-full h-full',
+                            images.length > 4 ? images.length - 4 : null
+                          )}
+                        </div>
+                      )}
+
+                    </div>
                   </div>
                 )}
 
@@ -642,17 +770,20 @@ const PostDetail = () => {
         postId={post?.id}
       />
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal — swipe snap 1 per 1 */}
       {isLightboxOpen && images.length > 0 && (
-        <div 
-          className="fixed inset-0 z-[100] bg-black bg-opacity-97 flex flex-col outline-none"
+        <div
+          className="fixed inset-0 z-[100] bg-black bg-opacity-85 flex flex-col outline-none select-none"
           onClick={closeLightbox}
           onKeyDown={handleKeyDown}
           tabIndex={0}
           ref={(el) => el && el.focus()}
         >
           {/* Top Bar */}
-          <div className="flex justify-between items-center px-4 py-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="flex justify-between items-center px-4 py-3 flex-shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {post.author?.fotoProfil ? (
@@ -661,49 +792,93 @@ const PostDetail = () => {
                   <span className="text-blue-600 text-xs font-bold">{post.author?.nama?.charAt(0).toUpperCase()}</span>
                 )}
               </div>
-              <span className="text-white text-sm font-medium select-none">{post.author?.nama}</span>
-              <span className="text-gray-500 text-xs select-none">•</span>
-              <span className="bg-white bg-opacity-15 text-white text-xs px-2.5 py-0.5 rounded-full font-medium select-none">
+              <span className="text-white text-sm font-medium">{post.author?.nama}</span>
+              <span className="text-gray-500 text-xs">•</span>
+              <span className="bg-white bg-opacity-15 text-white text-xs px-2.5 py-0.5 rounded-full font-medium">
                 {lightboxIndex + 1} / {images.length}
               </span>
             </div>
-            <button 
+            <button
               onClick={closeLightbox}
-              className="text-gray-400 hover:text-white bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full p-2 transition-all"
+              className="text-white bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-2 transition-all"
             >
               <X size={20} />
             </button>
           </div>
 
-          {/* Main Image Area */}
-          <div className="flex-1 flex items-center justify-center relative w-full select-none min-h-0">
-            {/* Left arrow */}
-            {images.length > 1 && (
-              <button 
-                onClick={prevImage}
+          {/* Swipe container — memaksa snap 1 gambar per swipe */}
+          <div
+            className="flex-1 flex items-center relative overflow-hidden min-h-0"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              lightboxStartX.current = e.touches[0].clientX
+              lightboxCurrentTranslate.current = 0
+              setLightboxDragging(false)
+            }}
+            onTouchMove={(e) => {
+              const deltaX = e.touches[0].clientX - lightboxStartX.current
+              if (Math.abs(deltaX) > 5) setLightboxDragging(true)
+              lightboxCurrentTranslate.current = deltaX
+              // Geser track — clamp agar tidak bisa geser di luar batas
+              const track = e.currentTarget.querySelector('.lightbox-track')
+              if (track) {
+                let clampedDelta = deltaX
+                // Jika di gambar pertama, clamp ke kanan (tidak bisa geser kanan)
+                if (lightboxIndex === 0 && deltaX > 0) clampedDelta = 0
+                // Jika di gambar terakhir, clamp ke kiri (tidak bisa geser kiri)
+                if (lightboxIndex === images.length - 1 && deltaX < 0) clampedDelta = 0
+                track.style.transform = `translateX(calc(-${lightboxIndex * 100}% + ${clampedDelta}px))`
+              }
+            }}
+            onTouchEnd={(e) => {
+              const deltaX = e.changedTouches[0].clientX - lightboxStartX.current
+              const track = e.currentTarget.querySelector('.lightbox-track')
+              if (track) track.style.transform = '' // reset dulu
+
+              if (Math.abs(deltaX) > 50) {
+                if (deltaX < 0 && lightboxIndex < images.length - 1) {
+                  setLightboxIndex((prev) => prev + 1)
+                } else if (deltaX > 0 && lightboxIndex > 0) {
+                  setLightboxIndex((prev) => prev - 1)
+                }
+              }
+              setLightboxDragging(false)
+            }}
+          >
+            {/* Images track — selalu full width per slide */}
+            <div
+              className="lightbox-track flex w-full flex-shrink-0 transition-transform duration-300 ease-out"
+              style={{ transform: `translateX(-${lightboxIndex * 100}%)` }}
+            >
+              {images.map((img, idx) => (
+                <div
+                  key={img.id || idx}
+                  className="w-full flex-shrink-0 flex items-center justify-center"
+                >
+                  <img
+                    src={getImageUrl(img.imageUrl)}
+                    alt={`Foto ${idx + 1}`}
+                    className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
+                    draggable={false}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Prev arrow */}
+            {lightboxIndex > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex(p => p - 1) }}
                 className="absolute left-3 sm:left-5 z-10 text-white bg-white bg-opacity-10 hover:bg-opacity-25 p-2.5 rounded-full transition-all border border-white border-opacity-10 hover:border-opacity-30"
               >
                 <ChevronLeft size={22} />
               </button>
             )}
 
-            {/* Current Image */}
-            <div 
-              className="max-w-[92vw] max-h-[75vh] flex items-center justify-center" 
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img 
-                src={getImageUrl(images[lightboxIndex]?.imageUrl)} 
-                alt={`Foto ${lightboxIndex + 1}`}
-                className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
-                draggable={false}
-              />
-            </div>
-
-            {/* Right arrow */}
-            {images.length > 1 && (
-              <button 
-                onClick={nextImage}
+            {/* Next arrow */}
+            {lightboxIndex < images.length - 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex(p => p + 1) }}
                 className="absolute right-3 sm:right-5 z-10 text-white bg-white bg-opacity-10 hover:bg-opacity-25 p-2.5 rounded-full transition-all border border-white border-opacity-10 hover:border-opacity-30"
               >
                 <ChevronRight size={22} />
@@ -711,9 +886,21 @@ const PostDetail = () => {
             )}
           </div>
 
-          {/* Bottom: Thumbnail strip (hanya jika > 1 gambar) */}
+          {/* Dot indicators */}
+          <div className="flex-shrink-0 flex justify-center gap-1.5 py-3">
+            {images.map((_, idx) => (
+              <span
+                key={idx}
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  idx === lightboxIndex ? 'bg-blue-400 w-4' : 'bg-white bg-opacity-40'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Bottom: Thumbnail strip */}
           {images.length > 1 && (
-            <div 
+            <div
               className="flex-shrink-0 flex items-center justify-center gap-2 py-3 px-4 overflow-x-auto"
               onClick={(e) => e.stopPropagation()}
             >
@@ -722,13 +909,13 @@ const PostDetail = () => {
                   key={img.id || idx}
                   onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx) }}
                   className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                    lightboxIndex === idx 
-                      ? 'border-blue-400 scale-110 shadow-lg shadow-blue-500/30' 
+                    lightboxIndex === idx
+                      ? 'border-blue-400 scale-110 shadow-lg shadow-blue-500/30'
                       : 'border-transparent opacity-50 hover:opacity-80'
                   }`}
                 >
-                  <img 
-                    src={getImageUrl(img.imageUrl)} 
+                  <img
+                    src={getImageUrl(img.imageUrl)}
                     alt={`Thumbnail ${idx + 1}`}
                     className="w-full h-full object-cover"
                     draggable={false}

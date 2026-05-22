@@ -367,7 +367,7 @@ export const updateAnnouncement = async (req, res) => {
         
         if (userIds.length > 0) {
           await createBulkNotifications(userIds, {
-            triggeredBy: authorId, // Author yang publish announcement
+            triggeredBy: userId, // Author yang publish announcement
             type: 'ANNOUNCEMENT',
             message: `Berita baru: ${announcement.title}`,
             relatedId: announcement.id,
@@ -480,7 +480,7 @@ export const togglePublish = async (req, res) => {
         
         if (userIds.length > 0) {
           await createBulkNotifications(userIds, {
-            triggeredBy: authorId, // Author yang publish announcement
+            triggeredBy: userId, // Author yang publish announcement
             type: 'ANNOUNCEMENT',
             message: `Berita baru: ${announcement.title}`,
             relatedId: announcement.id,

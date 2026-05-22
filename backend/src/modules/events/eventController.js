@@ -246,6 +246,10 @@ export const createEvent = async (req, res) => {
     if (isPublished) {
       try {
         const { createBulkNotifications } = await import('../../services/notificationService.js')
+        const { queueEventBroadcast } = await import('../../services/broadcastService.js')
+
+        // Queue email broadcast
+        await queueEventBroadcast(event)
         
         // Ambil semua user yang verified (kecuali admin)
         const users = await prisma.user.findMany({
@@ -299,6 +303,7 @@ export const updateEvent = async (req, res) => {
 
     const { id } = req.params
     const { title, description, image, tanggal, lokasi, linkDaftar, published } = req.body
+    const userId = req.user.userId
 
     // Cek apakah event ada
     const existing = await prisma.event.findUnique({
@@ -344,6 +349,10 @@ export const updateEvent = async (req, res) => {
     if (!wasPublished && willBePublished && published !== undefined) {
       try {
         const { createBulkNotifications } = await import('../../services/notificationService.js')
+        const { queueEventBroadcast } = await import('../../services/broadcastService.js')
+
+        // Queue email broadcast
+        await queueEventBroadcast(event)
         
         // Ambil semua user yang verified (kecuali admin)
         const users = await prisma.user.findMany({
@@ -358,7 +367,7 @@ export const updateEvent = async (req, res) => {
         
         if (userIds.length > 0) {
           await createBulkNotifications(userIds, {
-            triggeredBy: authorId, // Author yang publish event
+            triggeredBy: userId, // User yang publish event
             type: 'EVENT',
             message: `Event baru: ${event.title}`,
             relatedId: event.id,
@@ -419,6 +428,7 @@ export const togglePublish = async (req, res) => {
   try {
     const { id } = req.params
     const { published } = req.body
+    const userId = req.user.userId
 
     const existing = await prisma.event.findUnique({
       where: { id }
@@ -428,10 +438,48 @@ export const togglePublish = async (req, res) => {
       return res.status(404).json({ error: 'Event tidak ditemukan' })
     }
 
+    const wasPublished = existing.published
+    const willBePublished = published === true || published === 'true'
+
     const event = await prisma.event.update({
       where: { id },
-      data: { published: published === true || published === 'true' }
+      data: { published: willBePublished }
     })
+
+    // Create notification & queue email broadcast jika baru di-publish
+    if (!wasPublished && willBePublished) {
+      try {
+        const { createBulkNotifications } = await import('../../services/notificationService.js')
+        const { queueEventBroadcast } = await import('../../services/broadcastService.js')
+
+        // Queue email broadcast
+        await queueEventBroadcast(event)
+
+        // Ambil semua user yang verified (kecuali admin)
+        const users = await prisma.user.findMany({
+          where: {
+            verified: true,
+            role: { not: 'ADMIN' }
+          },
+          select: { id: true }
+        })
+
+        const userIds = users.map(u => u.id)
+
+        if (userIds.length > 0) {
+          await createBulkNotifications(userIds, {
+            triggeredBy: userId, // User yang publish event
+            type: 'EVENT',
+            message: `Event baru: ${event.title}`,
+            relatedId: event.id,
+            relatedType: 'event'
+          })
+        }
+      } catch (notifError) {
+        console.error('Error creating event notifications:', notifError)
+        // Jangan gagalkan toggle publish jika notifikasi gagal
+      }
+    }
 
     res.json({
       message: `Event berhasil ${event.published ? 'dipublish' : 'di-unpublish'}`,

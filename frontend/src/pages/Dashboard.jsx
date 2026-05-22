@@ -98,9 +98,9 @@ const Dashboard = () => {
             {/* ── Kolom tengah: feed utama ── */}
             <main className="flex-1 min-w-0">
               {/* Welcome & Create Post Card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 relative overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-6 mb-4 sm:mb-6 relative overflow-hidden">
                 {/* Decorative Background */}
-                <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-1/3 pointer-events-none rounded-r-2xl overflow-hidden">
+                <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-1/3 pointer-events-none rounded-r-2xl overflow-hidden hidden sm:block">
                   <div className="absolute -right-10 -top-24 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-2xl opacity-70"></div>
                   <div className="absolute right-10 -bottom-20 w-48 h-48 bg-indigo-100 rounded-full mix-blend-multiply filter blur-xl opacity-60"></div>
                   {/* Subtle Wave SVG */}
@@ -110,7 +110,7 @@ const Dashboard = () => {
                   </svg>
                 </div>
 
-                <div className="relative z-10 mb-6">
+                <div className="relative z-10 mb-6 hidden sm:block">
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
                     Selamat Datang, {user.nama}! <span className="text-2xl">👋</span>
                   </h1>
@@ -126,46 +126,46 @@ const Dashboard = () => {
                     <img
                       src={getImageUrl(user.profile.fotoProfil, 'profiles')}
                       alt={user?.nama || 'User'}
-                      className="w-12 h-12 rounded-full object-cover border border-gray-200 flex-shrink-0"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border border-gray-200 flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
                       {user?.nama?.charAt(0) || 'U'}
                     </div>
                   )}
                   <button 
                     onClick={() => setShowCreatePost(true)}
-                    className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-500 text-left px-5 py-3 rounded-full transition-colors text-sm sm:text-base font-medium shadow-sm"
+                    className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-500 text-left px-4 sm:px-5 py-2.5 sm:py-3 rounded-full transition-colors text-xs sm:text-base font-medium shadow-sm truncate"
                   >
                     Apa yang ingin Anda bagikan hari ini?
                   </button>
                 </div>
-                <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 px-1">
-                  <div className="flex flex-wrap gap-1 sm:gap-2">
-                    <button onClick={() => setShowCreatePost(true)} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold">
+                <div className="relative z-10 flex items-center justify-between gap-2 px-1">
+                  <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto flex-nowrap scrollbar-none flex-1 -mx-2 px-2 sm:mx-0 sm:px-0">
+                    <button onClick={() => setShowCreatePost(true)} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold shrink-0">
                       <ImageIcon className="text-blue-500" size={20} />
                       Foto
                     </button>
                     
                     {isPengurus && (
                       <>
-                        <button onClick={() => navigate('/pengurus/events/create')} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold">
+                        <button onClick={() => navigate('/pengurus/events/create')} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold shrink-0">
                           <Calendar className="text-orange-500" size={20} />
                           Event
                         </button>
-                        <button onClick={() => navigate('/pengurus/berita/create')} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold">
+                        <button onClick={() => navigate('/pengurus/berita/create')} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold shrink-0">
                           <FileText className="text-red-500" size={20} />
                           Pengumuman
                         </button>
                       </>
                     )}
 
-                    <button onClick={() => navigate('/lowongan')} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold">
+                    <button onClick={() => navigate('/lowongan')} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-gray-600 transition-colors text-sm font-semibold shrink-0">
                       <BriefcaseBusiness className="text-green-600" size={20} />
                       Lowongan
                     </button>
                   </div>
-                  <button onClick={() => setShowCreatePost(true)} className="p-2 hover:bg-gray-50 rounded-full text-gray-500 hover:text-gray-700 transition-colors hidden sm:block">
+                  <button onClick={() => setShowCreatePost(true)} className="p-2 hover:bg-gray-50 rounded-full text-gray-500 hover:text-gray-700 transition-colors hidden sm:block shrink-0">
                     <Smile size={24} />
                   </button>
                 </div>

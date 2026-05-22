@@ -16,10 +16,7 @@ export const createAnnouncementValidation = [
     .withMessage('Konten minimal 10 karakter'),
   
   body('image')
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage('Image tidak boleh kosong jika diisi'),
+    .optional({ nullable: true, checkFalsy: true }),
   
   body('published')
     .optional()
@@ -53,10 +50,7 @@ export const updateAnnouncementValidation = [
     .withMessage('Kategori tidak valid'),
   
   body('image')
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage('Image tidak boleh kosong jika diisi'),
+    .optional({ nullable: true, checkFalsy: true }),
   
   body('published')
     .optional()

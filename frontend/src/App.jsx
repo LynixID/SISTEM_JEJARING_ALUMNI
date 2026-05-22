@@ -32,9 +32,9 @@ import ManageFiles from './pages/admin/ManageFiles'
 import ManagePosts from './pages/admin/ManagePosts'
 import ManageForum from './pages/admin/ManageForum'
 import ManageJobs from './pages/admin/ManageJobs'
+import DisplayHomePage from './pages/admin/DisplayHomePage'
 import GlobalSuspendListener from './components/common/GlobalSuspendListener'
 import Crxs from './pages/Crxs'
-
 
 // Komponen untuk protect route: cek login, role, dan verified status
 const ProtectedRoute = ({ children, requireAdmin = false, requireAdminOrPengurus = false, allowUnverified = false, allowIncompleteProfile = false }) => {
@@ -457,7 +457,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route
+            path="/admin/display-home-page"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <DisplayHomePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>

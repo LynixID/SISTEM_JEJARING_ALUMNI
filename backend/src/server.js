@@ -27,6 +27,9 @@ import messageRoutes from './modules/messages/messageRoutes.js'
 import jobRoutes from './modules/jobs/jobRoutes.js'
 import wilayahRoutes from './modules/wilayah/wilayahRoutes.js'
 import reportRoutes from './modules/reports/reportRoutes.js'
+import landingRoutes from './modules/landing/landingRoutes.js'
+import displayHomePageRoutes from './modules/displayHomePage/displayHomePageRoutes.js'
+import contactRoutes from './modules/contact/contactRoutes.js'
 import initJobs from './jobs/cron.js'
 
 // Load environment variables
@@ -111,6 +114,9 @@ app.use('/api/messages', messageRoutes)
 app.use('/api/jobs', jobRoutes)
 app.use('/api/wilayah', wilayahRoutes)
 app.use('/api/reports', reportRoutes)
+app.use('/api/landing', landingRoutes)
+app.use('/api/display-home-page', displayHomePageRoutes)
+app.use('/api/contact', contactRoutes)
 
 // 404 handler
 app.use((req, res) => {

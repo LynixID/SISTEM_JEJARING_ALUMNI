@@ -170,7 +170,7 @@ const NotificationBell = () => {
   return (
     <div className="flex items-center gap-2" ref={dropdownRef}>
       {/* Connection Requests */}
-      <div className="relative">
+      <div className="relative hidden md:block">
         <button
           onClick={() => {
             setShowConnDropdown(prev => !prev)
@@ -190,107 +190,114 @@ const NotificationBell = () => {
         </button>
 
         {showConnDropdown && (
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Permintaan Koneksi</h3>
-              <button
-                onClick={() => {
-                  setShowConnDropdown(false)
-                  navigate('/koneksi')
-                }}
-                className="text-xs text-blue-600 hover:text-blue-700"
-                type="button"
-              >
-                Buka Koneksi
-              </button>
-            </div>
-
-            <div className="overflow-y-auto flex-1">
-              {pendingConnections.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
-                  <UserPlus size={32} className="mx-auto mb-2 text-gray-300" />
-                  <p>Tidak ada permintaan koneksi</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-200">
-                  {pendingConnections.map((req) => (
-                    <div
-                      key={req.id}
-                      onClick={() => {
-                        setShowConnDropdown(false)
-                        navigate('/koneksi')
-                      }}
-                      className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {req.user?.fotoProfil ? (
-                            <>
-                              <img
-                                src={getImageUrl(req.user.fotoProfil, 'profiles')}
-                                alt={req.user?.nama || 'User'}
-                                className="w-9 h-9 rounded-full object-cover"
-                                onError={(e) => {
-                                  e.target.style.display = 'none'
-                                  const nextSibling = e.target.nextElementSibling
-                                  if (nextSibling && nextSibling.style) {
-                                    nextSibling.style.display = 'flex'
-                                  }
-                                }}
-                              />
-                              <span
-                                className="text-blue-600 text-xs font-semibold w-9 h-9 items-center justify-center hidden"
-                                style={{ display: 'none' }}
-                              >
-                                {(req.user?.nama || 'U').charAt(0).toUpperCase()}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-blue-600 text-xs font-semibold">
-                              {(req.user?.nama || 'U').charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {req.user?.nama || 'User'}
-                          </p>
-                          {req.message && (
-                            <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">
-                              {req.message}
-                            </p>
-                          )}
-                          <p className="text-xs text-gray-500 mt-1">
-                            {formatTime(req.createdAt)}
-                          </p>
-                        </div>
-
-                        <div className="text-xs text-gray-400 flex-shrink-0">
-                          PENDING
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {pendingConnectionsCount > 0 && (
-              <div className="p-2 border-t border-gray-200">
+          <>
+            {/* Backdrop for mobile */}
+            <div 
+              className="fixed inset-0 bg-black/10 z-40 md:hidden animate-fadeIn"
+              onClick={() => setShowConnDropdown(false)}
+            />
+            <div className="fixed md:absolute inset-x-4 md:inset-x-auto md:right-0 md:left-auto top-16 md:top-full mt-2 max-w-md md:w-80 mx-auto md:mx-0 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 max-h-[75vh] md:max-h-96 overflow-hidden flex flex-col animate-slideIn">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">Permintaan Koneksi</h3>
                 <button
                   onClick={() => {
                     setShowConnDropdown(false)
                     navigate('/koneksi')
                   }}
-                  className="w-full text-center text-sm text-blue-600 hover:text-blue-700 py-2 font-medium"
+                  className="text-xs text-blue-600 hover:text-blue-700"
                   type="button"
                 >
-                  Lihat semua permintaan koneksi
+                  Buka Koneksi
                 </button>
               </div>
-            )}
-          </div>
+
+              <div className="overflow-y-auto flex-1">
+                {pendingConnections.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <UserPlus size={32} className="mx-auto mb-2 text-gray-300" />
+                    <p>Tidak ada permintaan koneksi</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {pendingConnections.map((req) => (
+                      <div
+                        key={req.id}
+                        onClick={() => {
+                          setShowConnDropdown(false)
+                          navigate('/koneksi')
+                        }}
+                        className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {req.user?.fotoProfil ? (
+                              <>
+                                <img
+                                  src={getImageUrl(req.user.fotoProfil, 'profiles')}
+                                  alt={req.user?.nama || 'User'}
+                                  className="w-9 h-9 rounded-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none'
+                                    const nextSibling = e.target.nextElementSibling
+                                    if (nextSibling && nextSibling.style) {
+                                      nextSibling.style.display = 'flex'
+                                    }
+                                  }}
+                                />
+                                <span
+                                  className="text-blue-600 text-xs font-semibold w-9 h-9 items-center justify-center hidden"
+                                  style={{ display: 'none' }}
+                                >
+                                  {(req.user?.nama || 'U').charAt(0).toUpperCase()}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-blue-600 text-xs font-semibold">
+                                {(req.user?.nama || 'U').charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {req.user?.nama || 'User'}
+                            </p>
+                            {req.message && (
+                              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">
+                                {req.message}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-500 mt-1">
+                              {formatTime(req.createdAt)}
+                            </p>
+                          </div>
+
+                          <div className="text-xs text-gray-400 flex-shrink-0">
+                            PENDING
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {pendingConnectionsCount > 0 && (
+                <div className="p-2 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setShowConnDropdown(false)
+                      navigate('/koneksi')
+                    }}
+                    className="w-full text-center text-sm text-blue-600 hover:text-blue-700 py-2 font-medium"
+                    type="button"
+                  >
+                    Lihat semua permintaan koneksi
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -314,74 +321,81 @@ const NotificationBell = () => {
         </button>
 
         {showNotifDropdown && (
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Notifikasi</h3>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  disabled={loading}
-                  className="text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50"
-                  type="button"
-                >
-                  {loading ? 'Memproses...' : 'Tandai semua sudah dibaca'}
-                </button>
-              )}
-            </div>
-
-            <div className="overflow-y-auto flex-1">
-              {notifications.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
-                  <Bell size={32} className="mx-auto mb-2 text-gray-300" />
-                  <p>Tidak ada notifikasi</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-200">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      onClick={() => handleNotificationClick(notification)}
-                      className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                        !notification.read ? 'bg-blue-50' : ''
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="text-xl flex-shrink-0">
-                          {getNotificationIcon(notification.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {formatTime(notification.createdAt)}
-                          </p>
-                        </div>
-                        {!notification.read && (
-                          <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {notifications.length > 0 && (
-              <div className="p-2 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    setShowNotifDropdown(false)
-                    navigate('/notifikasi')
-                  }}
-                  className="w-full text-center text-sm text-blue-600 hover:text-blue-700 py-2 font-medium"
-                  type="button"
-                >
-                  Lihat semua notifikasi
-                </button>
+          <>
+            {/* Backdrop for mobile */}
+            <div 
+              className="fixed inset-0 bg-black/10 z-40 md:hidden animate-fadeIn"
+              onClick={() => setShowNotifDropdown(false)}
+            />
+            <div className="fixed md:absolute inset-x-4 md:inset-x-auto md:right-0 md:left-auto top-16 md:top-full mt-2 max-w-md md:w-80 mx-auto md:mx-0 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 max-h-[75vh] md:max-h-96 overflow-hidden flex flex-col animate-slideIn">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">Notifikasi</h3>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    disabled={loading}
+                    className="text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                    type="button"
+                  >
+                    {loading ? 'Memproses...' : 'Tandai semua sudah dibaca'}
+                  </button>
+                )}
               </div>
-            )}
-          </div>
+
+              <div className="overflow-y-auto flex-1">
+                {notifications.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <Bell size={32} className="mx-auto mb-2 text-gray-300" />
+                    <p>Tidak ada notifikasi</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                          !notification.read ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="text-xl flex-shrink-0">
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {formatTime(notification.createdAt)}
+                            </p>
+                          </div>
+                          {!notification.read && (
+                            <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {notifications.length > 0 && (
+                <div className="p-2 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setShowNotifDropdown(false)
+                      navigate('/notifikasi')
+                    }}
+                    className="w-full text-center text-sm text-blue-600 hover:text-blue-700 py-2 font-medium"
+                    type="button"
+                  >
+                    Lihat semua notifikasi
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

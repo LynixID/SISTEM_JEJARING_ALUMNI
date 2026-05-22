@@ -1,16 +1,1330 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/icon_web.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="/icon_web.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <title>UII Connect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <title>UII Connect - Ikatan Alumni Universitas Islam Indonesia Wilayah Jawa Tengah</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/landing/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+
+    <!-- Additional CSS Files -->
+    <link rel="stylesheet" href="/landing/assets/css/fontawesome.css">
+    <link rel="stylesheet" href="/landing/assets/css/templatemo-onix-digital.css">
+    <link rel="stylesheet" href="/landing/assets/css/animated.css">
+    <link rel="stylesheet" href="/landing/assets/css/owl.css">
+<!--
+
+TemplateMo 565 Onix Digital
+
+https://templatemo.com/tm-565-onix-digital
+
+-->
+    <style>
+
+      /* Maintain the right alignment and bubble shape but add safe wrapping and max dimensions */
+      .our-portfolio .item .hover-effect .inner-content {
+        max-width: 190px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+      }
+
+      .our-portfolio .item .hover-effect .inner-content h4 {
+        font-size: 18px !important;
+        line-height: 1.2 !important;
+        margin-bottom: 8px !important;
+        font-weight: 700 !important;
+        color: #fff !important;
+      }
+
+      .our-portfolio .item .hover-effect .inner-content span {
+        font-size: 13px !important;
+        line-height: 1.3 !important;
+        display: block !important;
+        font-weight: 500 !important;
+        color: #fff !important;
+        margin-bottom: 5px !important;
+        text-transform: none !important;
+      }
+
+      .our-portfolio .item .hover-effect .inner-content p {
+        font-size: 11px !important;
+        line-height: 1.3 !important;
+        color: rgba(255, 255, 255, 0.85) !important;
+        margin: 0 !important;
+        font-weight: 400 !important;
+      }
+
+      /* Pricing Tables customization for Program cards */
+      .pricing-tables .item {
+        margin-bottom: 30px;
+      }
+
+      .pricing-tables .item h4 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #2a2a2a;
+        line-height: 1.3;
+        min-height: 52px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-wrap: break-word;
+      }
+      
+      .pricing-tables .item em {
+        color: #f02027;
+        font-size: 14px;
+        font-weight: 500;
+        display: block;
+        margin-top: 15px;
+        font-style: normal;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .pricing-tables .item span {
+        font-size: 20px !important;
+        color: #03a4ed !important;
+        font-weight: 600 !important;
+        display: block;
+        margin-top: 10px !important;
+        min-height: 30px;
+        text-transform: none !important;
+      }
+
+      .pricing-tables .item ul {
+        margin-top: 25px;
+        text-align: left;
+        padding-left: 10px;
+      }
+
+      .pricing-tables .item ul li {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 12px;
+        line-height: 1.4;
+        display: flex;
+        align-items: flex-start;
+      }
+
+      .pricing-tables .item ul li i {
+        margin-top: 3px;
+        font-size: 14px;
+        width: 20px;
+        color: #f02027;
+        flex-shrink: 0;
+      }
+
+      /* Loading state */
+      .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 8px;
+      }
+      @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
+      /* Responsive improvements and custom margins */
+      .our-portfolio .container-fluid {
+        padding-left: 60px !important;
+        padding-right: 60px !important;
+        transition: padding 0.3s ease;
+      }
+
+      .our-portfolio .item .thumb img.alumni-img {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 1 / 1 !important;
+        object-fit: cover !important;
+        border-radius: 12px !important;
+      }
+
+      /* Responsive form styling & margins for smaller devices */
+      @media (max-width: 991px) {
+        .our-portfolio .container-fluid {
+          padding-left: 30px !important;
+          padding-right: 30px !important;
+        }
+        .about-us .section-heading {
+          margin-top: 40px !important;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .our-portfolio .container-fluid {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+        #contact-form {
+          padding: 25px 20px !important;
+        }
+        .contact-us .section-heading {
+          margin-bottom: 30px !important;
+        }
+      }
+
+      /* Shrink and align hero banner image to be more elegant and centered without cropping */
+      .main-banner::before {
+        width: 700px !important;
+        height: 576px !important;
+        top: 150px !important;
+        background-size: contain !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        right: 50% !important;
+        margin-right: -720px !important;
+      }
+
+      @media (max-width: 1240px) {
+        .main-banner::before {
+          width: 550px !important;
+          height: 452px !important;
+          top: 180px !important;
+          background-size: contain !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          right: 50% !important;
+          margin-right: -580px !important;
+        }
+      }
+
+      /* Center the about section image and remove asymmetry */
+      .about-us .left-image {
+        margin-right: 0px !important;
+        text-align: center !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+      }
+
+      .about-us .left-image img {
+        max-width: 550px !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 auto !important;
+        display: block !important;
+      }
+
+      /* Navbar link active state color (Yellow) and hover state color (Yellow) */
+      .header-area .main-nav .nav li a.active,
+      .background-header .main-nav .nav li a.active,
+      .header-area.header-sticky .nav li a.active {
+        color: #efcc1a !important;
+      }
+      
+      .header-area .main-nav .nav li a:hover,
+      .background-header .main-nav .nav li a:hover {
+        color: #efcc1a !important;
+      }
+
+      /* Red 'Masuk' button styling with Yellow hover transition */
+      .header-area .main-nav .nav li .main-red-button-hover a {
+        background-color: #f02027 !important;
+        color: #fff !important;
+        transition: all 0.3s ease !important;
+      }
+      .header-area .main-nav .nav li .main-red-button-hover a:hover {
+        background-color: #efcc1a !important;
+        color: #fff !important;
+      }
+
+      /* Fixed logo sizing controls to isolate navbar layout and maintain aspect ratios */
+      .header-area .main-nav .logo img,
+      footer .logo img {
+        height: 40px !important;
+        width: auto !important;
+        max-width: 250px !important;
+        object-fit: contain !important;
+      }
+
+      /* Native fast smooth scrolling and scroll offset for the fixed thin header */
+      html {
+        scroll-behavior: smooth !important;
+      }
+      section, div[id] {
+        scroll-margin-top: 70px !important;
+      }
+
+      /* Always fixed and ultra-thin header (60px) with NO height transitions or scrolling animations */
+      .header-area {
+        background-color: #fff !important;
+        position: fixed !important;
+        top: 0px !important;
+        left: 0px !important;
+        right: 0px !important;
+        height: 60px !important;
+        z-index: 9999 !important;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.06) !important;
+        transition: none !important;
+        -webkit-transition: none !important;
+        -moz-transition: none !important;
+        -o-transition: none !important;
+      }
+      .background-header {
+        background-color: #fff !important;
+        position: fixed !important;
+        height: 60px !important;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.06) !important;
+        transition: none !important;
+        -webkit-transition: none !important;
+      }
+      
+      /* Make sure logo text, image and links are always dark/gray (scrolled look) */
+      .header-area .main-nav .nav li a {
+        color: #2a2a2a !important;
+      }
+      .header-area .main-nav .logo span {
+        color: #03a4ed !important; /* Keep modern blue brand color */
+      }
+
+      /* Desktop View Alignments for 60px Navbar */
+      @media (min-width: 768px) {
+        .header-area .main-nav {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          height: 60px !important;
+        }
+        .header-area .main-nav .logo {
+          display: flex !important;
+          align-items: center !important;
+          gap: 10px !important;
+          height: 60px !important;
+          margin-top: 0 !important;
+          line-height: normal !important;
+          padding-top: 0 !important;
+          float: none !important;
+        }
+        .background-header .main-nav .logo {
+          height: 60px !important;
+        }
+        .header-area .main-nav .nav {
+          margin-top: 0 !important;
+          float: none !important;
+          display: flex !important;
+          align-items: center !important;
+          height: 60px !important;
+        }
+        .background-header .main-nav .nav {
+          margin-top: 0 !important;
+          height: 60px !important;
+        }
+        .header-area .main-nav .nav li a {
+          height: 36px !important;
+          line-height: 36px !important;
+        }
+      }
+
+      /* Premium Mobile Navbar Override */
+      @media (max-width: 767px) {
+        .header-area {
+          background-color: rgba(255, 255, 255, 0.95) !important;
+          backdrop-filter: blur(10px) !important;
+          -webkit-backdrop-filter: blur(10px) !important;
+          height: 65px !important;
+          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03) !important;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+        }
+        .header-area .main-nav .logo {
+          height: 65px !important;
+          display: flex !important;
+          align-items: center !important;
+          margin-left: 10px !important;
+        }
+        .header-area .main-nav .logo span {
+          font-size: 20px !important;
+        }
+        .header-area .main-nav .menu-trigger {
+          top: 12px !important;
+          right: 20px !important;
+          height: 40px !important;
+          width: 40px !important;
+          display: block !important;
+          border-radius: 50% !important;
+          background: #f8fafc !important;
+          border: 1px solid rgba(0,0,0,0.05) !important;
+        }
+        .header-area .main-nav .menu-trigger span {
+          top: 19px !important;
+          left: 5px !important;
+        }
+        .header-area .main-nav .menu-trigger span:before {
+          left: 0 !important;
+        }
+        .header-area .main-nav .menu-trigger span:after {
+          left: 0 !important;
+        }
+        
+        /* Dropdown Menu Container */
+        .header-area .main-nav .nav {
+          background-color: rgba(255, 255, 255, 0.98) !important;
+          backdrop-filter: blur(15px) !important;
+          -webkit-backdrop-filter: blur(15px) !important;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08) !important;
+          margin-top: 65px !important;
+          border-radius: 0 0 24px 24px !important;
+          padding: 15px 20px 25px 20px !important;
+          border: 1px solid rgba(0,0,0,0.05) !important;
+          border-top: none !important;
+        }
+        .background-header .main-nav .nav {
+          margin-top: 65px !important;
+        }
+
+        /* List Items */
+        .header-area .main-nav .nav li {
+          background: transparent !important;
+          border-bottom: none !important;
+          margin-bottom: 8px !important;
+          width: 100% !important;
+        }
+        
+        .header-area .main-nav .nav li a {
+          background: transparent !important;
+          color: #475569 !important; /* Elegant slate gray */
+          font-size: 15px !important;
+          font-weight: 600 !important;
+          height: 46px !important;
+          line-height: 46px !important;
+          border-radius: 12px !important;
+          padding: 0 16px !important;
+          text-align: left !important;
+          transition: all 0.2s ease !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        
+        /* Active / Hover State */
+        .header-area .main-nav .nav li a:hover,
+        .header-area .main-nav .nav li a.active {
+          background: rgba(3, 164, 237, 0.08) !important;
+          color: #03a4ed !important;
+          padding-left: 22px !important; /* Smooth micro-slide */
+        }
+        
+        /* Show the last child (Masuk Button) on mobile and make it look amazing */
+        .header-area .main-nav .nav li:last-child,
+        .background-header .main-nav .nav li:last-child {
+          display: block !important;
+          margin-top: 15px !important;
+          padding-left: 0 !important;
+        }
+        
+        .header-area .main-nav .nav li .main-red-button-hover {
+          width: 100% !important;
+          display: block !important;
+        }
+        
+        .header-area .main-nav .nav li .main-red-button-hover a {
+          background: linear-gradient(135deg, #f02027 0%, #d8141b 100%) !important;
+          color: #fff !important;
+          font-size: 15px !important;
+          font-weight: 700 !important;
+          height: 48px !important;
+          line-height: 48px !important;
+          border-radius: 14px !important;
+          justify-content: center !important; /* Center the text */
+          box-shadow: 0 10px 20px rgba(240, 32, 39, 0.15) !important;
+          text-align: center !important;
+          padding: 0 !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        
+        .header-area .main-nav .nav li .main-red-button-hover a:hover {
+          background: #efcc1a !important;
+          box-shadow: 0 10px 20px rgba(239, 204, 26, 0.2) !important;
+          color: #fff !important;
+          padding-left: 0 !important; /* No slide for primary CTA */
+        }
+      }
+    </style>
   </head>
+  
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  
+    <!-- ***** Preloader Start ***** -->
+    <div id="js-preloader" class="js-preloader">
+      <div class="preloader-inner">
+        <span class="dot"></span>
+        <div class="dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </div>
+    <!-- ***** Preloader End ***** -->
+  
+    <!-- ***** Header Area Start ***** -->
+    <header class="header-area header-sticky">
+      <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <nav class="main-nav">
+            <!-- ***** Logo Start ***** -->
+            <a href="index.html" class="logo">
+              <img src="/icon_web.png" alt="UII Connect" style="height: 40px !important; width: auto !important;">
+              <span style="font-size: 22px; font-weight: 800; color: #03a4ed; letter-spacing: 0.5px; font-family: 'Poppins', sans-serif;">UII Connect</span>
+            </a>
+            <!-- ***** Logo End ***** -->
+            <!-- ***** Menu Start ***** -->
+            <ul class="nav">
+              <li class="scroll-to-section"><a href="#top" class="active">Home</a></li>
+              <li class="scroll-to-section"><a href="#about">Tentang</a></li>
+              <li class="scroll-to-section"><a href="#services">Layanan</a></li>
+              <li class="scroll-to-section"><a href="#portfolio">Portfolio</a></li>
+              <li class="scroll-to-section"><a href="#pricing">Kegiatan</a></li>
+              <li class="scroll-to-section"><a href="#contact">Kontak</a></li>
+              <li class="scroll-to-section"><div class="main-red-button-hover"><a href="/login">Masuk</a></div></li>
+            </ul>
+            <a class='menu-trigger'>
+                <span>Menu</span>
+            </a>
+            <!-- ***** Menu End ***** -->
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <div class="main-banner" id="top">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="row">
+            <div class="col-lg-6 align-self-center">
+              <div class="owl-carousel owl-banner">
+                <div class="item header-text">
+                  <h6>Welcome to IKA UII JATENG</h6>
+                  <h2>Membangun <em>Jaringan</em> Alumni <span>UII</span> Jawa Tengah</h2>
+                  <p>Platform resmi Ikatan Alumni Universitas Islam Indonesia Wilayah Jawa Tengah untuk menghubungkan, berbagi, dan berkembang bersama.</p>
+                  <div class="down-buttons">
+                    <div class="main-blue-button-hover">
+                      <a href="/register">Bergabung Sekarang</a>
+                    </div>
+                    <div class="call-button">
+                      <a href="#about"><i class="fa fa-info-circle"></i> Pelajari Lebih</a>
+                    </div>
+                  </div>
+                </div>
+                <div class="item header-text">
+                  <h6>Jaringan Alumni</h6>
+                  <h2>Terhubung dengan <em>Ribuan</em> Alumni <span>UII</span></h2>
+                  <p>Bergabunglah dengan komunitas alumni UII di Jawa Tengah. Bagikan pengalaman, peluang, dan inspirasi untuk masa depan bersama.</p>
+                  <div class="down-buttons">
+                    <div class="main-blue-button-hover">
+                      <a href="#services">Layanan Kami</a>
+                    </div>
+                    <div class="call-button">
+                      <a href="/login"><i class="fa fa-sign-in"></i> Masuk</a>
+                    </div>
+                  </div>
+                </div>
+                <div class="item header-text">
+                  <h6>Kesempatan Karir</h6>
+                  <h2>Jelajahi <em>Peluang</em> Karier <span>Terbaru</span></h2>
+                  <p>Dapatkan informasi lowongan kerja dan peluang bisnis dari jaringan alumni UII di seluruh wilayah Jawa Tengah.</p>
+                  <div class="down-buttons">
+                    <div class="main-blue-button-hover">
+                      <a href="#portfolio">Lihat Kegiatan</a>
+                    </div>
+                    <div class="call-button">
+                      <a href="/register"><i class="fa fa-user-plus"></i> Daftar Gratis</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="about" class="about-us section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6 align-self-center">
+          <div class="left-image">
+            <img src="/landing/assets/images/about-left-image.png" alt="Two Girls working together">
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="section-heading">
+            <h2>Tentang <em>IKA UII</em> <span>JATENG</span></h2>
+            <p>IKA UII Jawa Tengah adalah organisasi yang menghimpun para alumni Universitas Islam Indonesia yang tersebar di seluruh wilayah Jawa Tengah. Kami berkomitmen membangun jaringan alumni yang solid, saling mendukung, dan memberikan manfaat bagi masyarakat.</p>
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="fact-item">
+                  <div class="count-area-content">
+                    <div class="icon">
+                      <img src="/landing/assets/images/service-icon-01.png" alt="">
+                    </div>
+                    <div class="count-digit" id="about-alumni-count">500</div>
+                    <div class="count-title">Alumni Aktif</div>
+                    <p>Alumni UII yang aktif di komunitas and platform digital.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="fact-item">
+                  <div class="count-area-content">
+                    <div class="icon">
+                      <img src="/landing/assets/images/service-icon-02.png" alt="">
+                    </div>
+                    <div class="count-digit" id="about-event-count">50</div>
+                    <div class="count-title">Kegiatan/Tahun</div>
+                    <p>Event dan kegiatan yang diadakan setiap tahunnya.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="fact-item">
+                  <div class="count-area-content">
+                    <div class="icon">
+                      <img src="/landing/assets/images/service-icon-03.png" alt="">
+                    </div>
+                    <div class="count-digit" id="about-city-count">15</div>
+                    <div class="count-title">Kota Tercover</div>
+                    <p>Kabupaten dan kota di wilayah Jawa Tengah.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="services" class="our-services section">
+    <div class="services-right-dec">
+      <img src="/landing/assets/images/services-right-dec.png" alt="">
+    </div>
+    <div class="container">
+      <div class="services-left-dec">
+        <img src="/landing/assets/images/services-left-dec.png" alt="">
+      </div>
+      <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+          <div class="section-heading">
+            <h2>Nilai dan <em>Manfaat</em> <span>Keanggotaan</span></h2>
+            <span>Bergabung Bersama Kami</span>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="owl-carousel owl-services">
+            <div class="item">
+              <h4>Jaringan Alumni Luas</h4>
+              <div class="icon"><img src="/landing/assets/images/service-icon-01.png" alt=""></div>
+              <p>Terhubung dengan ribuan alumni UII di seluruh Jawa Tengah dari berbagai angkatan dan jurusan.</p>
+            </div>
+            <div class="item">
+              <h4>Peluang Karir</h4>
+              <div class="icon"><img src="/landing/assets/images/service-icon-02.png" alt=""></div>
+              <p>Akses informasi lowongan kerja eksklusif dari perusahaan dan startup yang dikelola alumni.</p>
+            </div>
+            <div class="item">
+              <h4>Event Berkualitas</h4>
+              <div class="icon"><img src="/landing/assets/images/service-icon-03.png" alt=""></div>
+              <p>Seminar, workshop, dan gathering rutin untuk pengembangan diri dan networking.</p>
+            </div>
+            <div class="item">
+              <h4>Kolaborasi Bisnis</h4>
+              <div class="icon"><img src="/landing/assets/images/service-icon-04.png" alt=""></div>
+              <p>Peluang kerjasama bisnis dan project bersama sesama alumni yang saling mendukung.</p>
+            </div>
+            <div class="item">
+              <h4>Platform Digital Modern</h4>
+              <div class="icon"><img src="/landing/assets/images/service-icon-01.png" alt=""></div>
+              <p>Aplikasi jejaring sosial khusus alumni dengan fitur lengkap untuk tetap terhubung.</p>
+            </div>
+            <div class="item">
+              <h4>Mentoring & Bimbingan</h4>
+              <div class="icon"><img src="/landing/assets/images/service-icon-02.png" alt=""></div>
+              <p>Program mentoring dari alumni senior untuk membantu pengembangan karir junior.</p>
+            </div>
+            <div class="item">
+              <h4>Informasi Beasiswa</h4>
+              <div class="icon"><img src="/landing/assets/images/service-icon-03.png" alt=""></div>
+              <p>Update beasiswa S2/S3 dan program pengembangan profesional untuk alumni.</p>
+            </div>
+            <div class="item">
+              <h4>Komunitas Regional</h4>
+              <div class="icon"><img src="/landing/assets/images/service-icon-04.png" alt=""></div>
+              <p>Komunitas alumni di setiap kota/kabupaten untuk memperkuat silaturahmi lokal.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portfolio Section - Alumni Cards -->
+  <div id="portfolio" class="our-portfolio section">
+    <div class="portfolio-left-dec">
+      <img src="/landing/assets/images/portfolio-left-dec.png" alt="">
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+          <div class="section-heading">
+            <h2>Beberapa <em>Anggota</em> <span>Kami</span></h2>
+            <span>Alumni yang Menginspirasi</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="owl-carousel owl-portfolio" id="alumni-carousel">
+            <!-- Alumni cards akan dimuat dari API -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event & Program Section -->
+  <div id="pricing" class="pricing-tables">
+    <div class="tables-left-dec">
+      <img src="/landing/assets/images/tables-left-dec.png" alt="">
+    </div>
+    <div class="tables-right-dec">
+      <img src="/landing/assets/images/tables-right-dec.png" alt="">
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+          <div class="section-heading">
+            <h2>Event & <em>Program</em> <span>Terbaru</span></h2>
+            <span>Kegiatan Kami</span>
+          </div>
+        </div>
+      </div>
+      <div class="row" id="program-carousel">
+        <!-- Program cards akan dimuat dari API -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Video Section -->
+  <div id="video" class="our-videos section">
+    <div class="videos-left-dec">
+      <img src="/landing/assets/images/videos-left-dec.png" alt="">
+    </div>
+    <div class="videos-right-dec">
+      <img src="/landing/assets/images/videos-right-dec.png" alt="">
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="naccs">
+            <div class="grid">
+              <div class="row">
+                <div class="col-lg-12">
+                  <ul class="nacc" id="video-list">
+                    <!-- Video dari database -->
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Section -->
+  <div id="contact" class="contact-us section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+          <div class="section-heading text-center" style="margin-bottom: 50px;">
+            <h2>Hubungi <em>Kami</em></h2>
+            <p style="color: #666; font-size: 16px; margin-top: 15px;">Kirimkan pesan Anda dan kami akan segera merespons</p>
+          </div>
+          <form id="contact-form" action="" method="post" style="background: #fff; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <div class="row">
+              <div class="col-lg-6">
+                <fieldset style="margin-bottom: 25px;">
+                  <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 14px;">Nama Lengkap</label>
+                  <input type="text" name="name" id="name" placeholder="Masukkan nama lengkap Anda" autocomplete="on" required style="width: 100%; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: all 0.3s;">
+                </fieldset>
+              </div>
+              <div class="col-lg-6">
+                <fieldset style="margin-bottom: 25px;">
+                  <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 14px;">Alamat Email</label>
+                  <input type="email" name="email" id="email" pattern="[^ @]*@[^ @]*" placeholder="email@example.com" required style="width: 100%; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: all 0.3s;">
+                </fieldset>
+              </div>
+              <div class="col-lg-12">
+                <fieldset style="margin-bottom: 30px;">
+                  <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 14px;">Pesan</label>
+                  <textarea name="message" id="message" placeholder="Tulis pesan Anda di sini..." rows="6" required style="width: 100%; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical; transition: all 0.3s;"></textarea>
+                </fieldset>
+              </div>
+              <div class="col-lg-12 text-center">
+                <fieldset>
+                  <button type="submit" id="form-submit" class="main-button" style="padding: 15px 50px; font-size: 16px; font-weight: 600; border-radius: 8px;">
+                    <i class="fa fa-paper-plane" style="margin-right: 8px;"></i>Kirim Pesan
+                  </button>
+                </fieldset>
+              </div>
+            </div>
+          </form>
+          <div class="contact-info text-center" style="margin-top: 40px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: #fff;">
+            <div class="row">
+              <div class="col-md-6" style="margin-bottom: 20px;">
+                <i class="fa fa-envelope" style="font-size: 24px; margin-bottom: 10px;"></i>
+                <h5 style="color: #fff; margin-bottom: 5px; font-size: 16px;">Email</h5>
+                <p style="margin: 0; font-size: 14px; opacity: 0.9;" id="contact-email-footer">Memuat...</p>
+              </div>
+              <div class="col-md-6" style="margin-bottom: 20px;">
+                <i class="fa fa-phone" style="font-size: 24px; margin-bottom: 10px;"></i>
+                <h5 style="color: #fff; margin-bottom: 5px; font-size: 16px;">Telepon</h5>
+                <p style="margin: 0; font-size: 14px; opacity: 0.9;" id="contact-phone-footer">Memuat...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="contact-dec">
+      <img src="/landing/assets/images/contact-dec.png" alt="">
+    </div>
+    <div class="contact-left-dec">
+      <img src="/landing/assets/images/contact-left-dec.png" alt="">
+    </div>
+  </div>
+
+  <div class="footer-dec">
+    <img src="/landing/assets/images/footer-dec.png" alt="">
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-3">
+          <div class="about footer-item">
+            <div class="logo" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+              <a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+                <img src="/icon_web.png" alt="UII Connect" style="height: 40px !important; width: auto !important;">
+                <span style="font-size: 22px; font-weight: 800; color: #03a4ed; letter-spacing: 0.5px; font-family: 'Poppins', sans-serif;">UII Connect</span>
+              </a>
+            </div>
+            <a href="#" id="footer-email">info@ikauiijateng.org</a>
+            <ul>
+              <li><a href="#"><i class="fa fa-facebook"></i></a></li>
+              <li><a href="#"><i class="fa fa-twitter"></i></a></li>
+              <li><a href="#"><i class="fa fa-behance"></i></a></li>
+              <li><a href="#"><i class="fa fa-instagram"></i></a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="services footer-item">
+            <h4>Layanan</h4>
+            <ul>
+              <li><a href="#">Jaringan Alumni</a></li>
+              <li><a href="#">Lowongan Kerja</a></li>
+              <li><a href="#">Event & Kegiatan</a></li>
+              <li><a href="#">Forum Diskusi</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="community footer-item">
+            <h4>Komunitas</h4>
+            <ul>
+              <li><a href="#">Berita & Pengumuman</a></li>
+              <li><a href="#">Diskusi Alumni</a></li>
+              <li><a href="#">Koneksi Profesional</a></li>
+              <li><a href="#">Kesempatan Karir</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="subscribe-newsletters footer-item">
+            <h4>Berlangganan Newsletter</h4>
+            <p>Dapatkan informasi terbaru dari UII Connect langsung ke inbox Anda</p>
+            <form action="#" method="get">
+              <input type="text" name="email" id="email" pattern="[^ @]*@[^ @]*" placeholder="Your Email" required="">
+              <button type="submit" id="form-submit" class="main-button "><i class="fa fa-paper-plane-o"></i></button>
+            </form>
+          </div>
+        </div>
+        <div class="col-lg-12">
+          <div class="copyright">
+            <p>Copyright © 2024 UII Connect. All Rights Reserved.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- Scripts -->
+  <script src="/landing/vendor/jquery/jquery.min.js"></script>
+  <script src="/landing/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/landing/assets/js/owl-carousel.js"></script>
+  <script src="/landing/assets/js/animation.js"></script>
+  <script src="/landing/assets/js/imagesloaded.js"></script>
+  <script src="/landing/assets/js/custom.js"></script>
+
+  <script>
+    // Custom Modal Alert function that matches the landing page theme
+    function showCustomModal(title, message, isSuccess = true) {
+      // Remove any existing modal first
+      const existingModal = document.getElementById('custom-alert-modal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+
+      // Create modal container
+      const modal = document.createElement('div');
+      modal.id = 'custom-alert-modal';
+      modal.style.position = 'fixed';
+      modal.style.top = '0';
+      modal.style.left = '0';
+      modal.style.width = '100%';
+      modal.style.height = '100%';
+      modal.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+      modal.style.backdropFilter = 'blur(5px)';
+      modal.style.webkitBackdropFilter = 'blur(5px)';
+      modal.style.zIndex = '99999';
+      modal.style.display = 'flex';
+      modal.style.alignItems = 'center';
+      modal.style.justifyContent = 'center';
+      modal.style.opacity = '0';
+      modal.style.transition = 'opacity 0.3s ease';
+
+      // Icon determination
+      const iconHtml = isSuccess
+        ? `<div style="width: 70px; height: 70px; background: #d1fae5; color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 32px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.15);">
+             <i class="fa fa-check"></i>
+           </div>`
+        : `<div style="width: 70px; height: 70px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 32px; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.15);">
+             <i class="fa fa-exclamation"></i>
+           </div>`;
+
+      const buttonBg = isSuccess 
+        ? 'linear-gradient(105deg, rgba(3,164,237,1) 0%, rgba(3,180,237,1) 100%)' 
+        : 'linear-gradient(105deg, rgba(239, 204, 26, 1) 0%, rgba(239, 215, 26, 1) 100%)';
+      const buttonShadow = isSuccess ? 'rgba(3, 164, 237, 0.3)' : 'rgba(240, 32, 39, 0.3)';
+
+      // Modal inner box
+      modal.innerHTML = `
+        <div style="background: #fff; width: 90%; max-width: 420px; padding: 40px 30px; border-radius: 24px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.15); transform: scale(0.85); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); font-family: 'Poppins', sans-serif; border: 1px solid rgba(0,0,0,0.05);">
+          ${iconHtml}
+          <h3 style="font-size: 22px; font-weight: 700; color: #2a2a2a; margin-bottom: 12px; font-family: 'Poppins', sans-serif;">${title}</h3>
+          <p style="font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 25px; font-family: 'Poppins', sans-serif;">${message}</p>
+          <button id="close-modal-btn" style="background: ${buttonBg}; color: #fff; border: none; border-radius: 30px; padding: 12px 35px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; width: 100%; box-shadow: 0 10px 20px ${buttonShadow}; font-family: 'Poppins', sans-serif;">Tutup</button>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Trigger animations
+      setTimeout(() => {
+        modal.style.opacity = '1';
+        modal.querySelector('div').style.transform = 'scale(1)';
+      }, 50);
+
+      // Close handler
+      const closeModal = () => {
+        modal.style.opacity = '0';
+        modal.querySelector('div').style.transform = 'scale(0.85)';
+        setTimeout(() => {
+          modal.remove();
+        }, 300);
+      };
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      modal.querySelector('#close-modal-btn').addEventListener('click', closeModal);
+    }
+
+  // Acc
+    $(document).on("click", ".naccs .menu div", function() {
+      var numberIndex = $(this).index();
+
+      if (!$(this).is("active")) {
+          $(".naccs .menu div").removeClass("active");
+          $(".naccs ul li").removeClass("active");
+
+          $(this).addClass("active");
+          $(".naccs ul").find("li:eq(" + numberIndex + ")").addClass("active");
+
+          var listItemHeight = $(".naccs ul")
+            .find("li:eq(" + numberIndex + ")")
+            .innerHeight();
+          $(".naccs ul").height(listItemHeight + "px");
+        }
+    });
+
+    // Resolve Image URL helper for landing page
+    function resolveImageUrl(url) {
+      if (!url) return '';
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      return url;
+    }
+
+    // Fetch landing page data dari database
+    async function fetchLandingData() {
+      try {
+        const response = await fetch('/api/landing/data');
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const { alumni, programs, contactEmail, contactPhone, videos, alumniCount, eventCount, cityCount, heroImage, aboutImage, navbarLogo } = result.data;
+
+          // Update navbar & footer logo if configured
+          if (navbarLogo) {
+            const resolvedLogo = resolveImageUrl(navbarLogo);
+            const navLogoImg = document.querySelector('.header-area .main-nav .logo img');
+            const footerLogoImg = document.querySelector('footer .logo img');
+            if (navLogoImg) navLogoImg.src = resolvedLogo;
+            if (footerLogoImg) footerLogoImg.src = resolvedLogo;
+          } else {
+            const navLogoImg = document.querySelector('.header-area .main-nav .logo img');
+            const footerLogoImg = document.querySelector('footer .logo img');
+            if (navLogoImg) navLogoImg.src = '/icon_web.png';
+            if (footerLogoImg) footerLogoImg.src = '/icon_web.png';
+          }
+
+          // Update footer email
+          if (contactEmail) {
+            document.getElementById('footer-email').href = 'mailto:' + contactEmail;
+            document.getElementById('footer-email').textContent = contactEmail;
+            document.getElementById('contact-email-footer').textContent = contactEmail;
+          }
+
+          // Update footer phone
+          if (contactPhone) {
+            document.getElementById('contact-phone-footer').textContent = contactPhone;
+          } else {
+            document.getElementById('contact-phone-footer').textContent = '+62 812-3456-7890';
+          }
+
+          // Update statistics
+          if (alumniCount) {
+            document.getElementById('about-alumni-count').textContent = alumniCount;
+          }
+          if (eventCount) {
+            document.getElementById('about-event-count').textContent = eventCount;
+          }
+          if (cityCount) {
+            document.getElementById('about-city-count').textContent = cityCount;
+          }
+
+          // Update hero image override
+          if (heroImage) {
+            const resolvedHero = resolveImageUrl(heroImage);
+            const style = document.createElement('style');
+            style.innerHTML = `
+              .main-banner::before {
+                background-image: url('${resolvedHero}') !important;
+              }
+            `;
+            document.head.appendChild(style);
+          }
+
+          // Update about us image
+          if (aboutImage) {
+            const resolvedAbout = resolveImageUrl(aboutImage);
+            const aboutImgElement = document.querySelector('.about-us .left-image img');
+            if (aboutImgElement) {
+              aboutImgElement.src = resolvedAbout;
+            }
+          }
+
+          // Render alumni cards
+          renderAlumniCards(alumni);
+
+          // Render program cards
+          renderProgramCards(programs);
+
+          // Render video
+          renderVideos(videos);
+        }
+      } catch (error) {
+        console.error('Error fetching landing data:', error);
+        // Fallback ke data default jika API gagal
+        loadDefaultAlumni();
+        loadDefaultPrograms();
+      }
+    }
+
+    // Render alumni cards
+    function renderAlumniCards(alumni) {
+      const $carousel = $('#alumni-carousel');
+      if ($carousel.length === 0) return;
+
+      if (!alumni || alumni.length === 0) {
+        loadDefaultAlumni();
+        return;
+      }
+
+      let html = '';
+      alumni.forEach(item => {
+        const imageUrl = item.fotoProfil ? resolveImageUrl(item.fotoProfil) : '/landing/assets/images/portfolio-01.jpg';
+        const infoText = item.profesi && item.perusahaan
+          ? `${item.profesi} di ${item.perusahaan}`
+          : (item.perusahaan || item.profesi || 'Alumni UII');
+        const detailText = item.prodi && item.angkatan
+          ? `Lulusan ${item.prodi} UII (${item.angkatan})`
+          : (item.angkatan ? `Lulusan UII (${item.angkatan})` : 'Alumni UII');
+
+        html += `
+          <div class="item">
+            <div class="thumb">
+              <img src="${imageUrl}" alt="${item.nama}" class="alumni-img">
+              <div class="hover-effect">
+                <div class="inner-content">
+                  <a href="#"><h4>${item.nama}</h4></a>
+                  <span>${infoText}</span>
+                  <p>${detailText}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      // Safely reinitialize Owl Carousel
+      if ($carousel.hasClass('owl-loaded')) {
+        $carousel.trigger('destroy.owl.carousel');
+        $carousel.removeClass('owl-loaded owl-drag owl-refresh');
+      }
+      
+      $carousel.html(html);
+      
+      $carousel.owlCarousel({
+        loop: true,
+        margin: 30,
+        nav: false,
+        autoplay: true,
+        autoplayTimeout: 3000,
+        autoplayHoverPause: true,
+        responsive: {
+          0: { items: 1 },
+          768: { items: 2 },
+          1000: { items: 3 },
+          1400: { items: 4 }
+        }
+      });
+    }
+
+    // Render program cards
+    function renderProgramCards(programs) {
+      const container = document.getElementById('program-carousel');
+      if (!container) return;
+
+      if (!programs || programs.length === 0) {
+        loadDefaultPrograms();
+        return;
+      }
+
+      let html = '';
+      programs.forEach((item) => {
+        const categoryType = item.type === 'event' ? 'Event Alumni' : 'Program Kerja';
+        const excerptText = item.excerpt
+          ? (item.excerpt.length > 80 ? item.excerpt.substring(0, 80) + '...' : item.excerpt)
+          : (item.description ? (item.description.length > 80 ? item.description.substring(0, 80) + '...' : item.description) : 'Detail program dapat dilihat di halaman selengkapnya.');
+
+        const resolvedImage = item.image ? resolveImageUrl(item.image) : '/landing/assets/images/video-big-thumb-01.png';
+        html += `
+          <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
+            <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
+              <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
+                <img src="${resolvedImage}" alt="${item.title}" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
+              </div>
+              <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">${categoryType}</span>
+              <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">${item.title}</h4>
+              <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">${excerptText}</p>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // Render videos
+    function renderVideos(videos) {
+      const videoList = document.getElementById('video-list');
+      if (!videoList) return;
+
+      let embedUrl = 'https://www.youtube.com/embed/a6XZ5cfIzr0?rel=0&modestbranding=1'; // Default video
+
+      if (videos && videos.length > 0 && videos[0].url) {
+        const url = videos[0].url;
+        // Robust YouTube embed URL extractor
+        let videoId = '';
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        if (match && match[2].length === 11) {
+          videoId = match[2];
+        } else {
+          const shortsMatch = url.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+          if (shortsMatch) {
+            videoId = shortsMatch[1];
+          }
+        }
+
+        if (videoId) {
+          embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+        } else {
+          embedUrl = url.includes('?') ? `${url}&rel=0&modestbranding=1` : `${url}?rel=0&modestbranding=1`;
+        }
+      }
+
+      videoList.innerHTML = `
+        <li class="active" style="width: 100%;">
+          <div>
+            <div class="thumb" style="border-radius: 23px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+              <iframe width="100%" src="${embedUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width: 100%; aspect-ratio: 16/9; height: auto !important; min-height: 320px; max-height: 675px; border-radius: 23px; display: block; border: none;"></iframe>
+            </div>
+          </div>
+        </li>
+      `;
+    }
+
+    // Default alumni data
+    function loadDefaultAlumni() {
+      const defaultAlumni = [
+        { nama: 'Ahmad Fauzi', profesi: 'Software Engineer', perusahaan: 'PT Tokopedia', prodi: 'Teknik Informatika', angkatan: 2015, fotoProfil: '/landing/assets/images/portfolio-01.jpg' },
+        { nama: 'Siti Nurhaliza', profesi: 'Marketing Manager', perusahaan: 'PT Unilever Indonesia', prodi: 'Manajemen', angkatan: 2016, fotoProfil: '/landing/assets/images/portfolio-02.jpg' },
+        { nama: 'Budi Santoso', profesi: 'Project Manager', perusahaan: 'PT Waskita Karya', prodi: 'Teknik Sipil', angkatan: 2014, fotoProfil: '/landing/assets/images/portfolio-03.jpg' },
+        { nama: 'Dewi Lestari', profesi: 'HR Manager', perusahaan: 'PT Bank Mandiri', prodi: 'Psikologi', angkatan: 2017, fotoProfil: '/landing/assets/images/portfolio-04.jpg' },
+        { nama: 'Rizki Pratama', profesi: 'Financial Analyst', perusahaan: 'PT Astra International', prodi: 'Ekonomi Pembangunan', angkatan: 2015, fotoProfil: '/landing/assets/images/portfolio-01.jpg' },
+        { nama: 'Rina Wijaya', profesi: 'Legal Counsel', perusahaan: 'PT Pertamina', prodi: 'Hukum', angkatan: 2016, fotoProfil: '/landing/assets/images/portfolio-02.jpg' },
+        { nama: 'Andi Setiawan', profesi: 'Lead Architect', perusahaan: 'PT Airmas Asri', prodi: 'Arsitektur', angkatan: 2014, fotoProfil: '/landing/assets/images/portfolio-03.jpg' },
+        { nama: 'Maya Kusuma', profesi: 'Content Strategist', perusahaan: 'PT Gojek Indonesia', prodi: 'Komunikasi', angkatan: 2017, fotoProfil: '/landing/assets/images/portfolio-04.jpg' }
+      ];
+      renderAlumniCards(defaultAlumni);
+    }
+
+    // Default program data
+    function loadDefaultPrograms() {
+      const container = document.getElementById('program-carousel');
+      if (!container) return;
+
+      container.innerHTML = `
+        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
+          <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
+            <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
+              <img src="/landing/assets/images/video-big-thumb-01.png" alt="Rapat Kerja Wilayah" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
+            </div>
+            <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">Event Alumni</span>
+            <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">Rapat Kerja Wilayah</h4>
+            <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">Rapat koordinasi tahunan pengurus wilayah IKA UII Jawa Tengah untuk membahas program kerja strategis.</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
+          <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
+            <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
+              <img src="/landing/assets/images/video-big-thumb-02.png" alt="Alumni Peduli Sosial" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
+            </div>
+            <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">Program Kerja</span>
+            <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">Alumni Peduli Sosial</h4>
+            <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">Aksi kepedulian sosial, santunan, dan bantuan darurat kebencanaan di wilayah Jawa Tengah.</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
+          <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
+            <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
+              <img src="/landing/assets/images/video-big-thumb-03.png" alt="Seminar & Networking" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
+            </div>
+            <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">Event Alumni</span>
+            <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">Seminar & Networking</h4>
+            <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">Temu bisnis dan sharing session bersama praktisi alumni sukses untuk memperkuat kolaborasi usaha.</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
+          <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
+            <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
+              <img src="/landing/assets/images/video-big-thumb-01.png" alt="Pembinaan UMKM Alumni" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
+            </div>
+            <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">Program Kerja</span>
+            <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">Pembinaan UMKM Alumni</h4>
+            <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">Pendampingan intensif bagi pelaku usaha kecil dan menengah dari alumni UII Jawa Tengah.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Handle contact form submission
+    document.getElementById('contact-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const message = document.getElementById('message').value;
+      const subject = 'Pesan Dari Landing Pages UII Connect';
+
+      // Get contact email from page
+      const contactEmail = document.getElementById('contact-email-footer').textContent;
+
+      // Kirim email
+      try {
+        const response = await fetch('/api/contact/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            subject,
+            message,
+            to: contactEmail
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showCustomModal('Berhasil Terkirim!', 'Pesan Anda berhasil terkirim! Kami akan segera merespons.', true);
+          this.reset();
+        } else {
+          showCustomModal('Gagal Mengirim', result.message || 'Gagal mengirim pesan. Silakan coba lagi.', false);
+        }
+      } catch (error) {
+        console.error('Error sending contact form:', error);
+        showCustomModal('Terjadi Kesalahan', 'Terjadi kesalahan saat mengirim pesan. Silakan coba lagi.', false);
+      }
+    });
+
+    // Load data saat page ready
+    $(document).ready(function() {
+      fetchLandingData();
+    });
+  </script>
+</body>
 </html>

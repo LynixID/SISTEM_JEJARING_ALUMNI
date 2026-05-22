@@ -189,9 +189,9 @@ const ManageEvents = () => {
   }
 
   const renderContent = () => (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Kelola Event</h1>
         <Button onClick={handleCreate} className="flex items-center gap-2">
           <Plus size={20} />
@@ -422,7 +422,7 @@ const ManageEvents = () => {
       {isAdmin ? (
         <div className="flex min-h-screen bg-gray-50">
           <AdminSidebar />
-          <div className="flex-1 ml-0 md:ml-0">
+          <div className="flex-1 min-w-0 ml-0 md:ml-0">
             {renderContent()}
           </div>
         </div>
@@ -431,7 +431,7 @@ const ManageEvents = () => {
           <Header />
           <div className="flex">
             <Sidebar />
-            <main className="flex-1">
+            <main className="flex-1 min-w-0">
               {renderContent()}
             </main>
           </div>

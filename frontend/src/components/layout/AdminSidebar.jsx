@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { 
-  LayoutDashboard, Users, LogOut, User, Menu, X, Settings, 
-  Newspaper, Calendar, ChevronDown, ChevronRight, FileText, 
-  CalendarCheck, ShieldAlert, MessageSquare, FolderOpen, Briefcase 
+import {
+  LayoutDashboard, Users, LogOut, User, Menu, X, Settings,
+  Newspaper, Calendar, ChevronDown, ChevronRight, FileText,
+  CalendarCheck, ShieldAlert, MessageSquare, FolderOpen, Briefcase, Monitor
 } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -11,6 +11,7 @@ import ConfirmModal from '../common/ConfirmModal'
 const AdminSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const location = useLocation()
   const { user, logout, isLoading } = useAuth()
   const navigate = useNavigate()
@@ -53,6 +54,7 @@ const AdminSidebar = () => {
     {
       title: 'SISTEM',
       items: [
+        { icon: Monitor, label: 'Display Home Page', path: '/admin/display-home-page' },
         { icon: FolderOpen, label: 'Manajemen File', path: '/admin/files' },
         { icon: Settings, label: 'Pengaturan', path: '/admin/settings' }
       ]
@@ -61,16 +63,73 @@ const AdminSidebar = () => {
 
   return (
     <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-gray-900 text-white h-screen sticky top-0 flex flex-col transition-all duration-300 z-50`}>
-      {/* Toggle Button */}
-      <div className="p-4 border-b border-gray-800 flex items-center justify-between overflow-hidden">
-        {!isCollapsed && <span className="font-bold text-blue-400">ADMIN PANEL</span>}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-          title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-        >
-          {isCollapsed ? <Menu size={20} /> : <X size={20} />}
-        </button>
+      {/* Toggle Button & Profile Header */}
+      <div className="border-b border-gray-800 flex flex-col">
+        <div className="p-4 flex items-center justify-between overflow-hidden">
+          {!isCollapsed ? (
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-3 hover:bg-gray-800 p-1.5 rounded-lg transition-all duration-200 text-left flex-1 min-w-0 mr-2 group"
+            >
+              <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-md group-hover:scale-105 transition-transform">
+                {user?.nama?.charAt(0) || 'A'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate leading-tight">{user?.nama || 'Administrator'}</p>
+                <p className="text-[11px] text-gray-400 truncate flex items-center gap-1">
+                  <span>Root Admin</span>
+                  <ChevronDown size={12} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </p>
+              </div>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setIsCollapsed(false)
+                setIsDropdownOpen(true)
+              }}
+              className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-md hover:scale-105 transition-transform"
+              title="Buka Profil"
+            >
+              {user?.nama?.charAt(0) || 'A'}
+            </button>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors flex-shrink-0"
+            title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+          >
+            {isCollapsed ? <Menu size={18} /> : <X size={18} />}
+          </button>
+        </div>
+
+        {/* Dropdown Menu */}
+        {!isCollapsed && isDropdownOpen && (
+          <div className="px-4 pb-3">
+            <div className="bg-gray-850 border border-gray-700/50 rounded-lg p-1.5 shadow-xl space-y-1">
+              <button
+                onClick={() => {
+                  navigate('/admin/settings')
+                  setIsDropdownOpen(false)
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-gray-700 transition-colors text-left text-sm text-gray-300 hover:text-white"
+              >
+                <User size={16} />
+                <span>Pengaturan Profil</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsLogoutConfirmOpen(true)
+                  setIsDropdownOpen(false)
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-red-400 hover:bg-red-950/30 hover:text-red-300 transition-colors text-left text-sm font-medium"
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Navigation Menu */}
@@ -113,41 +172,7 @@ const AdminSidebar = () => {
         ))}
       </nav>
 
-      {/* Bottom Section - Profile, Notifikasi, Logout */}
-      <div className="border-t border-gray-800 p-4 space-y-2">
-        {/* Profile */}
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} p-2 rounded-lg bg-gray-800`}>
-          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
-            {user?.nama?.charAt(0) || 'A'}
-          </div>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user?.nama || 'Administrator'}</p>
-              <p className="text-xs text-gray-400 truncate">Root Administrator</p>
-            </div>
-          )}
-        </div>
 
-
-        {/* Profil Button */}
-        <button 
-          className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-2'} px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors`}
-          title={isCollapsed ? 'Profil' : ''}
-        >
-          <User size={18} />
-          {!isCollapsed && <span className="text-sm">Profil</span>}
-        </button>
-
-        {/* Logout */}
-        <button
-          onClick={() => setIsLogoutConfirmOpen(true)}
-          className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-4 py-2 rounded-lg text-red-400 hover:bg-red-900 hover:bg-opacity-20 hover:text-red-300 transition-colors`}
-          title={isCollapsed ? 'Logout' : ''}
-        >
-          <LogOut size={20} />
-          {!isCollapsed && <span>Logout</span>}
-        </button>
-      </div>
 
       <ConfirmModal
         isOpen={isLogoutConfirmOpen}

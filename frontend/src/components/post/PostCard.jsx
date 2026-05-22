@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { toggleLike, deletePost } from '../../services/api'
@@ -13,10 +13,29 @@ import { Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit2, Globe, Lock,
 import CommentSection from '../comment/CommentSection'
 import LikesModal from './LikesModal'
 
+// Helper: potong teks dengan ellipsis jika exceeds maxLength
+const truncateText = (text, maxLength) => {
+  if (!text || text.length <= maxLength) return text
+  return text.substring(0, maxLength) + '...'
+}
+
 const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   const { user } = useAuth()
   const navigate = useNavigate()
-  
+
+  // State untuk deteksi lebar layar (responsive breakpoints)
+  // sm: 640px+ (tablet), md: 768px+ (tablet besar/desktop kecil)
+  // Di bawah sm = phone
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1200
+  )
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   // State management
   const [localPost, setLocalPost] = useState(post)
   const [isLiked, setIsLiked] = useState(post.isLiked || false)
@@ -329,25 +348,33 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
         </div>
       )}
 
-      {/* Post content text */}
+      {/* Post content text — responsive truncation */}
       <div className="mb-3">
-        <p className="text-gray-900 whitespace-pre-wrap">{localPost.content}</p>
+        <p className="text-gray-900 whitespace-pre-wrap">
+          {windowWidth < 640
+            ? truncateText(localPost.content, 400)
+            : windowWidth < 1024
+            ? truncateText(localPost.content, 600)
+            : localPost.content
+          }
+        </p>
       </div>
 
       {/* Post images — grid layout (di feed tidak bisa klik perbesar, klik card → detail) */}
+      {/* Responsive aspect ratios: mobile (phone <640px): 1-2 gambar→3:2, 3+ gambar→1:1 */}
       {images.length > 0 && (
         <div className="mb-3 rounded-xl overflow-hidden">
 
           {/* 1 gambar: full width */}
           {images.length === 1 && (
-            <div className="rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50">
+            <div className="rounded-xl overflow-hidden w-full bg-gray-50 aspect-[3/2] md:aspect-[3/1]">
               {renderImageTile(images[0], 0, 'h-full w-full')}
             </div>
           )}
 
           {/* 2 gambar: [1, 2] berdampingan */}
           {images.length === 2 && (
-            <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden aspect-[3/1] w-full bg-gray-50">
+            <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden w-full bg-gray-50 aspect-[3/2] md:aspect-[3/1]">
               {renderImageTile(images[0], 0, 'h-full w-full')}
               {renderImageTile(images[1], 1, 'h-full w-full')}
             </div>
@@ -355,7 +382,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
 
           {/* 3 gambar: [1] atas-kiri, [2] bawah-kiri | [3] kanan-full */}
           {images.length === 3 && (
-            <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
+            <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden w-full bg-gray-50 aspect-square md:aspect-[2/1]">
               {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
               {renderImageTile(images[1], 1, 'col-start-1 row-start-2 w-full h-full')}
               {renderImageTile(images[2], 2, 'col-start-2 row-start-1 row-span-2 w-full h-full')}
@@ -364,7 +391,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
 
           {/* 4+ gambar: [1,2] / [3,4] grid simetris */}
           {images.length >= 4 && (
-            <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden aspect-[2/1] w-full bg-gray-50">
+            <div className="grid grid-cols-2 grid-rows-2 gap-1 rounded-xl overflow-hidden w-full bg-gray-50 aspect-square md:aspect-[2/1]">
               {renderImageTile(images[0], 0, 'col-start-1 row-start-1 w-full h-full')}
               {renderImageTile(images[1], 1, 'col-start-2 row-start-1 w-full h-full')}
               {renderImageTile(images[2], 2, 'col-start-1 row-start-2 w-full h-full')}

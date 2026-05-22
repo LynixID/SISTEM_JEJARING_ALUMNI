@@ -260,7 +260,7 @@ const DiscussionDetail = () => {
       <div className="flex">
         <Sidebar />
         <main className="flex-1">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             <div className="mb-4">
               <Link to="/diskusi" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900">
                 <ArrowLeft size={18} />
@@ -278,8 +278,8 @@ const DiscussionDetail = () => {
               <div className="text-gray-500">Memuat...</div>
             ) : (
               <>
-                <Card className="p-6 mb-4">
-                  <div className="flex items-start justify-between gap-4">
+                <Card className="p-4 sm:p-6 mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="min-w-0">
                       <h1 className="text-2xl font-bold text-gray-900">{thread.title}</h1>
                       {thread.image && (
@@ -315,16 +315,16 @@ const DiscussionDetail = () => {
                       </div>
                     </div>
 
-                    <div className="shrink-0 flex flex-col gap-2">
+                    <div className="shrink-0 flex flex-row sm:flex-col gap-2 mt-4 sm:mt-0 w-full sm:w-auto">
                       {!isMember ? (
-                        <Button onClick={join}>Gabung</Button>
+                        <Button onClick={join} className="flex-1 sm:flex-initial text-center justify-center">Gabung</Button>
                       ) : (
-                        <Button variant="outline" onClick={leave}>
+                        <Button variant="outline" onClick={leave} className="flex-1 sm:flex-initial text-center justify-center">
                           Keluar
                         </Button>
                       )}
                       {canModerate && (
-                        <Button variant="outline" onClick={toggleLock} className="flex items-center gap-2">
+                        <Button variant="outline" onClick={toggleLock} className="flex-1 sm:flex-initial flex items-center justify-center gap-2">
                           {thread.status === 'LOCKED' ? <Unlock size={16} /> : <Lock size={16} />}
                           {thread.status === 'LOCKED' ? 'Buka Kunci' : 'Kunci'}
                         </Button>
@@ -333,7 +333,7 @@ const DiscussionDetail = () => {
                   </div>
                 </Card>
 
-                <Card className="p-6">
+                <Card className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-3">
                     <div className="font-semibold text-gray-900">Diskusi</div>
                     {!isMember && (
@@ -444,7 +444,7 @@ const DiscussionDetail = () => {
                                 </div>
                               )}
                               {isMember && thread.status !== 'LOCKED' && (
-                                <div className="mt-1 flex flex-wrap items-center">
+                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 justify-start">
                                   <button
                                     type="button"
                                     onClick={() => setReplyingTo(m)}
@@ -455,7 +455,7 @@ const DiscussionDetail = () => {
                                     Balas
                                   </button>
 
-                                  <div className="flex items-center gap-3 ml-5">
+                                  <div className="flex items-center gap-3">
                                     {(m.sender?.id === user.id) && editingId !== m.id && (
                                       <button
                                         type="button"

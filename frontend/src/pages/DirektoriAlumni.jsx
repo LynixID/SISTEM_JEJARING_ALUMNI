@@ -18,6 +18,7 @@ const DirektoriAlumni = () => {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('grid')
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState({
@@ -185,10 +186,10 @@ const DirektoriAlumni = () => {
             </div>
 
             {/* Search & Filter section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
-              {/* Search bar */}
-              <div className="mb-4">
-                <div className="relative">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mb-6">
+              {/* Search bar row */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center mb-4">
+                <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <Input
                     type="text"
@@ -198,69 +199,124 @@ const DirektoriAlumni = () => {
                     className="pl-10 w-full"
                   />
                 </div>
-              </div>
-
-              {/* Filter dropdowns, Reset, dan View Mode - All in one row */}
-              <div className="flex flex-wrap items-end gap-3">
-                {/* Filter dropdowns */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1 min-w-0">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Angkatan</label>
-                    <select
-                      value={filters.angkatan}
-                      onChange={(e) => handleFilterChange('angkatan', e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                
+                {/* Mobile Filter & View Mode buttons inline */}
+                <div className="flex items-center gap-2 sm:hidden justify-between w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowMobileFilters(!showMobileFilters)}
+                    className={`flex-1 rounded-lg h-[38px] flex items-center justify-center gap-1.5 ${showMobileFilters ? 'bg-blue-50 border-blue-200 text-blue-600 font-semibold' : 'text-gray-700'}`}
+                  >
+                    <Filter size={16} />
+                    {showMobileFilters ? 'Sembunyikan Filter' : 'Filter'}
+                  </Button>
+                  
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 h-[38px]">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('grid')}
+                      className={`p-1 rounded transition-colors ${
+                        viewMode === 'grid' 
+                          ? 'bg-white text-blue-600 shadow-sm' 
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                      title="Grid View"
                     >
-                      <option value="">Semua Angkatan</option>
-                      {filterOptions.angkatan.map(angkatan => (
-                        <option key={angkatan} value={angkatan}>{angkatan}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Domisili</label>
-                    <select
-                      value={filters.domisili}
-                      onChange={(e) => handleFilterChange('domisili', e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      <Grid size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('list')}
+                      className={`p-1 rounded transition-colors ${
+                        viewMode === 'list' 
+                          ? 'bg-white text-blue-600 shadow-sm' 
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                      title="List View"
                     >
-                      <option value="">Semua Domisili</option>
-                      {filterOptions.domisili.map(domisili => (
-                        <option key={domisili} value={domisili}>{domisili}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Program Studi</label>
-                    <select
-                      value={filters.prodi}
-                      onChange={(e) => handleFilterChange('prodi', e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    >
-                      <option value="">Semua Prodi</option>
-                      {filterOptions.prodi.map(prodi => (
-                        <option key={prodi} value={prodi}>{prodi}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Profesi</label>
-                    <select
-                      value={filters.profesi}
-                      onChange={(e) => handleFilterChange('profesi', e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    >
-                      <option value="">Semua Profesi</option>
-                      {filterOptions.profesi.map(profesi => (
-                        <option key={profesi} value={profesi}>{profesi}</option>
-                      ))}
-                    </select>
+                      <List size={16} />
+                    </button>
                   </div>
                 </div>
+              </div>
 
+              {/* Filter dropdowns */}
+              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full ${showMobileFilters ? 'grid' : 'hidden sm:grid'}`}>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Angkatan</label>
+                  <select
+                    value={filters.angkatan}
+                    onChange={(e) => handleFilterChange('angkatan', e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Semua Angkatan</option>
+                    {filterOptions.angkatan.map(angkatan => (
+                      <option key={angkatan} value={angkatan}>{angkatan}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Domisili</label>
+                  <select
+                    value={filters.domisili}
+                    onChange={(e) => handleFilterChange('domisili', e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Semua Domisili</option>
+                    {filterOptions.domisili.map(domisili => (
+                      <option key={domisili} value={domisili}>{domisili}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Program Studi</label>
+                  <select
+                    value={filters.prodi}
+                    onChange={(e) => handleFilterChange('prodi', e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Semua Prodi</option>
+                    {filterOptions.prodi.map(prodi => (
+                      <option key={prodi} value={prodi}>{prodi}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Profesi</label>
+                  <select
+                    value={filters.profesi}
+                    onChange={(e) => handleFilterChange('profesi', e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Semua Profesi</option>
+                    {filterOptions.profesi.map(profesi => (
+                      <option key={profesi} value={profesi}>{profesi}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Mobile Reset Button when filters are expanded */}
+              {showMobileFilters && (
+                <div className="mt-3 pt-3 border-t border-gray-100 sm:hidden">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={clearFilters} 
+                    className="w-full rounded-lg h-[38px] flex items-center justify-center gap-1.5"
+                  >
+                    <Filter size={16} />
+                    Reset Filter
+                  </Button>
+                </div>
+              )}
+
+              {/* Reset & View Mode Toggles (Desktop only) */}
+              <div className="hidden sm:flex items-center justify-between gap-3 pt-4 border-t border-gray-100 w-full mt-3">
                 {/* Reset Filter Button */}
                 <div className="flex-shrink-0">
                   <Button 
@@ -277,6 +333,7 @@ const DirektoriAlumni = () => {
                 {/* View Mode Toggle */}
                 <div className="flex-shrink-0 flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                   <button
+                    type="button"
                     onClick={() => setViewMode('grid')}
                     className={`p-1.5 rounded transition-colors ${
                       viewMode === 'grid' 
@@ -288,6 +345,7 @@ const DirektoriAlumni = () => {
                     <Grid size={16} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => setViewMode('list')}
                     className={`p-1.5 rounded transition-colors ${
                       viewMode === 'list' 
@@ -405,18 +463,18 @@ const DirektoriAlumni = () => {
                         className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
                         onClick={() => handleViewProfile(user.id)}
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-start gap-3 sm:gap-4">
                           {/* Avatar */}
-                          <div className="relative flex-shrink-0">
+                          <div className="relative flex-shrink-0 mt-0.5">
                             {user.profile?.fotoProfil ? (
                               <img
                                 src={getImageUrl(user.profile.fotoProfil, 'profiles')}
                                 alt={user.nama}
-                                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200 group-hover:border-blue-400 transition-colors shadow-sm"
+                                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-gray-200 group-hover:border-blue-400 transition-colors shadow-sm"
                                 onError={(e) => { e.target.style.display = 'none' }}
                               />
                             ) : (
-                              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg font-bold border-2 border-gray-200 shadow-sm">
+                              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-base sm:text-lg font-bold border-2 border-gray-200 shadow-sm">
                                 {user.nama?.charAt(0).toUpperCase()}
                               </div>
                             )}
@@ -424,16 +482,16 @@ const DirektoriAlumni = () => {
 
                           {/* User info */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 w-full">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-semibold text-base text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                                <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                  <h3 className="font-semibold text-base text-gray-900 group-hover:text-blue-600 transition-colors truncate max-w-[140px] xs:max-w-xs sm:max-w-none">
                                     {user.nama}
-                                    <UserBadge role={user.role} size="sm" />
                                   </h3>
+                                  <UserBadge role={user.role} size="sm" />
                                 </div>
                                 {user.profile?.profesi && (
-                                  <p className="text-gray-700 text-sm font-medium mb-1">{user.profile.profesi}</p>
+                                  <p className="text-gray-700 text-sm font-medium mb-1 truncate">{user.profile.profesi}</p>
                                 )}
                                 {user.profile?.jabatan && user.profile?.perusahaan && (
                                   <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-2">
@@ -441,7 +499,7 @@ const DirektoriAlumni = () => {
                                     <span className="truncate">{user.profile.jabatan} di {user.profile.perusahaan}</span>
                                   </div>
                                 )}
-                                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-600">
                                   {user.domisili && (
                                     <div className="flex items-center gap-1.5">
                                       <MapPin size={12} className="text-gray-400" />
@@ -465,7 +523,7 @@ const DirektoriAlumni = () => {
                               <Button
                                 variant="primary"
                                 size="sm"
-                                className="rounded-lg flex-shrink-0 text-sm"
+                                className="rounded-lg w-full sm:w-auto flex-shrink-0 text-sm text-center justify-center mt-1 sm:mt-0"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   handleViewProfile(user.id)

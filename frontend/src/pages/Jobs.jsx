@@ -241,13 +241,13 @@ const Jobs = () => {
               </div>
 
               <div className="mt-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                <div className="flex gap-2">
+                <div className="flex bg-gray-100/80 p-1 rounded-xl border border-gray-200/40 gap-1 w-fit">
                   {(!isDraftMode && !isPengurusManage) && (
                     <button
                       type="button"
                       onClick={() => setTab('LIST')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium border ${
-                        tab === 'LIST' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                      className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        tab === 'LIST' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/40'
                       }`}
                     >
                       Lowongan
@@ -257,8 +257,8 @@ const Jobs = () => {
                     <button
                       type="button"
                       onClick={() => setTab('LIST')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium border ${
-                        tab === 'LIST' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                      className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        tab === 'LIST' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/40'
                       }`}
                     >
                       Daftar Lowongan
@@ -267,8 +267,8 @@ const Jobs = () => {
                   <button
                     type="button"
                     onClick={() => setTab('PENDING')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium border ${
-                      tab === 'PENDING' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      tab === 'PENDING' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/40'
                     }`}
                   >
                     {isPengurusManage ? 'Draft Lowongan' : (isPengurus ? 'Draft Lowongan' : 'Menunggu Persetujuan')}
@@ -308,98 +308,127 @@ const Jobs = () => {
                     <div className="text-gray-500 text-sm mt-1">Coba buat lowongan baru.</div>
                   </Card>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    {jobs.map((job) => (
-                      <Card key={job.id} onClick={() => openDetail(job)} className="p-3 sm:p-5 flex flex-col h-full">
-                        {job.image && (
-                          <div className="mb-3">
-                            <img
-                              src={getImageUrl(job.image, 'jobs')}
-                              alt={job.title}
-                              className="w-full aspect-[3/2] object-cover rounded-xl border border-gray-200"
-                              loading="lazy"
-                            />
-                          </div>
-                        )}
-                        <div className="flex flex-col flex-1">
-                          <div className="min-w-0 flex-1">
-                            <div className="text-base sm:text-lg font-semibold text-gray-900 line-clamp-2">{job.title}</div>
-                            <div className="text-xs sm:text-sm text-gray-700 mt-1">
-                              <span className="font-medium">{job.company}</span>
-                              {job.location ? <span className="text-gray-500 block sm:inline"> {job.location}</span> : null}
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                      {jobs.map((job) => (
+                        <Card
+                          key={job.id}
+                          onClick={() => openDetail(job)}
+                          className="relative p-3 sm:p-5 flex flex-col h-full hover:shadow-md transition-shadow duration-200 cursor-pointer overflow-hidden group"
+                        >
+                          {isPengurusManage && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                confirmDeleteMyJob(job.id);
+                              }}
+                              className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm text-red-500 hover:text-white hover:bg-red-500 rounded-full border border-gray-200 transition-all shadow-sm z-10"
+                              title="Hapus Lowongan"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
+                          {job.image && (
+                            <div className="mb-3">
+                              <img
+                                src={getImageUrl(job.image, 'jobs')}
+                                alt={job.title}
+                                className="w-full aspect-[3/2] object-cover rounded-xl border border-gray-200"
+                                loading="lazy"
+                              />
                             </div>
-                            <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
-                              {job.employmentType ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 text-[9px] sm:text-xs">
-                                  {job.employmentType}
-                                </span>
-                              ) : null}
-                              {job.salaryRange ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-[9px] sm:text-xs">
-                                  {job.salaryRange}
-                                </span>
-                              ) : null}
-                              {job.contact ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[9px] sm:text-xs truncate max-w-full">
-                                  {job.contact}
-                                </span>
-                              ) : null}
+                          )}
+                          <div className="flex flex-col flex-1">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-base sm:text-lg font-semibold text-gray-900 line-clamp-2">{job.title}</div>
+                              <div className="text-xs sm:text-sm text-gray-700 mt-1">
+                                <span className="font-medium">{job.company}</span>
+                                {job.location ? <span className="text-gray-500 block sm:inline"> {job.location}</span> : null}
+                              </div>
+                              <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
+                                {job.employmentType ? (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 text-[9px] sm:text-xs">
+                                    {job.employmentType}
+                                  </span>
+                                ) : null}
+                                {job.salaryRange ? (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-[9px] sm:text-xs">
+                                    {job.salaryRange}
+                                  </span>
+                                ) : null}
+                                {job.contact ? (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[9px] sm:text-xs truncate max-w-full">
+                                    {job.contact}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">
+                                {job.description?.length > 50 ? job.description.substring(0, 50) + "...." : job.description}
+                              </div>
+                              <div className="hidden sm:block text-xs text-gray-500 mt-2">
+                                Oleh: {job.author?.nama || 'Alumni'}
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">
-                              {job.description?.length > 50 ? job.description.substring(0, 50) + "...." : job.description}
-                            </div>
-                            <div className="hidden sm:block text-xs text-gray-500 mt-2">
-                              Oleh: {job.author?.nama || 'Alumni'}
-                            </div>
-                          </div>
-                            <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
-                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openDetail(job) }} className="text-xs">
-                              Detail
-                            </Button>
-                              {isPengurusManage && (
-                                <Button
-                                  onClick={(e) => { e.stopPropagation(); confirmDeleteMyJob(job.id) }}
-                                  variant="danger"
-                                  size="sm"
-                                  className="flex items-center justify-center gap-1 text-xs"
+                            <div className="mt-auto pt-4 flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openDetail(job);
+                                }}
+                                className={`text-xs border-gray-200 hover:bg-gray-50 text-gray-700 font-medium ${
+                                  job.applyLink ? 'flex-1' : 'w-full'
+                                }`}
+                              >
+                                Detail
+                              </Button>
+                              {job.applyLink && (
+                                <a
+                                  href={job.applyLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex-1"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Trash2 size={14} />
-                                  Hapus
-                                </Button>
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                                  >
+                                    <span>Apply</span>
+                                    <ExternalLink size={12} />
+                                  </Button>
+                                </a>
                               )}
-                            {job.applyLink && (
-                              <a href={job.applyLink} target="_blank" rel="noreferrer" className="col-span-full" onClick={(e) => e.stopPropagation()}>
-                                <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-1 text-xs">
-                                  <ExternalLink size={14} />
-                                  Apply
-                                </Button>
-                              </a>
-                            )}
+                            </div>
                           </div>
-                        </div>
-                      </Card>
-                    ))}
+                        </Card>
+                      ))}
+                    </div>
 
-                    <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-150">
                       <Button
                         variant="outline"
                         disabled={page <= 1}
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        className="text-xs"
                       >
                         Prev
                       </Button>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 font-medium">
                         Halaman {page} / {totalPages}
                       </div>
                       <Button
                         variant="outline"
                         disabled={page >= totalPages}
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        className="text-xs"
                       >
                         Next
                       </Button>
                     </div>
-                  </div>
+                  </>
                 )}
               </>
             ) : (
@@ -422,9 +451,13 @@ const Jobs = () => {
                     </div>
                   </Card>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {pendingJobs.map((job) => (
-                      <Card key={job.id} onClick={() => openDetail(job)} className="p-3 sm:p-5 flex flex-col h-full">
+                      <Card
+                        key={job.id}
+                        onClick={() => openDetail(job)}
+                        className="relative p-3 sm:p-5 flex flex-col h-full hover:shadow-md transition-shadow duration-200 cursor-pointer overflow-hidden group"
+                      >
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-gray-600 mb-2">
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200 whitespace-nowrap">
                             <Clock size={12} className="sm:w-[14px] sm:h-[14px]" />
@@ -475,23 +508,54 @@ const Jobs = () => {
                             </div>
                           </div>
 
-                          <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
-                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openDetail(job) }} className="text-xs">
+                          <div className="mt-auto pt-4 flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDetail(job);
+                              }}
+                              className="flex-1 text-xs border-gray-200 hover:bg-gray-50 text-gray-700 font-medium"
+                            >
                               Detail
                             </Button>
                             {isPengurus ? (
                               <>
-                                <Button onClick={(e) => { e.stopPropagation(); onApprove(job.id) }} size="sm" className="flex items-center justify-center gap-1 text-xs">
-                                  <Check size={14} />
-                                  Approve
-                                </Button>
-                                <Button onClick={(e) => { e.stopPropagation(); onReject(job.id) }} variant="danger" size="sm" className="col-span-full flex items-center justify-center gap-1 text-xs">
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onReject(job.id);
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 flex items-center justify-center gap-1 text-xs border-red-200 hover:bg-red-50 text-red-600 hover:text-red-700"
+                                >
                                   <X size={14} />
                                   Reject
                                 </Button>
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onApprove(job.id);
+                                  }}
+                                  size="sm"
+                                  className="flex-1 flex items-center justify-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
+                                >
+                                  <Check size={14} />
+                                  Approve
+                                </Button>
                               </>
                             ) : (
-                              <Button onClick={(e) => { e.stopPropagation(); confirmDeleteMyJob(job.id) }} variant="danger" size="sm" className="flex items-center justify-center gap-1 text-xs">
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  confirmDeleteMyJob(job.id);
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 flex items-center justify-center gap-1.5 text-xs border-red-200 hover:bg-red-50 text-red-600 hover:text-red-700 font-medium"
+                              >
                                 <Trash2 size={14} />
                                 Hapus
                               </Button>

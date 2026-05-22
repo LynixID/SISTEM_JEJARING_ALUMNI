@@ -179,38 +179,44 @@ const Connections = () => {
 
             {/* Tabs */}
             <div className="mb-6">
-              <div className="flex gap-2 border-b border-gray-200">
+              <div className="flex bg-gray-100/80 p-1 rounded-xl border border-gray-200/40 gap-1 w-fit">
                 <button
+                  type="button"
                   onClick={() => setActiveTab('requests')}
-                  className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'requests'
-                      ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white/40'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <Clock size={18} />
-                    Permintaan Koneksi
+                    <Clock size={16} />
+                    <span>Permintaan Koneksi</span>
                     {requests.length > 0 && (
-                      <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
+                      <span className={`text-xs rounded-full px-2 py-0.5 font-semibold ${
+                        activeTab === 'requests' ? 'bg-blue-100 text-blue-700' : 'bg-blue-600 text-white'
+                      }`}>
                         {requests.length}
                       </span>
                     )}
                   </div>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setActiveTab('connections')}
-                  className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'connections'
-                      ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white/40'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <Users size={18} />
-                    Koneksi Saya
+                    <Users size={16} />
+                    <span>Koneksi Saya</span>
                     {connections.length > 0 && (
-                      <span className="bg-gray-200 text-gray-700 text-xs rounded-full px-2 py-0.5">
+                      <span className={`text-xs rounded-full px-2 py-0.5 font-semibold ${
+                        activeTab === 'connections' ? 'bg-blue-50 text-blue-600' : 'bg-gray-200 text-gray-700'
+                      }`}>
                         {connections.length}
                       </span>
                     )}
@@ -236,7 +242,8 @@ const Connections = () => {
                   <div className="divide-y divide-gray-100">
                     {requests.map((request) => (
                       <div key={request.id} className="p-5 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-start gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                          <div className="flex items-start gap-4 w-full flex-1">
                           {/* Avatar */}
                           <div className="flex-shrink-0">
                             {request.user.fotoProfil ? (
@@ -299,9 +306,10 @@ const Connections = () => {
                               </div>
                             </div>
                           </div>
+                        </div>
 
-                          {/* Actions */}
-                          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        {/* Actions */}
+                        <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto mt-2 sm:mt-0 flex-shrink-0">
                             <Button
                               variant="primary"
                               size="sm"
@@ -344,18 +352,18 @@ const Connections = () => {
                 ) : (
                   <div className="flex flex-col h-full">
                     {/* Toolbar */}
-                    <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row gap-4 justify-between items-center">
-                      <div className="relative w-full sm:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between gap-3">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
                           type="text"
                           placeholder="Cari nama koneksi..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full pl-9 pr-4 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                       </div>
-                      <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-gray-200 shadow-sm flex-shrink-0">
                         <button
                           onClick={() => setViewType('grid')}
                           className={`p-1.5 rounded-md transition-all ${
@@ -365,7 +373,7 @@ const Connections = () => {
                           }`}
                           title="Grid View"
                         >
-                          <LayoutGrid size={18} />
+                          <LayoutGrid size={16} />
                         </button>
                         <button
                           onClick={() => setViewType('list')}
@@ -376,7 +384,7 @@ const Connections = () => {
                           }`}
                           title="List View"
                         >
-                          <ListIcon size={18} />
+                          <ListIcon size={16} />
                         </button>
                       </div>
                     </div>
@@ -444,23 +452,22 @@ const Connections = () => {
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      /* List View */
+                    ) : (                     /* List View */
                       <div className="divide-y divide-gray-100">
                         {filteredConnections.map((connection) => (
                           <div
                             key={connection.id}
-                            className="p-4 hover:bg-blue-50/30 transition-colors flex items-center justify-between gap-4 cursor-pointer group"
+                            className="py-2.5 px-4 hover:bg-blue-50/30 transition-colors flex items-center justify-between gap-3 cursor-pointer group"
                             onClick={() => handleViewProfile(connection.user.id)}
                           >
-                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                              {/* Small Avatar */}
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              {/* Minimal Avatar */}
                               <div className="flex-shrink-0">
                                 {connection.user.fotoProfil ? (
                                   <img
                                     src={getImageUrl(connection.user.fotoProfil, 'profiles')}
                                     alt={connection.user.nama}
-                                    className="w-12 h-12 rounded-full object-cover border border-gray-200 group-hover:border-blue-200"
+                                    className="w-9 h-9 rounded-full object-cover border border-gray-100 group-hover:border-blue-200 transition-colors"
                                     onError={(e) => {
                                       e.target.style.display = 'none'
                                       const fallback = e.target.nextElementSibling
@@ -469,31 +476,45 @@ const Connections = () => {
                                   />
                                 ) : null}
                                 <div 
-                                  className={`w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold ${connection.user.fotoProfil ? 'hidden' : ''}`}
+                                  className={`w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm ${connection.user.fotoProfil ? 'hidden' : ''}`}
                                   style={{ display: connection.user.fotoProfil ? 'none' : 'flex' }}
                                 >
-                                  {connection.user.nama?.charAt(0) || 'U'}
+                                  {connection.user.nama?.charAt(0).toUpperCase() || 'U'}
                                 </div>
                               </div>
                               
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                  {connection.user.nama}
-                                </h4>
-                                <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 mt-0.5">
-                                  <span>Angkatan {connection.user.angkatan}</span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <h4 className="font-semibold text-sm text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                                    {connection.user.nama}
+                                  </h4>
+                                  <span className="hidden sm:inline-flex">
+                                    <UserBadge role={connection.user.role} size="sm" />
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-gray-500 mt-0.5">
+                                  {/* Desktop View: Angkatan and Domisili */}
+                                  <div className="hidden sm:flex items-center gap-1.5">
+                                    <span>Angkatan {connection.user.angkatan}</span>
+                                    {connection.user.domisili && (
+                                      <>
+                                        <span>•</span>
+                                        <span className="truncate">{connection.user.domisili}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                  {/* Mobile View: Only Domisili (Address) */}
                                   {connection.user.domisili && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="truncate">{connection.user.domisili}</span>
-                                    </>
+                                    <div className="block sm:hidden truncate text-gray-500">
+                                      {connection.user.domisili}
+                                    </div>
                                   )}
                                 </div>
                               </div>
                             </div>
 
-                            <div className="flex flex-col items-end gap-2 text-right">
-                              <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                            <div className="hidden sm:block flex-shrink-0 text-right">
+                              <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 whitespace-nowrap">
                                 {formatConnectedSince(connection.updatedAt || connection.createdAt)}
                               </span>
                             </div>
