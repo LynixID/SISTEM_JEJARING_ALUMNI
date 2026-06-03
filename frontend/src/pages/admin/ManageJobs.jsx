@@ -267,6 +267,7 @@ const ManageJobs = () => {
                     <table className="w-full text-left">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-12">No.</th>
                           <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-[80px]">Logo</th>
                           <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Pekerjaan & Perusahaan</th>
                           <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Pengirim</th>
@@ -276,8 +277,11 @@ const ManageJobs = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {jobs.map((job) => (
+                        {jobs.map((job, index) => (
                           <tr key={job.id} className="hover:bg-blue-50/30 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                              {(pagination.page - 1) * pagination.limit + index + 1}
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-100 bg-gray-50 flex items-center justify-center">
                                 {job.image ? (

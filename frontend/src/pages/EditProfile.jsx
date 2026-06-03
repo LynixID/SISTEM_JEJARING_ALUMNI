@@ -11,6 +11,8 @@ import AlertModal from '../components/common/AlertModal'
 import ConfirmModal from '../components/common/ConfirmModal'
 import { getUserProfile, updateUserProfile, updateUserBasicInfo } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
+import OnboardingTour from '../components/common/OnboardingTour'
+import useTourStatus from '../hooks/useTourStatus'
 
 const EditProfile = () => {
   const { id } = useParams()
@@ -114,6 +116,51 @@ const EditProfile = () => {
     variant: 'warning',
     onConfirm: () => {}
   })
+
+  // Onboarding Tour states
+  const [showTour, setShowTour] = useState(false)
+  const [isTourActive, setIsTourActive] = useState(false)
+  const [activeTourStepSelector, setActiveTourStepSelector] = useState(null)
+  const { shouldShowTour, markTourComplete } = useTourStatus('edit-profil')
+
+  // Listen to Start Tour and Step Change events
+  useEffect(() => {
+    const handleStartTour = () => {
+      setShowTour(true)
+      setIsTourActive(true)
+    }
+    window.addEventListener('startEditProfilTour', handleStartTour)
+    return () => {
+      window.removeEventListener('startEditProfilTour', handleStartTour)
+    }
+  }, [])
+
+  // Auto-trigger tur untuk user yang belum pernah melihat (via DB)
+  useEffect(() => {
+    if (!shouldShowTour) return
+    const timer = setTimeout(() => {
+      setShowTour(true)
+      setIsTourActive(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldShowTour])
+
+  useEffect(() => {
+    const handleStepChange = (e) => {
+      const { selector } = e.detail
+      setActiveTourStepSelector(selector)
+      
+      if (selector === '#tour-edit-profile-media') {
+        setActiveTab('profile')
+      } else if (selector === '#tour-edit-profile-form') {
+        setActiveTab('basic')
+      }
+    }
+    window.addEventListener('tourStepChange', handleStepChange)
+    return () => {
+      window.removeEventListener('tourStepChange', handleStepChange)
+    }
+  }, [])
 
   // Fetch user profile dan populate form
   const fetchProfile = async () => {
@@ -633,7 +680,7 @@ const EditProfile = () => {
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Sidebar Tabs */}
               <div className="w-full lg:w-64 flex-shrink-0">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 lg:sticky lg:top-24 flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible scrollbar-hide gap-1 lg:gap-0 whitespace-nowrap">
+                <div id="tour-edit-profile-tabs" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 lg:sticky lg:top-24 flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible scrollbar-hide gap-1 lg:gap-0 whitespace-nowrap">
                   {tabs.map((tab) => {
                     const Icon = tab.icon
                     return (
@@ -656,7 +703,7 @@ const EditProfile = () => {
 
               {/* Main Content Area */}
               <div className="flex-1 min-w-0">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div id="tour-edit-profile-form" className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="p-4 sm:p-8">
 
                 {/* Tab: Basic Info */}
@@ -707,6 +754,7 @@ const EditProfile = () => {
                     </div>
                     <div className="flex justify-end mt-6">
                       <Button
+                        id="tour-edit-profile-save"
                         onClick={handleSaveBasicInfo}
                         disabled={saving}
                         className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl"
@@ -724,69 +772,71 @@ const EditProfile = () => {
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900 mb-4">Informasi Profil</h2>
                       
-                      {/* Cover Photo */}
-                      <div className="mb-8">
-                        <label className="block text-sm font-bold text-gray-700 mb-3">
-                          Cover Photo
-                        </label>
-                        <div className="relative group rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 hover:border-blue-400 transition-all aspect-[2.5/1] sm:aspect-[4/1] h-32 sm:h-auto">
-                          {coverPhotoPreview ? (
-                            <>
-                              <img
-                                src={coverPhotoPreview}
-                                alt="Cover Photo"
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                <label className="cursor-pointer p-3 bg-white text-blue-600 rounded-full hover:bg-blue-50 transition-colors shadow-lg">
-                                  <Edit2 size={20} />
-                                  <input type="file" accept="image/*" onChange={(e) => handleFileSelect('coverPhoto', e)} className="hidden" />
-                                </label>
-                                <button type="button" onClick={() => handleRemoveImage('coverPhoto')} className="p-3 bg-white text-red-600 rounded-full hover:bg-red-50 transition-colors shadow-lg">
-                                  <Trash2 size={20} />
-                                </button>
-                              </div>
-                            </>
-                          ) : (
-                            <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                              <ImageIcon size={32} className="text-gray-400 mb-2" />
-                              <span className="text-sm text-gray-500 font-medium">Upload Cover Photo</span>
-                              <input type="file" accept="image/*" onChange={(e) => handleFileSelect('coverPhoto', e)} className="hidden" />
-                            </label>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Foto Profil */}
-                      <div className="mb-8 flex flex-col sm:flex-row items-center text-center sm:text-left gap-6">
-                        <div className="relative group">
-                          <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100 mx-auto">
-                            {fotoProfilPreview ? (
-                              <img src={fotoProfilPreview} alt="Profil" className="w-full h-full object-cover" />
+                      <div id="tour-edit-profile-media">
+                        {/* Cover Photo */}
+                        <div className="mb-8">
+                          <label className="block text-sm font-bold text-gray-700 mb-3">
+                            Cover Photo
+                          </label>
+                          <div className="relative group rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 hover:border-blue-400 transition-all aspect-[2.5/1] sm:aspect-[4/1] h-32 sm:h-auto">
+                            {coverPhotoPreview ? (
+                              <>
+                                <img
+                                  src={coverPhotoPreview}
+                                  alt="Cover Photo"
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                  <label className="cursor-pointer p-3 bg-white text-blue-600 rounded-full hover:bg-blue-50 transition-colors shadow-lg">
+                                    <Edit2 size={20} />
+                                    <input type="file" accept="image/*" onChange={(e) => handleFileSelect('coverPhoto', e)} className="hidden" />
+                                  </label>
+                                  <button type="button" onClick={() => handleRemoveImage('coverPhoto')} className="p-3 bg-white text-red-600 rounded-full hover:bg-red-50 transition-colors shadow-lg">
+                                    <Trash2 size={20} />
+                                  </button>
+                                </div>
+                              </>
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                <User size={40} />
-                              </div>
+                              <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+                                <ImageIcon size={32} className="text-gray-400 mb-2" />
+                                <span className="text-sm text-gray-500 font-medium">Upload Cover Photo</span>
+                                <input type="file" accept="image/*" onChange={(e) => handleFileSelect('coverPhoto', e)} className="hidden" />
+                              </label>
                             )}
                           </div>
-                          <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                             <label className="cursor-pointer text-white">
-                               <Edit2 size={20} />
-                               <input type="file" accept="image/*" onChange={(e) => handleFileSelect('fotoProfil', e)} className="hidden" />
-                             </label>
-                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h4 className="text-sm font-bold text-gray-700 mb-1">Foto Profil</h4>
-                          <p className="text-xs text-gray-500 mb-3">Gunakan foto formal agar terlihat lebih profesional. Maksimal 5MB.</p>
-                          <div className="flex flex-wrap justify-center sm:justify-start gap-2">
-                             <label className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 cursor-pointer transition-colors">
-                                Ganti Foto
-                                <input type="file" accept="image/*" onChange={(e) => handleFileSelect('fotoProfil', e)} className="hidden" />
-                             </label>
-                             {fotoProfilPreview && (
-                               <button type="button" onClick={() => handleRemoveImage('fotoProfil')} className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl text-sm font-semibold transition-colors">Hapus</button>
-                             )}
+
+                        {/* Foto Profil */}
+                        <div className="mb-8 flex flex-col sm:flex-row items-center text-center sm:text-left gap-6">
+                          <div className="relative group">
+                            <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100 mx-auto">
+                              {fotoProfilPreview ? (
+                                <img src={fotoProfilPreview} alt="Profil" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  <User size={40} />
+                                </div>
+                              )}
+                            </div>
+                            <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                               <label className="cursor-pointer text-white">
+                                 <Edit2 size={20} />
+                                 <input type="file" accept="image/*" onChange={(e) => handleFileSelect('fotoProfil', e)} className="hidden" />
+                               </label>
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-bold text-gray-700 mb-1">Foto Profil</h4>
+                            <p className="text-xs text-gray-500 mb-3">Gunakan foto formal agar terlihat lebih profesional. Maksimal 5MB.</p>
+                            <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                               <label className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 cursor-pointer transition-colors">
+                                  Ganti Foto
+                                  <input type="file" accept="image/*" onChange={(e) => handleFileSelect('fotoProfil', e)} className="hidden" />
+                               </label>
+                               {fotoProfilPreview && (
+                                 <button type="button" onClick={() => handleRemoveImage('fotoProfil')} className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl text-sm font-semibold transition-colors">Hapus</button>
+                               )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -830,6 +880,7 @@ const EditProfile = () => {
                     </div>
                     <div className="flex justify-end mt-6">
                       <Button
+                        id="tour-edit-profile-save"
                         onClick={handleSaveProfile}
                         disabled={saving}
                         className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl"
@@ -1565,6 +1616,18 @@ const EditProfile = () => {
         message={confirmModal.message}
         variant={confirmModal.variant}
       />
+
+      <OnboardingTour
+        isOpen={showTour}
+        onClose={() => {
+          setShowTour(false)
+          setIsTourActive(false)
+          setActiveTourStepSelector(null)
+          markTourComplete()
+        }}
+        type="edit-profile"
+      />
+
     </div>
   )
 }

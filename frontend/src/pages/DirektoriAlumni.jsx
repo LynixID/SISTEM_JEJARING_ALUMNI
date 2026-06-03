@@ -9,6 +9,8 @@ import UserBadge from '../components/common/UserBadge'
 import { Search, Filter, Grid, List, MapPin, Calendar, GraduationCap, Briefcase, Building2 } from 'lucide-react'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
+import OnboardingTour from '../components/common/OnboardingTour'
+import useTourStatus from '../hooks/useTourStatus'
 
 const DirektoriAlumni = () => {
   const { isAuthenticated } = useAuth()
@@ -39,6 +41,41 @@ const DirektoriAlumni = () => {
     prodi: [],
     profesi: []
   })
+  const [showTour, setShowTour] = useState(false)
+  const [isTourActive, setIsTourActive] = useState(false)
+  const [activeTourStepSelector, setActiveTourStepSelector] = useState(null)
+  const { shouldShowTour, markTourComplete } = useTourStatus('direktori')
+
+  useEffect(() => {
+    const handleStartTour = () => {
+      setShowTour(true)
+      setIsTourActive(true)
+    }
+    window.addEventListener('startDirektoriTour', handleStartTour)
+    return () => {
+      window.removeEventListener('startDirektoriTour', handleStartTour)
+    }
+  }, [])
+
+  // Auto-trigger tur untuk user yang belum pernah melihat (via DB)
+  useEffect(() => {
+    if (!shouldShowTour) return
+    const timer = setTimeout(() => {
+      setShowTour(true)
+      setIsTourActive(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldShowTour])
+
+  useEffect(() => {
+    const handleTourStepChange = (e) => {
+      setActiveTourStepSelector(e.detail.selector)
+    }
+    window.addEventListener('tourStepChange', handleTourStepChange)
+    return () => {
+      window.removeEventListener('tourStepChange', handleTourStepChange)
+    }
+  }, [])
 
   // Debounce search input untuk mengurangi API calls
   useEffect(() => {
@@ -186,10 +223,10 @@ const DirektoriAlumni = () => {
             </div>
 
             {/* Search & Filter section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mb-6">
+            <div id="tour-directory-search" className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mb-6">
               {/* Search bar row */}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center mb-4">
-                <div className="relative flex-1">
+                <div id="tour-directory-search-input" className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <Input
                     type="text"
@@ -242,7 +279,7 @@ const DirektoriAlumni = () => {
               </div>
 
               {/* Filter dropdowns */}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full ${showMobileFilters ? 'grid' : 'hidden sm:grid'}`}>
+              <div id="tour-directory-filters" className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full ${(showMobileFilters || (isTourActive && (activeTourStepSelector === '#tour-directory-filters' || activeTourStepSelector === '#tour-directory-reset-view'))) ? 'grid' : 'hidden sm:grid'}`}>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">Angkatan</label>
                   <select
@@ -316,7 +353,7 @@ const DirektoriAlumni = () => {
               )}
 
               {/* Reset & View Mode Toggles (Desktop only) */}
-              <div className="hidden sm:flex items-center justify-between gap-3 pt-4 border-t border-gray-100 w-full mt-3">
+              <div id="tour-directory-reset-view" className={`${(isTourActive && activeTourStepSelector === '#tour-directory-reset-view') ? 'flex' : 'hidden sm:flex'} items-center justify-between gap-3 pt-4 border-t border-gray-100 w-full mt-3`}>
                 {/* Reset Filter Button */}
                 <div className="flex-shrink-0">
                   <Button 
@@ -377,7 +414,8 @@ const DirektoriAlumni = () => {
             ) : (
               <>
                 {/* Grid view */}
-                {viewMode === 'grid' ? (
+                <div id="tour-directory-grid">
+                  {viewMode === 'grid' ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                     {users.map((user) => (
                       <div
@@ -537,7 +575,8 @@ const DirektoriAlumni = () => {
                       </div>
                     ))}
                   </div>
-                )}
+                  )}
+                </div>
 
                 {/* Pagination */}
                 {pagination.totalPages > 1 && (
@@ -574,6 +613,18 @@ const DirektoriAlumni = () => {
           </div>
         </main>
       </div>
+
+      <OnboardingTour
+        isOpen={showTour}
+        onClose={() => {
+          setShowTour(false)
+          setIsTourActive(false)
+          setActiveTourStepSelector(null)
+          markTourComplete()
+        }}
+        type="direktori"
+      />
+
     </div>
   )
 }

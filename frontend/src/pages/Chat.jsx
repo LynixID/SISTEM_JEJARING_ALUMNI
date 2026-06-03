@@ -9,6 +9,8 @@ import { getImageUrl } from '../utils/imageUtils'
 import UserBadge from '../components/common/UserBadge'
 import { MessageCircle, Send, Image as ImageIcon, X, Reply, Loader, Plus, Search, ArrowLeft } from 'lucide-react'
 import Button from '../components/common/Button'
+import OnboardingTour from '../components/common/OnboardingTour'
+import useTourStatus from '../hooks/useTourStatus'
 
 const Chat = () => {
   const { userId } = useParams()
@@ -34,6 +36,67 @@ const Chat = () => {
   const fetchingRef = useRef(false)
   const userInfoFromNavigationRef = useRef(null)
   const socket = getSocket()
+  
+  const [showTour, setShowTour] = useState(false)
+  const [isTourActive, setIsTourActive] = useState(false)
+  const [activeTourStepSelector, setActiveTourStepSelector] = useState(null)
+  const { shouldShowTour, markTourComplete } = useTourStatus('pesan')
+
+  const mockConversations = [
+    {
+      partner: { id: 'mock-1', nama: 'Ahmad Fauzi, S.T.', role: 'ALUMNI', fotoProfil: null },
+      unreadCount: 2,
+      lastMessage: { content: 'Halo, apakah besok ada pertemuan Anggota IKA UII Jateng?', createdAt: new Date().toISOString() }
+    }
+  ]
+
+  const mockMessages = [
+    {
+      id: 'mock-msg-1',
+      senderId: 'mock-1',
+      sender: { nama: 'Ahmad Fauzi, S.T.' },
+      content: 'Halo, apakah besok ada pertemuan Anggota IKA UII Jateng?',
+      createdAt: new Date(Date.now() - 3600000).toISOString()
+    },
+    {
+      id: 'mock-msg-2',
+      senderId: currentUser?.id,
+      sender: { nama: currentUser?.nama || 'Saya' },
+      content: 'Halo Ahmad! Ya, pertemuan diselenggarakan jam 09.00 WIB.',
+      createdAt: new Date().toISOString()
+    }
+  ]
+
+  useEffect(() => {
+    const handleStartTour = () => {
+      setShowTour(true)
+      setIsTourActive(true)
+    }
+    window.addEventListener('startPesanTour', handleStartTour)
+    return () => {
+      window.removeEventListener('startPesanTour', handleStartTour)
+    }
+  }, [])
+
+  // Auto-trigger tur untuk user yang belum pernah melihat (via DB)
+  useEffect(() => {
+    if (!shouldShowTour) return
+    const timer = setTimeout(() => {
+      setShowTour(true)
+      setIsTourActive(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldShowTour])
+
+  useEffect(() => {
+    const handleTourStepChange = (e) => {
+      setActiveTourStepSelector(e.detail.selector)
+    }
+    window.addEventListener('tourStepChange', handleTourStepChange)
+    return () => {
+      window.removeEventListener('tourStepChange', handleTourStepChange)
+    }
+  }, [])
   
   // Simpan userInfo dari navigation state ke ref agar tetap tersedia
   useEffect(() => {
@@ -798,6 +861,25 @@ const Chat = () => {
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
   }
 
+  const showMockChatWindow = isTourActive && (
+    activeTourStepSelector === '#tour-chat-window-header' ||
+    activeTourStepSelector === '#tour-chat-input-area'
+  )
+
+  const displaySelectedConversation = showMockChatWindow
+    ? (selectedConversation || mockConversations[0])
+    : selectedConversation
+
+  const displayConversations = (conversations.length === 0 && isTourActive)
+    ? mockConversations
+    : conversations
+
+  const isViewingMock = isTourActive && displaySelectedConversation?.partner?.id === 'mock-1'
+
+  const displayMessages = isViewingMock
+    ? mockMessages
+    : messages
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -828,11 +910,12 @@ const Chat = () => {
           <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex h-[750px]">
           {/* Conversations List */}
-          <div className={`${selectedConversation?.partner ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-white border-r border-gray-200 flex flex-col`}>
+          <div id="tour-chat-list" className={`${displaySelectedConversation?.partner ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-white border-r border-gray-200 flex flex-col`}>
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900">Pesan</h2>
                 <Button
+                  id="tour-chat-start-btn"
                   onClick={handleStartNewMessage}
                   className="px-3 py-1.5 rounded-lg text-sm"
                   variant="primary"
@@ -843,19 +926,19 @@ const Chat = () => {
                 </Button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {conversations.length === 0 ? (
+            <div id="tour-chat-list-threads" className="flex-1 overflow-y-auto">
+              {displayConversations.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   <MessageCircle className="mx-auto mb-2 text-gray-300" size={48} />
                   <p>Belum ada percakapan</p>
                 </div>
               ) : (
-                conversations.map((conv) => (
+                displayConversations.map((conv) => (
                   <button
                     key={conv.partner.id}
                     onClick={() => handleSelectConversation(conv)}
                     className={`w-full p-4 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 ${
-                      selectedConversation?.partner?.id === conv.partner.id ? 'bg-blue-50' : ''
+                      displaySelectedConversation?.partner?.id === conv.partner.id ? 'bg-blue-50' : ''
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -910,43 +993,43 @@ const Chat = () => {
           </div>
 
           {/* Chat Window */}
-          <div className={`${selectedConversation?.partner ? 'flex' : 'hidden md:flex'} flex-1 flex flex-col bg-white`}>
-            {selectedConversation?.partner ? (
+          <div id="tour-chat-window" className={`${displaySelectedConversation?.partner ? 'flex' : 'hidden md:flex'} flex-1 flex flex-col bg-white`}>
+            {displaySelectedConversation?.partner ? (
               <>
                 {/* Chat Header */}
-                <div className="p-4 border-b border-gray-200 flex items-center gap-3 bg-white sticky top-16 md:static z-20 shadow-sm md:shadow-none">
+                <div id="tour-chat-window-header" className="p-4 border-b border-gray-200 flex items-center gap-3 bg-white sticky top-16 md:static z-20 shadow-sm md:shadow-none">
                   <button
                     onClick={handleBackToConversations}
                     className="md:hidden p-1 mr-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <ArrowLeft size={24} />
                   </button>
-                  {selectedConversation.partner.fotoProfil ? (
+                  {displaySelectedConversation.partner.fotoProfil ? (
                     <img
-                      src={getImageUrl(selectedConversation.partner.fotoProfil, 'profiles')}
-                      alt={selectedConversation.partner.nama}
+                      src={getImageUrl(displaySelectedConversation.partner.fotoProfil, 'profiles')}
+                      alt={displaySelectedConversation.partner.nama}
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold">
-                      {selectedConversation.partner.nama?.charAt(0) || 'U'}
+                      {displaySelectedConversation.partner.nama?.charAt(0) || 'U'}
                     </div>
                   )}
                   <div>
                     <h3 className="font-semibold text-gray-900">
-                      {selectedConversation.partner.nama}
-                      <UserBadge role={selectedConversation.partner.role} size="sm" />
+                      {displaySelectedConversation.partner.nama}
+                      <UserBadge role={displaySelectedConversation.partner.role} size="sm" />
                     </h3>
                   </div>
                 </div>
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {loadingMessages ? (
+                  {(loadingMessages && !isViewingMock) ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader className="animate-spin text-gray-400" size={24} />
                     </div>
-                  ) : messages.length === 0 ? (
+                  ) : displayMessages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
                       <div className="text-center">
                         <MessageCircle className="mx-auto mb-2 text-gray-300" size={48} />
@@ -954,7 +1037,7 @@ const Chat = () => {
                       </div>
                     </div>
                   ) : (
-                    messages.map((message, index) => (
+                    displayMessages.map((message, index) => (
                       <MessageBubble
                         key={message.id || `msg-${index}`}
                         message={message}
@@ -1007,7 +1090,7 @@ const Chat = () => {
                 )}
 
                 {/* Message Input */}
-                <div className="p-4 border-t border-gray-200">
+                <div id="tour-chat-input-area" className="p-4 border-t border-gray-200">
                   <div className="flex items-end gap-2">
                     <input
                       type="file"
@@ -1062,6 +1145,18 @@ const Chat = () => {
           </div>
         </main>
       </div>
+
+      <OnboardingTour
+        isOpen={showTour}
+        onClose={() => {
+          setShowTour(false)
+          setIsTourActive(false)
+          setActiveTourStepSelector(null)
+          markTourComplete()
+        }}
+        type="pesan"
+      />
+
 
       {/* New Message Modal */}
       {showNewMessageModal && (

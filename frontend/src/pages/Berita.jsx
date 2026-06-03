@@ -9,6 +9,8 @@ import Sidebar from '../components/layout/Sidebar'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
+import OnboardingTour from '../components/common/OnboardingTour'
+import useTourStatus from '../hooks/useTourStatus'
 
 const Berita = () => {
   const { user, isAuthenticated, isLoading } = useAuth()
@@ -25,6 +27,27 @@ const Berita = () => {
     total: 0,
     totalPages: 0
   })
+  const [showTour, setShowTour] = useState(false)
+  const { shouldShowTour, markTourComplete } = useTourStatus('berita')
+
+  useEffect(() => {
+    const handleStartTour = () => {
+      setShowTour(true)
+    }
+    window.addEventListener('startBeritaTour', handleStartTour)
+    return () => {
+      window.removeEventListener('startBeritaTour', handleStartTour)
+    }
+  }, [])
+
+  // Auto-trigger tur untuk user yang belum pernah melihat (via DB)
+  useEffect(() => {
+    if (!shouldShowTour) return
+    const timer = setTimeout(() => {
+      setShowTour(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldShowTour])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -153,7 +176,7 @@ const Berita = () => {
             </div>
 
             {/* Tabs */}
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm mb-6">
+            <div id="tour-berita-tabs" className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm mb-6">
               <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 <button
                   onClick={() => {
@@ -185,7 +208,7 @@ const Berita = () => {
             </div>
 
             {/* Search & Filter */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div id="tour-berita-search" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
               <form onSubmit={handleSearch} className="flex gap-4 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
                   <div className="relative">
@@ -208,7 +231,8 @@ const Berita = () => {
             </div>
 
             {/* Content Grid */}
-            {activeTab === 'pengumuman' ? (
+            <div id="tour-berita-list">
+              {activeTab === 'pengumuman' ? (
               <>
                 {loading && announcements.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">Memuat pengumuman...</div>
@@ -402,6 +426,7 @@ const Berita = () => {
                 )}
               </>
             )}
+            </div>
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
@@ -437,6 +462,16 @@ const Berita = () => {
           </div>
         </main>
       </div>
+
+      <OnboardingTour
+        isOpen={showTour}
+        onClose={() => {
+          setShowTour(false)
+          markTourComplete()
+        }}
+        type="berita"
+      />
+
     </div>
   )
 }

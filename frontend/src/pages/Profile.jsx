@@ -11,6 +11,8 @@ import Button from '../components/common/Button'
 import ConnectModal from '../components/connection/ConnectModal'
 import PostCard from '../components/post/PostCard'
 import ReportModal from '../components/common/ReportModal'
+import OnboardingTour from '../components/common/OnboardingTour'
+import useTourStatus from '../hooks/useTourStatus'
 
 const Profile = () => {
   const { id } = useParams()
@@ -34,6 +36,28 @@ const Profile = () => {
     total: 0,
     totalPages: 0
   })
+  const [showTour, setShowTour] = useState(false)
+  const { shouldShowTour, markTourComplete } = useTourStatus('profil', isOwnProfile)
+
+  useEffect(() => {
+    const handleStartTour = () => {
+      setShowTour(true)
+    }
+    window.addEventListener('startProfileTour', handleStartTour)
+    return () => {
+      window.removeEventListener('startProfileTour', handleStartTour)
+    }
+  }, [])
+
+  // Auto-trigger tur untuk user yang belum pernah melihat (via DB)
+  // Hanya untuk profil sendiri
+  useEffect(() => {
+    if (!shouldShowTour || !isOwnProfile) return
+    const timer = setTimeout(() => {
+      setShowTour(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldShowTour, isOwnProfile])
 
   // Fetch user profile saat component mount atau id berubah
   useEffect(() => {
@@ -245,7 +269,7 @@ const Profile = () => {
 
 
           {/* Cover Photo & Profile Header Section (Unified Card) */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+          <div id="tour-profile-header" className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
             {/* Cover Photo */}
             <div className="relative h-48 sm:h-80 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600">
               {coverPhoto ? (
@@ -258,15 +282,16 @@ const Profile = () => {
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600"></div>
               )}
-              {isOwnProfile && (
-                <button
-                  onClick={handleEditProfile}
-                  className="absolute top-4 right-4 sm:top-6 sm:right-6 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-white/90 backdrop-blur-sm text-gray-700 rounded-xl hover:bg-white transition-all flex items-center gap-2 shadow-sm font-medium text-xs sm:text-sm"
-                >
-                  <Edit size={16} />
-                  <span>Edit Profil</span>
-                </button>
-              )}
+               {isOwnProfile && (
+                 <button
+                   id="tour-profile-edit"
+                   onClick={handleEditProfile}
+                   className="absolute top-4 right-4 sm:top-6 sm:right-6 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-white/90 backdrop-blur-sm text-gray-700 rounded-xl hover:bg-white transition-all flex items-center gap-2 shadow-sm font-medium text-xs sm:text-sm"
+                 >
+                   <Edit size={16} />
+                   <span>Edit Profil</span>
+                 </button>
+               )}
 
             </div>
             
@@ -439,7 +464,7 @@ const Profile = () => {
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 pb-12">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {/* Tabs Header */}
-            <div className="bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8">
+            <div id="tour-profile-tabs" className="bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8">
               <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {
                   const Icon = tab.icon
@@ -462,7 +487,7 @@ const Profile = () => {
             </div>
 
             {/* Tab Content Area */}
-            <div className="p-6 sm:p-8">
+            <div id="tour-profile-details" className="p-6 sm:p-8">
 
 
 
@@ -863,6 +888,18 @@ const Profile = () => {
           targetName={user.nama}
         />
       )}
+
+      {isOwnProfile && (
+        <OnboardingTour
+          isOpen={showTour}
+          onClose={() => {
+            setShowTour(false)
+            markTourComplete()
+          }}
+          type="profile"
+        />
+      )}
+
     </div>
   )
 }

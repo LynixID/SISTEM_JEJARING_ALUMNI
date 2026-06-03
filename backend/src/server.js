@@ -30,7 +30,9 @@ import reportRoutes from './modules/reports/reportRoutes.js'
 import landingRoutes from './modules/landing/landingRoutes.js'
 import displayHomePageRoutes from './modules/displayHomePage/displayHomePageRoutes.js'
 import contactRoutes from './modules/contact/contactRoutes.js'
+import tourRoutes from './modules/tour/tourRoutes.js'
 import initJobs from './jobs/cron.js'
+
 
 // Load environment variables
 dotenv.config()
@@ -117,6 +119,8 @@ app.use('/api/reports', reportRoutes)
 app.use('/api/landing', landingRoutes)
 app.use('/api/display-home-page', displayHomePageRoutes)
 app.use('/api/contact', contactRoutes)
+app.use('/api/tour', tourRoutes)
+
 
 // 404 handler
 app.use((req, res) => {

@@ -16,16 +16,39 @@ const Sidebar = () => {
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
+  // Hitung total badge dari semua menu
+  const totalSidebarBadge =
+    pendingConnectionsCount +
+    unreadNewsCount +
+    newApprovedJobsCount +
+    unreadMessagesCount +
+    pendingJobsCount
+
   // Close mobile menu on path change
   useEffect(() => {
     setIsMobileOpen(false)
   }, [location.pathname])
 
+  // Emit total badge ke Header setiap kali ada perubahan count
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('sidebarBadgeUpdate', { detail: { total: totalSidebarBadge } }))
+  }, [totalSidebarBadge])
+
   // Listen to custom toggle event
   useEffect(() => {
     const handleToggle = () => setIsMobileOpen(prev => !prev)
+    const handleOpen = () => setIsMobileOpen(true)
+    const handleClose = () => setIsMobileOpen(false)
+    
     window.addEventListener('toggleMobileMenu', handleToggle)
-    return () => window.removeEventListener('toggleMobileMenu', handleToggle)
+    window.addEventListener('openMobileMenu', handleOpen)
+    window.addEventListener('closeMobileMenu', handleClose)
+    
+    return () => {
+      window.removeEventListener('toggleMobileMenu', handleToggle)
+      window.removeEventListener('openMobileMenu', handleOpen)
+      window.removeEventListener('closeMobileMenu', handleClose)
+    }
   }, [])
 
 
@@ -186,7 +209,7 @@ const Sidebar = () => {
         onClick={() => setIsMobileOpen(false)}
       />
 
-      <aside className={`
+      <aside id="tour-sidebar" className={`
         fixed lg:sticky top-[5rem] left-0 h-[calc(100vh-6.5rem)] w-64 bg-white rounded-2xl shadow-sm border border-gray-100 z-50 lg:z-0 overflow-y-auto transition-transform duration-300
         lg:ml-6 lg:mt-6
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -228,8 +251,9 @@ const Sidebar = () => {
             // Badge untuk pesan
             const showMessagesBadge = item.path === '/pesan' && unreadMessagesCount > 0 && user?.role !== 'ADMIN'
 
+            const itemTourId = `tour-sidebar-${item.label.toLowerCase().replace(/\s+/g, '-')}`
             return (
-              <li key={item.path}>
+              <li key={item.path} id={itemTourId}>
                 <Link
                   to={item.path}
                   className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${

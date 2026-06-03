@@ -9,6 +9,8 @@ import Modal from '../components/common/Modal'
 import ConfirmModal from '../components/common/ConfirmModal'
 import { useAuth } from '../context/AuthContext'
 import { approveJob, createJob, deleteMyJob, getJobs, getPendingJobs, rejectJob } from '../services/api'
+import OnboardingTour from '../components/common/OnboardingTour'
+import useTourStatus from '../hooks/useTourStatus'
 import { getImageUrl } from '../utils/imageUtils'
 import { BriefcaseBusiness, Check, Clock, Plus, Search, Trash2, X, ExternalLink } from 'lucide-react'
 
@@ -53,6 +55,27 @@ const Jobs = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [selectedJob, setSelectedJob] = useState(null)
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null })
+  const [showTour, setShowTour] = useState(false)
+  const { shouldShowTour, markTourComplete } = useTourStatus('lowongan')
+
+  useEffect(() => {
+    const handleStartTour = () => {
+      setShowTour(true)
+    }
+    window.addEventListener('startLowonganTour', handleStartTour)
+    return () => {
+      window.removeEventListener('startLowonganTour', handleStartTour)
+    }
+  }, [])
+
+  // Auto-trigger tur untuk user yang belum pernah melihat (via DB)
+  useEffect(() => {
+    if (!shouldShowTour) return
+    const timer = setTimeout(() => {
+      setShowTour(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldShowTour])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) navigate('/login', { replace: true })
@@ -220,7 +243,7 @@ const Jobs = () => {
         <Sidebar />
         <main className="flex-1">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-6">
+            <div id="tour-jobs-header" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center gap-3">
@@ -234,14 +257,14 @@ const Jobs = () => {
                   </p>
                 </div>
 
-                <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
+                <Button id="tour-jobs-create-btn" onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
                   <Plus size={18} />
                   Buat Lowongan
                 </Button>
               </div>
 
-              <div className="mt-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                <div className="flex bg-gray-100/80 p-1 rounded-xl border border-gray-200/40 gap-1 w-fit">
+              <div id="tour-jobs-search" className="mt-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <div id="tour-jobs-tabs" className="flex bg-gray-100/80 p-1 rounded-xl border border-gray-200/40 gap-1 w-fit">
                   {(!isDraftMode && !isPengurusManage) && (
                     <button
                       type="button"
@@ -276,7 +299,7 @@ const Jobs = () => {
                 </div>
 
                 {tab === 'LIST' && (
-                  <div className="flex-1 sm:max-w-md relative">
+                  <div id="tour-jobs-search-input" className="flex-1 sm:max-w-md relative">
                     <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       value={q}
@@ -292,7 +315,8 @@ const Jobs = () => {
               </div>
             </div>
 
-            {tab === 'LIST' ? (
+            <div id="tour-jobs-card">
+              {tab === 'LIST' ? (
               <>
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4">
@@ -568,6 +592,7 @@ const Jobs = () => {
                 )}
               </>
             )}
+            </div>
           </div>
         </main>
       </div>
@@ -751,6 +776,16 @@ const Jobs = () => {
         confirmText="Hapus"
         variant="danger"
       />
+
+      <OnboardingTour
+        isOpen={showTour}
+        onClose={() => {
+          setShowTour(false)
+          markTourComplete()
+        }}
+        type="lowongan"
+      />
+
     </div>
   )
 }

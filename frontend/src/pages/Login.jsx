@@ -30,14 +30,24 @@ const Login = () => {
     const result = await login(formData.email, formData.password)
     
     if (result.success) {
-      if (result.user.role === 'ADMIN') {
-        navigate('/admin', { replace: true })
-      } else if (!result.user.nama || !String(result.user.nama).trim()) {
+      if (result.user.role !== 'ADMIN' && (!result.user.nama || !String(result.user.nama).trim())) {
         navigate('/lengkapi-data', { replace: true })
-      } else if (!result.user.verified) {
+      } else if (result.user.role !== 'ADMIN' && !result.user.verified) {
         navigate('/waiting-verification', { replace: true })
       } else {
-        navigate('/dashboard', { replace: true })
+        let from = location.state?.from 
+          ? (location.state.from.pathname + location.state.from.search + location.state.from.hash)
+          : null
+        
+        // Prevent redirecting back to restricted onboarding pages if user is already verified & complete
+        if (from && (from.startsWith('/waiting-verification') || from.startsWith('/lengkapi-data') || from.startsWith('/login') || from.startsWith('/register') || from.startsWith('/verify-otp'))) {
+          from = null
+        }
+
+        if (!from) {
+          from = result.user.role === 'ADMIN' ? '/admin' : '/dashboard'
+        }
+        navigate(from, { replace: true })
       }
     } else {
       // Cek apakah kegagalan login karena suspen
@@ -181,14 +191,24 @@ const Login = () => {
                     setLoading(true)
                     const result = await loginWithGoogle(credential)
                     if (result.success) {
-                      if (result.user.role === 'ADMIN') {
-                        navigate('/admin', { replace: true })
-                      } else if (!result.user.nama || !String(result.user.nama).trim()) {
+                      if (result.user.role !== 'ADMIN' && (!result.user.nama || !String(result.user.nama).trim())) {
                         navigate('/lengkapi-data', { replace: true })
-                      } else if (!result.user.verified) {
+                      } else if (result.user.role !== 'ADMIN' && !result.user.verified) {
                         navigate('/waiting-verification', { replace: true })
                       } else {
-                        navigate('/dashboard', { replace: true })
+                        let from = location.state?.from 
+                          ? (location.state.from.pathname + location.state.from.search + location.state.from.hash)
+                          : null
+                        
+                        // Prevent redirecting back to restricted onboarding pages if user is already verified & complete
+                        if (from && (from.startsWith('/waiting-verification') || from.startsWith('/lengkapi-data') || from.startsWith('/login') || from.startsWith('/register') || from.startsWith('/verify-otp'))) {
+                          from = null
+                        }
+
+                        if (!from) {
+                          from = result.user.role === 'ADMIN' ? '/admin' : '/dashboard'
+                        }
+                        navigate(from, { replace: true })
                       }
                     } else {
                       setError(result.message)

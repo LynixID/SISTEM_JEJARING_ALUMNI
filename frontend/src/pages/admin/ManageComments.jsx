@@ -207,7 +207,7 @@ const ManageComments = () => {
                   <table className="w-full text-left">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
-                        <th className="px-6 py-4">
+                        <th className="px-6 py-4 w-10">
                           <input 
                             type="checkbox" 
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
@@ -215,6 +215,7 @@ const ManageComments = () => {
                             onChange={toggleSelectAll}
                           />
                         </th>
+                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider w-12">No.</th>
                         <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Isi Komentar</th>
                         <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Penulis</th>
                         <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Post Terkait</th>
@@ -223,7 +224,7 @@ const ManageComments = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {comments.map((comment) => (
+                      {comments.map((comment, index) => (
                         <tr key={comment.id} className="hover:bg-blue-50/30 transition-colors">
                           <td className="px-6 py-4">
                             <input 
@@ -232,6 +233,9 @@ const ManageComments = () => {
                               checked={selectedComments.includes(comment.id)}
                               onChange={() => toggleSelectComment(comment.id)}
                             />
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium whitespace-nowrap">
+                            {(pagination.page - 1) * pagination.limit + index + 1}
                           </td>
                           <td className="px-6 py-4">
                             <div className="max-w-xs md:max-w-md">

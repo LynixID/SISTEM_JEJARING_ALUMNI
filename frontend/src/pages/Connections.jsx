@@ -10,6 +10,8 @@ import { getConnectionRequests, getConnections, acceptConnection, rejectConnecti
 import { getImageUrl } from '../utils/imageUtils'
 import { UserPlus, Check, X, Users, Clock, User, MessageCircle, Search, LayoutGrid, List as ListIcon } from 'lucide-react'
 import { getSocket } from '../config/socket'
+import OnboardingTour from '../components/common/OnboardingTour'
+import useTourStatus from '../hooks/useTourStatus'
 
 const Connections = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -19,9 +21,47 @@ const Connections = () => {
   const [requests, setRequests] = useState([])
   const [connections, setConnections] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [processingId, setProcessingId] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewType, setViewType] = useState('grid') // 'grid' or 'list'
+  const [showTour, setShowTour] = useState(false)
+  const { shouldShowTour, markTourComplete } = useTourStatus('koneksi')
+
+  useEffect(() => {
+    const handleStartTour = () => {
+      setShowTour(true)
+    }
+    window.addEventListener('startKoneksiTour', handleStartTour)
+    return () => {
+      window.removeEventListener('startKoneksiTour', handleStartTour)
+    }
+  }, [])
+
+  // Auto-trigger tur untuk user yang belum pernah melihat (via DB)
+  useEffect(() => {
+    if (!shouldShowTour) return
+    const timer = setTimeout(() => {
+      setShowTour(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldShowTour])
+
+  // Listen to step changes to switch tabs dynamically
+  useEffect(() => {
+    const handleStepChange = (e) => {
+      const { selector } = e.detail
+      if (selector === '#tour-connections-requests-content') {
+        setActiveTab('requests')
+      } else if (selector === '#tour-connections-list-content') {
+        setActiveTab('connections')
+      }
+    }
+    window.addEventListener('tourStepChange', handleStepChange)
+    return () => {
+      window.removeEventListener('tourStepChange', handleStepChange)
+    }
+  }, [])
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -70,6 +110,7 @@ const Connections = () => {
       }
     } finally {
       setLoading(false)
+      setIsInitialLoad(false)
     }
   }
 
@@ -150,7 +191,7 @@ const Connections = () => {
     connection.user.nama.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  if (authLoading || loading) {
+  if (authLoading || isInitialLoad) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -179,7 +220,7 @@ const Connections = () => {
 
             {/* Tabs */}
             <div className="mb-6">
-              <div className="flex bg-gray-100/80 p-1 rounded-xl border border-gray-200/40 gap-1 w-fit">
+              <div id="tour-connections-tabs" className="flex bg-gray-100/80 p-1 rounded-xl border border-gray-200/40 gap-1 w-fit">
                 <button
                   type="button"
                   onClick={() => setActiveTab('requests')}
@@ -226,8 +267,9 @@ const Connections = () => {
             </div>
 
             {/* Content */}
-            {activeTab === 'requests' ? (
-              <Card className="p-0 overflow-hidden">
+            <div id="tour-connections-card">
+              {activeTab === 'requests' ? (
+              <Card id="tour-connections-requests-content" className="p-0 overflow-hidden">
                 {loading ? (
                   <div className="p-12 text-center">
                     <div className="text-gray-500">Memuat permintaan koneksi...</div>
@@ -338,7 +380,7 @@ const Connections = () => {
                 )}
               </Card>
             ) : (
-              <Card className="p-0 overflow-hidden">
+              <Card id="tour-connections-list-content" className="p-0 overflow-hidden">
                 {loading ? (
                   <div className="p-12 text-center">
                     <div className="text-gray-500">Memuat koneksi...</div>
@@ -352,7 +394,7 @@ const Connections = () => {
                 ) : (
                   <div className="flex flex-col h-full">
                     {/* Toolbar */}
-                    <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between gap-3">
+                    <div id="tour-connections-toolbar" className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between gap-3">
                       <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         <input
@@ -526,9 +568,19 @@ const Connections = () => {
                 )}
               </Card>
             )}
+            </div>
           </div>
         </main>
       </div>
+      <OnboardingTour
+        isOpen={showTour}
+        onClose={() => {
+          setShowTour(false)
+          markTourComplete()
+        }}
+        type="koneksi"
+      />
+
     </div>
   )
 }

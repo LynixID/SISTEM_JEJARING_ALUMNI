@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -39,6 +39,7 @@ import Crxs from './pages/Crxs'
 // Komponen untuk protect route: cek login, role, dan verified status
 const ProtectedRoute = ({ children, requireAdmin = false, requireAdminOrPengurus = false, allowUnverified = false, allowIncompleteProfile = false }) => {
   const { isAuthenticated, user, isLoading } = useAuth()
+  const location = useLocation()
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
@@ -46,7 +47,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireAdminOrPengurus
 
   // Jika belum login, redirect ke login
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" state={{ from: location }} replace />
   }
 
   // Cek kelengkapan profil (untuk mencegah akses akun SSO yang belum isi data diri)
@@ -78,6 +79,7 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireAdminOrPengurus
 // Komponen Public Route (redirect jika sudah login)
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, user, isLoading } = useAuth()
+  const location = useLocation()
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
@@ -95,6 +97,20 @@ const PublicRoute = ({ children }) => {
     // Cek apakah user perlu verifikasi admin
     if (!isAdmin && !user?.verified) {
       return <Navigate to="/waiting-verification" replace />
+    }
+
+    // Ambil redirect URL dari state jika ada
+    let from = location.state?.from 
+      ? (location.state.from.pathname + location.state.from.search + location.state.from.hash)
+      : null
+    
+    // Prevent redirecting back to restricted onboarding pages if user is already verified & complete
+    if (from && (from.startsWith('/waiting-verification') || from.startsWith('/lengkapi-data') || from.startsWith('/login') || from.startsWith('/register') || from.startsWith('/verify-otp'))) {
+      from = null
+    }
+
+    if (from) {
+      return <Navigate to={from} replace />
     }
 
     if (isAdmin) {

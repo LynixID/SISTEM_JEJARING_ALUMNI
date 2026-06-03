@@ -494,5 +494,18 @@ export const getActiveEmail = () => {
   return api.get('/display-home-page/email/active')
 }
 
+// Tour Panduan API
+// Cek status tur untuk satu atau beberapa tourKey sekaligus
+// keys: array of string, e.g. ['dashboard', 'berita']
+export const getTourStatus = (keys) => {
+  const keysParam = Array.isArray(keys) ? keys.join(',') : keys
+  return api.get('/tour/status', { params: { keys: keysParam } })
+}
+
+// Tandai tur sebagai selesai (idempotent)
+export const completeTourApi = (tourKey) => {
+  return api.post('/tour/complete', { tourKey })
+}
+
 export default api
 

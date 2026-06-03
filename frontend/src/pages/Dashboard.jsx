@@ -4,12 +4,14 @@ import { useAuth } from '../context/AuthContext'
 import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
 import CreatePost from '../components/post/CreatePost'
+import OnboardingTour from '../components/common/OnboardingTour'
 import PostFeed from '../components/post/PostFeed'
 import RightPanel from '../components/dashboard/RightPanel'
 import Button from '../components/common/Button'
 import { initSocket, getSocket } from '../config/socket'
 import { Plus, Image as ImageIcon, Calendar, FileText, BarChart2, Smile, BriefcaseBusiness, ArrowUp } from 'lucide-react'
 import { getImageUrl } from '../utils/imageUtils'
+import useTourStatus from '../hooks/useTourStatus'
 
 const Dashboard = () => {
   const { user, isAuthenticated, isLoading } = useAuth()
@@ -20,12 +22,18 @@ const Dashboard = () => {
   const [refreshKey, setRefreshKey] = useState(0)
   const [showCreatePost, setShowCreatePost] = useState(false)
   const [hasNewPosts, setHasNewPosts] = useState(false)
+  const [showTour, setShowTour] = useState(false)
+  const { shouldShowTour, markTourComplete } = useTourStatus('dashboard')
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login', { replace: true })
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        navigate('/login', { replace: true })
+      } else if (user?.role === 'ADMIN') {
+        navigate('/admin', { replace: true })
+      }
     }
-  }, [isAuthenticated, isLoading, navigate])
+  }, [isAuthenticated, isLoading, user, navigate])
 
   useEffect(() => {
     if (!isAuthenticated || !user) return
@@ -46,6 +54,32 @@ const Dashboard = () => {
     }
   }, [isAuthenticated, user])
 
+  useEffect(() => {
+    const handleStartTour = () => {
+      setShowTour(true)
+    }
+    window.addEventListener('startOnboardingTour', handleStartTour)
+
+    // Check if redirect-triggered from other page
+    if (localStorage.getItem('trigger_tour_on_mount') === 'true') {
+      localStorage.removeItem('trigger_tour_on_mount')
+      setShowTour(true)
+    }
+
+    return () => {
+      window.removeEventListener('startOnboardingTour', handleStartTour)
+    }
+  }, [])
+
+  // Auto-trigger tur untuk user yang belum pernah melihat (via DB)
+  useEffect(() => {
+    if (!shouldShowTour) return
+    const timer = setTimeout(() => {
+      setShowTour(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldShowTour])
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -56,10 +90,7 @@ const Dashboard = () => {
 
   if (!isAuthenticated || !user) return null
 
-  if (user.role === 'ADMIN') {
-    navigate('/admin', { replace: true })
-    return null
-  }
+  if (user.role === 'ADMIN') return null
 
   const isPengurus = user.role === 'PENGURUS'
   const handlePostCreated = () => { setRefreshKey(prev => prev + 1) }
@@ -98,7 +129,7 @@ const Dashboard = () => {
             {/* ── Kolom tengah: feed utama ── */}
             <main className="flex-1 min-w-0">
               {/* Welcome & Create Post Card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-6 mb-4 sm:mb-6 relative overflow-hidden">
+              <div id="tour-create-post" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-6 mb-4 sm:mb-6 relative overflow-hidden">
                 {/* Decorative Background */}
                 <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-1/3 pointer-events-none rounded-r-2xl overflow-hidden hidden sm:block">
                   <div className="absolute -right-10 -top-24 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-2xl opacity-70"></div>
@@ -186,6 +217,15 @@ const Dashboard = () => {
         onClose={() => setShowCreatePost(false)}
         onPostCreated={handlePostCreated}
       />
+
+      <OnboardingTour
+        isOpen={showTour}
+        onClose={() => {
+          setShowTour(false)
+          markTourComplete()
+        }}
+      />
+
     </div>
   )
 }

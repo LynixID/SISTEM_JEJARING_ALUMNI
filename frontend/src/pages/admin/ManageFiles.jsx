@@ -357,6 +357,7 @@ const ManageFiles = () => {
                   <table className="w-full text-left">
                     <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase">
                       <tr>
+                        <th className="px-6 py-3 w-12">No.</th>
                         <th className="px-6 py-3">Pratinjau</th>
                         <th className="px-6 py-3">Nama File</th>
                         <th className="px-6 py-3">Ukuran</th>
@@ -365,45 +366,65 @@ const ManageFiles = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {(viewMode === 'explorer' ? filteredFiles : getPaginatedTrash()).map((file) => (
-                        <tr key={file.name} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="w-10 h-10 rounded border border-gray-200 overflow-hidden bg-gray-100">
-                              <img 
-                                src={`${api.defaults.baseURL.replace('/api', '')}${file.path}?t=${Date.now()}`} 
-                                alt=""
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.target.src = "https://placehold.co/100/f3f4f6/9ca3af?text=File"
-                                }}
-                              />
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm font-medium text-gray-900 truncate max-w-xs" title={file.name}>
-                                {file.name}
-                            </div>
-                            <div className="text-xs text-gray-400 font-medium uppercase tracking-tight">{file.category}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {formatSize(file.size)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
-                            {new Date(file.mtime || file.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end gap-2">
-                              {viewMode === 'trash' ? (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleRestore(file)}
-                                    disabled={isRestoring}
-                                    className="bg-white"
-                                  >
-                                    Pulihkan
-                                  </Button>
+                      {(viewMode === 'explorer' ? filteredFiles : getPaginatedTrash()).map((file, index) => {
+                        const rowNumber = viewMode === 'explorer'
+                          ? index + 1
+                          : (trashPage - 1) * itemsPerPage + index + 1;
+                        return (
+                          <tr key={file.name} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                              {rowNumber}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="w-10 h-10 rounded border border-gray-200 overflow-hidden bg-gray-100">
+                                <img 
+                                  src={`${api.defaults.baseURL.replace('/api', '')}${file.path}?t=${Date.now()}`} 
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.src = "https://placehold.co/100/f3f4f6/9ca3af?text=File"
+                                  }}
+                                />
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-medium text-gray-900 truncate max-w-xs" title={file.name}>
+                                  {file.name}
+                              </div>
+                              <div className="text-xs text-gray-400 font-medium uppercase tracking-tight">{file.category}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {formatSize(file.size)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                              {new Date(file.mtime || file.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex justify-end gap-2">
+                                {viewMode === 'trash' ? (
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleRestore(file)}
+                                      disabled={isRestoring}
+                                      className="bg-white"
+                                    >
+                                      Pulihkan
+                                    </Button>
+                                    <Button
+                                      variant="danger"
+                                      size="sm"
+                                      onClick={() => setConfirmModal({ 
+                                        isOpen: true, 
+                                        filename: file.name, 
+                                        category: file.category 
+                                      })}
+                                    >
+                                      Hapus
+                                    </Button>
+                                  </>
+                                ) : (
                                   <Button
                                     variant="danger"
                                     size="sm"
@@ -413,26 +434,14 @@ const ManageFiles = () => {
                                       category: file.category 
                                     })}
                                   >
-                                    Hapus
+                                    Ke Sampah
                                   </Button>
-                                </>
-                              ) : (
-                                <Button
-                                  variant="danger"
-                                  size="sm"
-                                  onClick={() => setConfirmModal({ 
-                                    isOpen: true, 
-                                    filename: file.name, 
-                                    category: file.category 
-                                  })}
-                                >
-                                  Ke Sampah
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -519,6 +528,7 @@ const ManageFiles = () => {
                   <table className="w-full text-left bg-white">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
+                        <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase w-12">No.</th>
                         <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Kategori</th>
                         <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Nama File</th>
                         <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Ukuran</th>
@@ -527,6 +537,7 @@ const ManageFiles = () => {
                     <tbody className="divide-y divide-gray-100">
                       {auditData.orphanedFiles.map((f, i) => (
                         <tr key={i} className="text-sm">
+                          <td className="px-6 py-3 text-gray-500 font-medium">{i + 1}</td>
                           <td className="px-6 py-3 uppercase text-[10px] font-bold text-gray-400">{f.category}</td>
                           <td className="px-6 py-3 truncate max-w-xs">{f.name}</td>
                           <td className="px-6 py-3 text-gray-500">{formatSize(f.size)}</td>

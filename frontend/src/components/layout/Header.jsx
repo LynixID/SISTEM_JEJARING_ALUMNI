@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getImageUrl } from '../../utils/imageUtils'
-import { LogOut, User, Settings, Menu, Search, UserPlus } from 'lucide-react'
+import { LogOut, User, Settings, Menu, Search, UserPlus, Compass } from 'lucide-react'
 import NotificationBell from '../common/NotificationBell'
 import ConfirmModal from '../common/ConfirmModal'
 
@@ -12,6 +12,14 @@ const Header = () => {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
+  const [sidebarBadgeCount, setSidebarBadgeCount] = useState(0)
+
+  // Dengarkan total badge dari Sidebar
+  useEffect(() => {
+    const handleBadgeUpdate = (e) => setSidebarBadgeCount(e.detail?.total ?? 0)
+    window.addEventListener('sidebarBadgeUpdate', handleBadgeUpdate)
+    return () => window.removeEventListener('sidebarBadgeUpdate', handleBadgeUpdate)
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -24,6 +32,54 @@ const Header = () => {
       navigate(`/dashboard?search=${encodeURIComponent(searchQuery.trim())}`)
     } else {
       navigate('/dashboard')
+    }
+  }
+
+  const getPageInfo = () => {
+    const path = window.location.pathname
+    if (path.startsWith('/berita')) {
+      return { event: 'startBeritaTour', label: 'Tur Panduan (Berita)' }
+    }
+    if (path.startsWith('/pesan')) {
+      return { event: 'startPesanTour', label: 'Tur Panduan (Pesan)' }
+    }
+    if (path.startsWith('/koneksi')) {
+      return { event: 'startKoneksiTour', label: 'Tur Panduan (Koneksi)' }
+    }
+    if (path.startsWith('/direktori')) {
+      return { event: 'startDirektoriTour', label: 'Tur Panduan (Direktori)' }
+    }
+    if (path.startsWith('/diskusi')) {
+      return { event: 'startDiskusiTour', label: 'Tur Panduan (Diskusi)' }
+    }
+    if (path.startsWith('/lowongan')) {
+      return { event: 'startLowonganTour', label: 'Tur Panduan (Lowongan)' }
+    }
+    
+    if (path.endsWith('/edit') && path.includes('/profil')) {
+      return { event: 'startEditProfilTour', label: 'Tur Panduan (Edit Profil)' }
+    }
+
+    const isOwnProfilePage = path === `/profil/${user?.id}` || 
+                             path === '/profil' || 
+                             path === '/profil/'
+    if (isOwnProfilePage) {
+      return { event: 'startProfileTour', label: 'Tur Panduan (Profil)' }
+    }
+    if (path === '/dashboard') {
+      return { event: 'startOnboardingTour', label: 'Tur Panduan (Beranda)' }
+    }
+    return { event: 'startOnboardingTour', label: 'Tur Panduan (Beranda)', redirect: true }
+  }
+
+  const handleStartTour = () => {
+    setShowProfileMenu(false)
+    const info = getPageInfo()
+    if (info.redirect) {
+      localStorage.setItem('trigger_tour_on_mount', 'true')
+      navigate('/dashboard')
+    } else {
+      window.dispatchEvent(new Event(info.event))
     }
   }
 
@@ -58,12 +114,18 @@ const Header = () => {
           {/* Left: Logo & Mobile Menu */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
+              id="tour-mobile-menu"
               onClick={() => {
                 window.dispatchEvent(new Event('toggleMobileMenu'))
               }}
-              className="lg:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="lg:hidden relative p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <Menu size={24} />
+              {sidebarBadgeCount > 0 && user?.role !== 'ADMIN' && (
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                  {sidebarBadgeCount > 9 ? '9+' : sidebarBadgeCount}
+                </span>
+              )}
             </button>
             <Link to="/dashboard" className="flex items-center gap-2 sm:gap-3 group">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-sm group-hover:shadow transition-shadow">
@@ -75,7 +137,7 @@ const Header = () => {
 
           {/* Center/Right-aligned: Search Bar */}
           <div className="flex-1 max-w-[140px] xs:max-w-[200px] sm:max-w-xl md:max-w-2xl px-1 sm:px-2 block ml-auto">
-            <form onSubmit={handleSearch} className="relative w-full group">
+            <form id="tour-search" onSubmit={handleSearch} className="relative w-full group">
               <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
                 <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
               </div>
@@ -96,11 +158,16 @@ const Header = () => {
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             
             {/* Notifications - hanya untuk user yang bukan admin */}
-            {user?.role !== 'ADMIN' && <NotificationBell />}
+            {user?.role !== 'ADMIN' && (
+              <div id="tour-notifications" className="flex items-center">
+                <NotificationBell />
+              </div>
+            )}
             
             {/* User Info & Dropdown */}
             <div className="relative flex items-center ml-2 border-l border-gray-200 pl-4">
               <button
+                id="tour-profile"
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="flex items-center gap-3 p-1 rounded-xl hover:bg-gray-50 transition group"
               >
@@ -165,6 +232,16 @@ const Header = () => {
                         <Settings size={16} />
                         Admin Panel
                       </Link>
+                    )}
+
+                    {user?.role !== 'ADMIN' && (
+                      <button
+                        onClick={handleStartTour}
+                        className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      >
+                        <Compass size={16} className="text-blue-500" />
+                        {getPageInfo().label}
+                      </button>
                     )}
                     
                     <div className="border-t border-gray-100 my-1"></div>

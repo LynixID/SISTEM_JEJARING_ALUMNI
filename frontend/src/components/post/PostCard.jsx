@@ -201,14 +201,15 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
 
   // Handler untuk share post (native share API atau copy link)
   const handleShare = () => {
+    const postUrl = `${window.location.origin}/posts/${localPost.id}`
     if (navigator.share) {
       navigator.share({
         title: 'Lihat post ini',
         text: localPost.content?.substring(0, 100) || '',
-        url: window.location.href
+        url: postUrl
       })
     } else {
-      navigator.clipboard.writeText(window.location.href)
+      navigator.clipboard.writeText(postUrl)
       setAlertModal({
         isOpen: true,
         title: 'Berhasil',

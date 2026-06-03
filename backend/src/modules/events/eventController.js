@@ -9,7 +9,9 @@ export const getAllEvents = async (req, res) => {
       page = 1, 
       limit = 10, 
       search = '', 
-      published = undefined 
+      published = undefined,
+      sortBy = 'tanggal',
+      sortOrder = 'asc'
     } = req.query
 
     const where = {}
@@ -32,9 +34,14 @@ export const getAllEvents = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit)
     const take = parseInt(limit)
 
+    // Validasi sort field & order
+    const validSortFields = ['tanggal', 'createdAt', 'title']
+    const orderField = validSortFields.includes(sortBy) ? sortBy : 'tanggal'
+    const orderDirection = sortOrder === 'desc' ? 'desc' : 'asc'
+
     const eventsRaw = await prisma.event.findMany({
       where,
-      orderBy: { tanggal: 'asc' },
+      orderBy: { [orderField]: orderDirection },
       skip,
       take,
       select: {

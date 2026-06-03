@@ -33,7 +33,22 @@ const NotificationBell = () => {
       }
     }
 
+    // Notif pesan yang diupdate (bukan baru) — jangan naikkan badge count
+    const handleNotificationUpdated = (updatedNotif) => {
+      setNotifications(prev => {
+        const exists = prev.some(n => n.id === updatedNotif.id)
+        if (exists) {
+          // Update in-place: perbarui pesan preview dan waktu
+          return prev.map(n => n.id === updatedNotif.id ? { ...n, ...updatedNotif } : n)
+        }
+        // Notif belum ada di list (mungkin belum di-load), biarkan polling yang handle
+        return prev
+      })
+      // Badge count TIDAK bertambah karena ini bukan notif baru
+    }
+
     socket.on('new_notification', handleNewNotification)
+    socket.on('notification_updated', handleNotificationUpdated)
 
     // Polling setiap 30 detik untuk update notifikasi
     const interval = setInterval(() => {
@@ -44,9 +59,11 @@ const NotificationBell = () => {
 
     return () => {
       socket.off('new_notification', handleNewNotification)
+      socket.off('notification_updated', handleNotificationUpdated)
       clearInterval(interval)
     }
   }, [])
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -122,6 +139,9 @@ const NotificationBell = () => {
     // Navigate berdasarkan type
     if (notification.type === 'CONNECTION_REQUEST' || notification.type === 'CONNECTION_ACCEPTED') {
       navigate('/koneksi')
+    } else if (notification.type === 'MESSAGE' && notification.triggeredBy) {
+      // Navigasi ke halaman chat dengan pengirim pesan
+      navigate(`/pesan/${notification.triggeredBy}`)
     } else if (notification.relatedType === 'post' && notification.relatedId) {
       navigate(`/posts/${notification.relatedId}`)
     } else if (notification.relatedType === 'announcement' && notification.relatedId) {
@@ -132,6 +152,7 @@ const NotificationBell = () => {
 
     setShowNotifDropdown(false)
   }
+
 
   const formatTime = (dateString) => {
     const date = new Date(dateString)
@@ -155,6 +176,8 @@ const NotificationBell = () => {
       case 'COMMENT':
       case 'REPLY':
         return '💬'
+      case 'MESSAGE':
+        return '✉️'
       case 'ANNOUNCEMENT':
         return '📢'
       case 'EVENT':
@@ -166,6 +189,7 @@ const NotificationBell = () => {
         return '🔔'
     }
   }
+
 
   return (
     <div className="flex items-center gap-2" ref={dropdownRef}>

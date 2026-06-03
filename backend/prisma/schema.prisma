@@ -47,6 +47,7 @@ model User {
   discussionMessages DiscussionMessage[]
   reports       Report[]
   mailQueues    MailQueue[]
+  tourStatuses  UserTourStatus[]
 
   @@index([email])
   @@index([nim])
@@ -140,8 +141,7 @@ model Comment {
   parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
 
-  @@index([postId])
-  @@index([parentId])
+  @@index([postId, parentId, createdAt])
   @@map("comments")
 }
 
@@ -156,6 +156,7 @@ model Like {
 
   @@unique([postId, userId])
   @@index([postId])
+  @@index([userId])
   @@map("likes")
 }
 
@@ -174,8 +175,8 @@ model Message {
   parent    Message? @relation("MessageReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Message[] @relation("MessageReplies")
 
-  @@index([senderId, receiverId])
-  @@index([createdAt])
+  @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, senderId, createdAt])
   @@index([parentId])
   @@map("messages")
 }
@@ -249,6 +250,7 @@ model EventParticipant {
 
   @@unique([eventId, userId])
   @@index([eventId])
+  @@index([userId])
   @@map("event_participants")
 }
 
@@ -282,10 +284,9 @@ model Notification {
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([userId, read, createdAt])
+  @@index([userId, createdAt])
   @@index([triggeredBy])
-  @@index([read])
-  @@index([createdAt])
   @@index([relatedId, relatedType, triggeredBy]) // Composite index untuk cek duplicate like
   @@map("notifications")
 }
@@ -523,8 +524,22 @@ model MailQueue {
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([status])
+  @@index([status, createdAt])
   @@map("mail_queues")
+}
+
+// ─── Tour Panduan Status ────────────────────────────────────────────────────
+model UserTourStatus {
+  id          String   @id @default(uuid())
+  userId      String
+  tourKey     String   // e.g. "dashboard", "berita", "chat", "koneksi", "direktori", "diskusi", "lowongan", "profil", "edit-profil"
+  completedAt DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tourKey])
+  @@index([userId])
+  @@map("user_tour_status")
 }
 
 // ─── Display Home Page Configuration ───────────────────────────────────────

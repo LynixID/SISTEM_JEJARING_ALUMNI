@@ -231,6 +231,7 @@ export default function ManageReports() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                <th className="px-6 py-4 text-left w-12">No.</th>
                 <th className="px-6 py-4 text-left">Pelapor</th>
                 <th className="px-6 py-4 text-left">Tipe Konten</th>
                 <th className="px-6 py-4 text-left">Alasan</th>
@@ -242,19 +243,22 @@ export default function ManageReports() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-10 text-center text-gray-400 font-medium">
+                  <td colSpan="7" className="px-6 py-10 text-center text-gray-400 font-medium">
                     Memuat data laporan...
                   </td>
                 </tr>
               ) : reports.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-10 text-center text-gray-400 font-medium italic">
+                  <td colSpan="7" className="px-6 py-10 text-center text-gray-400 font-medium italic">
                     Tidak ada laporan ditemukan
                   </td>
                 </tr>
               ) : (
-                reports.map((r) => (
+                reports.map((r, index) => (
                   <tr key={r.id} className={`hover:bg-gray-50 transition-colors ${r.status === 'PENDING' ? 'bg-amber-50/30' : ''}`}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                      {(page - 1) * 15 + index + 1}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">

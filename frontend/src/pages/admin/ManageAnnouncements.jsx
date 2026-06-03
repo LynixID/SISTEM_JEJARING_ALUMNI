@@ -11,6 +11,7 @@ import Card from '../../components/common/Card'
 import Input from '../../components/common/Input'
 import ImageLightbox from '../../components/common/ImageLightbox'
 import ConfirmModal from '../../components/common/ConfirmModal'
+import AlertModal from '../../components/common/AlertModal'
 import { getImageUrl } from '../../utils/imageUtils'
 
 const ManageAnnouncements = () => {
@@ -37,6 +38,7 @@ const ManageAnnouncements = () => {
     published: false
   })
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null })
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', variant: 'info' })
 
   useEffect(() => {
     fetchAnnouncements()
@@ -57,7 +59,12 @@ const ManageAnnouncements = () => {
       setPagination(response.data.pagination)
     } catch (error) {
       console.error('Error fetching announcements:', error)
-      alert(error.response?.data?.error || 'Gagal mengambil data berita')
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: error.response?.data?.error || 'Gagal mengambil data berita',
+        variant: 'error'
+      })
     } finally {
       setLoading(false)
     }
@@ -111,15 +118,30 @@ const ManageAnnouncements = () => {
     try {
       if (editingId) {
         await api.put(`/announcements/${editingId}`, formData)
-        alert('Berita berhasil diupdate')
+        setAlertModal({
+          isOpen: true,
+          title: 'Berhasil',
+          message: 'Berita berhasil diupdate',
+          variant: 'success'
+        })
       } else {
         await api.post('/announcements', formData)
-        alert('Berita berhasil dibuat')
+        setAlertModal({
+          isOpen: true,
+          title: 'Berhasil',
+          message: 'Berita berhasil dibuat',
+          variant: 'success'
+        })
       }
       setShowForm(false)
       fetchAnnouncements()
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal menyimpan berita')
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: error.response?.data?.error || 'Gagal menyimpan berita',
+        variant: 'error'
+      })
     }
   }
 
@@ -132,11 +154,21 @@ const ManageAnnouncements = () => {
 
     try {
       await api.delete(`/announcements/${deleteModal.id}`)
-      alert('Berita berhasil dihapus')
+      setAlertModal({
+        isOpen: true,
+        title: 'Berhasil',
+        message: 'Berita berhasil dihapus',
+        variant: 'success'
+      })
       fetchAnnouncements()
       setDeleteModal({ isOpen: false, id: null })
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal menghapus berita')
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: error.response?.data?.error || 'Gagal menghapus berita',
+        variant: 'error'
+      })
     }
   }
 
@@ -145,7 +177,12 @@ const ManageAnnouncements = () => {
       await api.put(`/announcements/${id}/publish`, { published: !currentStatus })
       fetchAnnouncements()
     } catch (error) {
-      alert(error.response?.data?.error || 'Gagal mengupdate status publish')
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: error.response?.data?.error || 'Gagal mengupdate status publish',
+        variant: 'error'
+      })
     }
   }
 
@@ -210,6 +247,7 @@ const ManageAnnouncements = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">No.</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gambar</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pembuat</th>
@@ -222,19 +260,22 @@ const ManageAnnouncements = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading && announcements.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
                     Memuat data...
                   </td>
                 </tr>
               ) : announcements.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
                     Tidak ada berita
                   </td>
                 </tr>
               ) : (
-                announcements.map((announcement) => (
+                announcements.map((announcement, index) => (
                   <tr key={announcement.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                      {(pagination.page - 1) * pagination.limit + index + 1}
+                    </td>
                     <td className="px-6 py-4">
                       {announcement.image ? (
                         <div 
@@ -494,6 +535,14 @@ const ManageAnnouncements = () => {
         message="Apakah Anda yakin ingin menghapus berita ini? Tindakan ini tidak dapat dibatalkan."
         confirmText="Hapus"
         variant="danger"
+      />
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
       />
     </>
   )

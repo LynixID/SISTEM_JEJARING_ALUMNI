@@ -58,7 +58,9 @@ const ManageEvents = () => {
         page: pagination.page,
         limit: pagination.limit,
         ...(search && { search }),
-        ...(publishedFilter !== '' && { published: publishedFilter })
+        ...(publishedFilter !== '' && { published: publishedFilter }),
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
       })
 
       const response = await api.get(`/events?${params}`)
@@ -248,6 +250,7 @@ const ManageEvents = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">No.</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
@@ -260,19 +263,22 @@ const ManageEvents = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading && events.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
                     Memuat data...
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
                     Tidak ada event
                   </td>
                 </tr>
               ) : (
-                events.map((event) => (
+                events.map((event, index) => (
                   <tr key={event.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                      {(pagination.page - 1) * pagination.limit + index + 1}
+                    </td>
                     <td className="px-6 py-4">
                       {event.image ? (
                         <div 

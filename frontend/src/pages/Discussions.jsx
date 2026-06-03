@@ -8,6 +8,8 @@ import Input from '../components/common/Input'
 import Modal from '../components/common/Modal'
 import UserBadge from '../components/common/UserBadge'
 import { useAuth } from '../context/AuthContext'
+import OnboardingTour from '../components/common/OnboardingTour'
+import useTourStatus from '../hooks/useTourStatus'
 import { createDiscussion, getDiscussions } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
 import { MessageSquareText, Plus, Search } from 'lucide-react'
@@ -31,6 +33,27 @@ const Discussions = () => {
   const [createImage, setCreateImage] = useState(null)
   const [createImagePreview, setCreateImagePreview] = useState(null)
   const [creating, setCreating] = useState(false)
+  const [showTour, setShowTour] = useState(false)
+  const { shouldShowTour, markTourComplete } = useTourStatus('diskusi')
+
+  useEffect(() => {
+    const handleStartTour = () => {
+      setShowTour(true)
+    }
+    window.addEventListener('startDiskusiTour', handleStartTour)
+    return () => {
+      window.removeEventListener('startDiskusiTour', handleStartTour)
+    }
+  }, [])
+
+  // Auto-trigger tur untuk user yang belum pernah melihat (via DB)
+  useEffect(() => {
+    if (!shouldShowTour) return
+    const timer = setTimeout(() => {
+      setShowTour(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldShowTour])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) navigate('/login', { replace: true })
@@ -114,7 +137,7 @@ const Discussions = () => {
 
         <main className="flex-1">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-6">
+            <div id="tour-discussions-header" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center gap-3">
@@ -125,14 +148,14 @@ const Discussions = () => {
                     Buat bahan diskusi, lalu bergabung untuk ikut ngobrol dan fokus pada pembahasan.
                   </p>
                 </div>
-                <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
+                <Button id="tour-discussions-create-btn" onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
                   <Plus size={18} />
                   Buat Diskusi
                 </Button>
               </div>
 
               <div className="mt-5 flex gap-3">
-                <div className="flex-1 relative">
+                <div id="tour-discussions-search" className="flex-1 relative">
                   <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     value={q}
@@ -153,7 +176,8 @@ const Discussions = () => {
               </div>
             )}
 
-            {loading ? (
+            <div id="tour-discussions-list">
+              {loading ? (
               <div className="text-gray-500">Memuat...</div>
             ) : threads.length === 0 ? (
               <Card className="p-6">
@@ -231,7 +255,8 @@ const Discussions = () => {
                   </Button>
                 </div>
               </div>
-            )}
+              )}
+            </div>
           </div>
         </main>
       </div>
@@ -324,6 +349,16 @@ const Discussions = () => {
           </div>
         </form>
       </Modal>
+
+      <OnboardingTour
+        isOpen={showTour}
+        onClose={() => {
+          setShowTour(false)
+          markTourComplete()
+        }}
+        type="diskusi"
+      />
+
     </div>
   )
 }

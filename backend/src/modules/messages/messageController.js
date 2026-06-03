@@ -419,16 +419,49 @@ export const sendMessage = async (req, res) => {
     io.to(`user:${receiverId}`).emit('newMessage', formattedMessage)
     io.to(`user:${currentUserId}`).emit('messageSent', formattedMessage)
 
-    // Create notification
-    await createNotification({
-      userId: receiverId,
-      triggeredBy: currentUserId,
-      type: 'MESSAGE',
-      message: `${message.sender.nama} mengirimkan pesan`,
-      relatedId: message.id,
-      relatedType: 'message',
-      read: false
+    // Smart notification: jika sudah ada notif MESSAGE dari sender yang belum dibaca,
+    // update saja notif tersebut (jangan buat duplikat).
+    // Jika belum ada atau notif sebelumnya sudah dibaca → buat baru.
+    const existingNotif = await prisma.notification.findFirst({
+      where: {
+        userId: receiverId,
+        triggeredBy: currentUserId,
+        type: 'MESSAGE',
+        read: false
+      },
+      orderBy: { createdAt: 'desc' }
     })
+
+    if (existingNotif) {
+      // Update notif yang ada: perbarui pesan preview dan waktu
+      const updatedNotif = await prisma.notification.update({
+        where: { id: existingNotif.id },
+        data: {
+          message: `${message.sender.nama} mengirimkan pesan`,
+          relatedId: message.id,   // Arahkan ke pesan terbaru
+          createdAt: new Date()    // Refresh timestamp supaya muncul di atas
+        }
+      })
+
+      // Emit socket update agar badge count tidak bertambah lagi
+      try {
+        const io = getIO()
+        io.to(`user:${receiverId}`).emit('notification_updated', updatedNotif)
+      } catch (socketError) {
+        console.error('Socket.io error (notification_updated):', socketError)
+      }
+    } else {
+      // Belum ada notif unread dari sender ini → buat baru
+      await createNotification({
+        userId: receiverId,
+        triggeredBy: currentUserId,
+        type: 'MESSAGE',
+        message: `${message.sender.nama} mengirimkan pesan`,
+        relatedId: message.id,
+        relatedType: 'message',
+        read: false
+      })
+    }
 
     res.status(201).json({
       success: true,
@@ -490,10 +523,25 @@ export const markAsRead = async (req, res) => {
     const currentUserId = req.user.userId
     const { userId } = req.params
 
+    // 1. Tandai semua pesan dari partner sebagai sudah dibaca
     await prisma.message.updateMany({
       where: {
         senderId: userId,
         receiverId: currentUserId,
+        read: false
+      },
+      data: {
+        read: true
+      }
+    })
+
+    // 2. Tandai notifikasi MESSAGE dari sender yang belum dibaca menjadi read
+    //    Ini supaya badge notif turun dan notif tidak highlight lagi
+    await prisma.notification.updateMany({
+      where: {
+        userId: currentUserId,
+        triggeredBy: userId,
+        type: 'MESSAGE',
         read: false
       },
       data: {
@@ -514,4 +562,5 @@ export const markAsRead = async (req, res) => {
     res.status(500).json({ error: 'Gagal menandai pesan sebagai sudah dibaca' })
   }
 }
+
 

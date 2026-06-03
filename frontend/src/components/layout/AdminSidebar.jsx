@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, LogOut, User, Menu, X, Settings,
   Newspaper, Calendar, ChevronDown, ChevronRight, FileText,
@@ -9,12 +9,40 @@ import { useAuth } from '../../context/AuthContext'
 import ConfirmModal from '../common/ConfirmModal'
 
 const AdminSidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth < 768) {
+        return true // Always start collapsed on mobile viewports
+      }
+      const persisted = localStorage.getItem('admin-sidebar-collapsed')
+      if (persisted !== null) {
+        return persisted === 'true'
+      }
+    }
+    return false
+  })
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const location = useLocation()
   const { user, logout, isLoading } = useAuth()
   const navigate = useNavigate()
+
+  const toggleCollapse = () => {
+    setIsCollapsed(prev => {
+      const nextValue = !prev
+      if (window.innerWidth >= 768) {
+        localStorage.setItem('admin-sidebar-collapsed', String(nextValue))
+      }
+      return nextValue
+    })
+  }
+
+  // Auto-collapse sidebar on route changes for mobile viewports
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setIsCollapsed(true)
+    }
+  }, [location.pathname])
 
   // Prevent rendering if user is not loaded
   if (isLoading || !user) {
@@ -62,46 +90,72 @@ const AdminSidebar = () => {
   ]
 
   return (
-    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-gray-900 text-white h-screen sticky top-0 flex flex-col transition-all duration-300 z-50`}>
-      {/* Toggle Button & Profile Header */}
-      <div className="border-b border-gray-800 flex flex-col">
-        <div className="p-4 flex items-center justify-between overflow-hidden">
-          {!isCollapsed ? (
+    <>
+      <style>{`
+        @media (max-width: 767px) {
+          /* Force page wrapper container to flex-col to occupy 100% viewport width on mobile */
+          div.flex:has(> aside) {
+            flex-direction: column !important;
+          }
+          
+          /* Add top spacing to the page content container on mobile screens */
+          aside + div {
+            padding-top: 4.5rem !important;
+          }
+        }
+      `}</style>
+
+      {/* Floating Toggle Button for Mobile Screens */}
+      {isCollapsed && (
+        <button
+          onClick={toggleCollapse}
+          className="fixed top-4 left-4 z-40 p-2.5 rounded-lg bg-gray-900 text-white shadow-lg md:hidden border border-gray-800 hover:bg-gray-800 active:scale-95 transition-all"
+        >
+          <Menu size={20} />
+        </button>
+      )}
+
+      {/* Backdrop overlay for mobile screens when expanded */}
+      {!isCollapsed && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm transition-opacity duration-300"
+          onClick={toggleCollapse}
+        />
+      )}
+
+      <aside className={`
+        bg-gray-900 text-white h-screen flex flex-col transition-all duration-300 z-50
+        fixed md:sticky top-0 left-0
+        ${isCollapsed ? 'w-20 -translate-x-full md:translate-x-0' : 'w-64 translate-x-0'}
+      `}>
+        {/* Toggle Button & Profile Header */}
+        <div className="border-b border-gray-800 flex flex-col">
+          <div className={`p-4 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} overflow-hidden`}>
+            {!isCollapsed && (
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-3 hover:bg-gray-800 p-1.5 rounded-lg transition-all duration-200 text-left flex-1 min-w-0 mr-2 group"
+              >
+                <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-md group-hover:scale-105 transition-transform">
+                  {user?.nama?.charAt(0) || 'A'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate leading-tight">{user?.nama || 'Administrator'}</p>
+                  <p className="text-[11px] text-gray-400 truncate flex items-center gap-1">
+                    <span>Root Admin</span>
+                    <ChevronDown size={12} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  </p>
+                </div>
+              </button>
+            )}
             <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-3 hover:bg-gray-800 p-1.5 rounded-lg transition-all duration-200 text-left flex-1 min-w-0 mr-2 group"
+              onClick={toggleCollapse}
+              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors flex-shrink-0"
+              title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             >
-              <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-md group-hover:scale-105 transition-transform">
-                {user?.nama?.charAt(0) || 'A'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate leading-tight">{user?.nama || 'Administrator'}</p>
-                <p className="text-[11px] text-gray-400 truncate flex items-center gap-1">
-                  <span>Root Admin</span>
-                  <ChevronDown size={12} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                </p>
-              </div>
+              {isCollapsed ? <Menu size={18} /> : <X size={18} />}
             </button>
-          ) : (
-            <button
-              onClick={() => {
-                setIsCollapsed(false)
-                setIsDropdownOpen(true)
-              }}
-              className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-md hover:scale-105 transition-transform"
-              title="Buka Profil"
-            >
-              {user?.nama?.charAt(0) || 'A'}
-            </button>
-          )}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors flex-shrink-0"
-            title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          >
-            {isCollapsed ? <Menu size={18} /> : <X size={18} />}
-          </button>
-        </div>
+          </div>
 
         {/* Dropdown Menu */}
         {!isCollapsed && isDropdownOpen && (
@@ -174,17 +228,19 @@ const AdminSidebar = () => {
 
 
 
-      <ConfirmModal
-        isOpen={isLogoutConfirmOpen}
-        onClose={() => setIsLogoutConfirmOpen(false)}
-        onConfirm={handleLogout}
-        title="Konfirmasi Logout"
-        message="Apakah Anda yakin ingin keluar dari panel admin?"
-        confirmText="Logout"
-        cancelText="Batal"
-        variant="danger"
-      />
     </aside>
+
+    <ConfirmModal
+      isOpen={isLogoutConfirmOpen}
+      onClose={() => setIsLogoutConfirmOpen(false)}
+      onConfirm={handleLogout}
+      title="Konfirmasi Logout"
+      message="Apakah Anda yakin ingin keluar dari panel admin?"
+      confirmText="Logout"
+      cancelText="Batal"
+      variant="danger"
+    />
+  </>
   )
 }
 
