@@ -667,8 +667,6 @@ const OnboardingTour = ({ isOpen, onClose, type = 'dashboard' }) => {
 
   // Handle tour completion / skip
   const handleFinish = () => {
-    localStorage.setItem('hasCompletedOnboardingTour', 'true')
-    localStorage.setItem(`hasCompletedTour_${type}`, 'true')
     window.dispatchEvent(new Event('closeMobileMenu'))
     setCurrentStep(0)
     onClose()

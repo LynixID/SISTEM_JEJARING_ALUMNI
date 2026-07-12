@@ -451,6 +451,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
             postId={localPost.id} 
             onCommentAdded={() => setCommentsCount(prev => prev + 1)}
             onCommentDeleted={() => setCommentsCount(prev => Math.max(0, prev - 1))}
+            isFeedMode={true}
           />
         </div>
       )}

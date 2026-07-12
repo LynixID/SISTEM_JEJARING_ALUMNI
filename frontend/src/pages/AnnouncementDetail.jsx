@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Calendar, Eye, ArrowLeft, User as UserIcon } from 'lucide-react'
+import { Calendar, Eye, ArrowLeft, User as UserIcon, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api, { markAnnouncementAsRead } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
@@ -19,6 +19,20 @@ const AnnouncementDetail = () => {
   const [announcement, setAnnouncement] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [activeImagePreview, setActiveImagePreview] = useState(null)
+  const [animateImage, setAnimateImage] = useState(false)
+
+  const handleOpenPreview = (imgUrl) => {
+    setActiveImagePreview(imgUrl)
+    setTimeout(() => setAnimateImage(true), 10)
+  }
+
+  const handleClosePreview = () => {
+    setAnimateImage(false)
+    setTimeout(() => {
+      setActiveImagePreview(null)
+    }, 200)
+  }
 
   // Redirect ke login jika belum authenticated
   useEffect(() => {
@@ -143,10 +157,11 @@ const AnnouncementDetail = () => {
                   <img
                     src={getImageUrl(announcement.image, 'announcements')}
                     alt={announcement.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover cursor-zoom-in hover:brightness-95 transition-all"
                     onError={(e) => {
                       e.target.style.display = 'none'
                     }}
+                    onClick={() => handleOpenPreview(getImageUrl(announcement.image, 'announcements'))}
                   />
                 </div>
               )}
@@ -188,6 +203,34 @@ const AnnouncementDetail = () => {
           </div>
         </main>
       </div>
+
+      {/* Image Preview Modal */}
+      {activeImagePreview && (
+        <div 
+          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[9999] flex items-center justify-center p-4 transition-all duration-200 ease-out ${
+            animateImage ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={handleClosePreview}
+        >
+          <button 
+            className={`absolute top-6 right-6 text-slate-800 hover:text-slate-900 bg-white/80 hover:bg-white p-2.5 rounded-xl transition-all shadow-md duration-200 ease-out ${
+              animateImage ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
+            }`}
+            onClick={handleClosePreview}
+          >
+            <X size={20} />
+          </button>
+          <img 
+            src={activeImagePreview} 
+            alt="Preview" 
+            className={`max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl transition-all duration-200 ease-out transform ${
+              animateImage ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
     </div>
   )
 }

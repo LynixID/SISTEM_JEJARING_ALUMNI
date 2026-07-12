@@ -43,7 +43,7 @@ const Connections = () => {
     if (!shouldShowTour) return
     const timer = setTimeout(() => {
       setShowTour(true)
-    }, 1500)
+    }, 200)
     return () => clearTimeout(timer)
   }, [shouldShowTour])
 

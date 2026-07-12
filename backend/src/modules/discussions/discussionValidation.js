@@ -86,3 +86,7 @@ export const deleteMessageValidation = [
   param('messageId').notEmpty().withMessage('ID pesan diperlukan'),
 ]
 
+export const deleteDiscussionValidation = [
+  param('id').notEmpty().withMessage('ID diskusi diperlukan'),
+]
+

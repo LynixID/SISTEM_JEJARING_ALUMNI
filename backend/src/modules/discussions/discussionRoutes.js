@@ -14,6 +14,7 @@ import {
   updateMessageValidation,
   deleteMessageValidation,
   updateDiscussionValidation,
+  deleteDiscussionValidation,
 } from './discussionValidation.js'
 import {
   listDiscussions,
@@ -28,6 +29,7 @@ import {
   sendMessage,
   updateMessage,
   deleteMessage,
+  deleteDiscussion,
 } from './discussionController.js'
 
 const router = express.Router()
@@ -91,6 +93,7 @@ router.post('/', threadUpload.single('image'), handleMulterError, createDiscussi
 
 router.get('/:id', getDiscussionById)
 router.put('/:id', threadUpload.single('image'), handleMulterError, updateDiscussionValidation, compressImage, updateDiscussion)
+router.delete('/:id', deleteDiscussionValidation, deleteDiscussion)
 
 router.post('/:id/join', joinDiscussion)
 router.post('/:id/leave', leaveDiscussion)

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getComments, createComment } from '../../services/api'
 import { getSocket } from '../../config/socket'
@@ -7,8 +8,9 @@ import Button from '../common/Button'
 import { Send, Loader } from 'lucide-react'
 import CommentItem from './CommentItem'
 
-const CommentSection = ({ postId, onCommentAdded, onCommentDeleted }) => {
+const CommentSection = ({ postId, onCommentAdded, onCommentDeleted, isFeedMode = false }) => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   
   // State management untuk comments dan form
   const [comments, setComments] = useState([])
@@ -251,11 +253,12 @@ const CommentSection = ({ postId, onCommentAdded, onCommentDeleted }) => {
       ) : (
         <>
           <div className="space-y-3">
-            {comments.map((comment, index) => (
+            {(isFeedMode ? comments.slice(0, 5) : comments).map((comment, index) => (
               <CommentItem
                 key={`${comment.id}-${comment.createdAt || index}`}
                 comment={comment}
                 postId={postId}
+                isFeedMode={isFeedMode}
                 onDeleted={(id, isReply, parentId) => {
                   if (isReply && parentId) {
                     // Hapus reply dari parent
@@ -293,14 +296,21 @@ const CommentSection = ({ postId, onCommentAdded, onCommentDeleted }) => {
               />
             ))}
           </div>
-          {hasMore && (
+          {isFeedMode && comments.length > 5 ? (
+            <button
+              onClick={() => navigate(`/posts/${postId}`)}
+              className="mt-4 w-full text-center text-sm font-semibold text-blue-600 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-50 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              Lihat Selengkapnya
+            </button>
+          ) : !isFeedMode && hasMore ? (
             <button
               onClick={handleLoadMore}
               className="mt-4 text-sm text-blue-600 hover:text-blue-700"
             >
               Muat lebih banyak komentar
             </button>
-          )}
+          ) : null}
         </>
       )}
     </div>

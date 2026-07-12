@@ -4,10 +4,12 @@ import { useAuth } from '../../context/AuthContext'
 import { deleteComment, createComment } from '../../services/api'
 import { getImageUrl } from '../../utils/imageUtils'
 import UserBadge from '../common/UserBadge'
-import { Trash2, MoreVertical, Reply, Send, Loader, Edit2 } from 'lucide-react'
+import { Trash2, MoreVertical, Reply, Send, Loader, Edit2, ChevronDown, ChevronUp } from 'lucide-react'
 import EditComment from './EditComment'
+import ConfirmModal from '../common/ConfirmModal'
+import AlertModal from '../common/AlertModal'
 
-const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdated, isReply = false }) => {
+const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdated, isReply = false, isFeedMode = false }) => {
   const { user } = useAuth()
   const navigate = useNavigate()
   
@@ -17,6 +19,19 @@ const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdate
   const [showEditModal, setShowEditModal] = useState(false)
   const [replyContent, setReplyContent] = useState('')
   const [submittingReply, setSubmittingReply] = useState(false)
+  const [showReplies, setShowReplies] = useState(false)
+  const [showAllReplies, setShowAllReplies] = useState(false)
+
+  // Modals state
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', variant: 'info' })
+  const [confirmModal, setConfirmModal] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    variant: 'warning',
+    onConfirm: () => {}
+  })
   
   // Check ownership dan comment type
   const isOwnComment = user?.id === comment.author.id
@@ -39,15 +54,30 @@ const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdate
   }
 
   // Handler untuk delete comment dengan confirmation
-  const handleDelete = async () => {
-    if (!confirm('Apakah Anda yakin ingin menghapus komentar ini?')) return
-    try {
-      await deleteComment(comment.id)
-      if (onDeleted) onDeleted(comment.id, isReply, comment.parentId)
-    } catch (err) {
-      console.error('Error deleting comment:', err)
-      alert(err.response?.data?.error || 'Gagal menghapus komentar')
-    }
+  const handleDelete = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Komentar',
+      message: 'Apakah Anda yakin ingin menghapus komentar ini?',
+      variant: 'danger',
+      onConfirm: async () => {
+        setIsDeleting(true)
+        try {
+          await deleteComment(comment.id)
+          if (onDeleted) onDeleted(comment.id, isReply, comment.parentId)
+        } catch (err) {
+          console.error('Error deleting comment:', err)
+          setAlertModal({
+            isOpen: true,
+            title: 'Error',
+            message: err.response?.data?.error || 'Gagal menghapus komentar',
+            variant: 'error'
+          })
+        } finally {
+          setIsDeleting(false)
+        }
+      }
+    })
   }
 
   // Handler untuk submit reply
@@ -57,10 +87,12 @@ const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdate
 
     setSubmittingReply(true)
     try {
-      const response = await createComment(postId, replyContent.trim(), comment.id)
+      const targetParentId = isReply ? comment.parentId : comment.id
+      const response = await createComment(postId, replyContent.trim(), targetParentId)
       setReplyContent('')
       setShowReplyForm(false)
-      if (onReplyAdded) onReplyAdded(comment.id, response.data.comment)
+      setShowReplies(true) // Auto expand replies when replying
+      if (onReplyAdded) onReplyAdded(targetParentId, response.data.comment)
     } catch (err) {
       alert(err.response?.data?.error || 'Gagal membalas komentar')
     } finally {
@@ -152,20 +184,40 @@ const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdate
             </div>
             <p className="text-gray-900 text-sm whitespace-pre-wrap">{comment.content}</p>
             
-            {/* Reply button - hanya untuk parent comments */}
-            {isParentComment && user && (
-              <button
-                onClick={() => setShowReplyForm(!showReplyForm)}
-                className="mt-2 text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-              >
-                <Reply size={12} />
-                Balas
-              </button>
-            )}
+            {/* Actions: Balas & Tampilkan Balasan */}
+            <div className="mt-2 flex items-center gap-3">
+              {user && (
+                <button
+                  onClick={() => setShowReplyForm(!showReplyForm)}
+                  className="text-xs text-gray-500 hover:text-blue-600 flex items-center gap-1 cursor-pointer font-medium py-1 px-2 rounded hover:bg-gray-100 transition-colors"
+                >
+                  <Reply size={12} />
+                  Balas
+                </button>
+              )}
+              {isParentComment && comment.replies && comment.replies.length > 0 && (
+                <button
+                  onClick={() => setShowReplies(!showReplies)}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-full transition-colors flex items-center gap-1 cursor-pointer border border-blue-200 shadow-sm"
+                >
+                  {showReplies ? (
+                    <>
+                      <ChevronUp size={12} className="text-blue-500" />
+                      Sembunyikan Balasan
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={12} className="text-blue-500" />
+                      Tampilkan Balasan ({comment.replies.length})
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Reply Form - hanya untuk parent comments */}
-          {isParentComment && showReplyForm && user && (
+          {/* Reply Form */}
+          {showReplyForm && user && (
             <form onSubmit={handleReplySubmit} className="mt-2 flex gap-2">
               <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                 {user?.profile?.fotoProfil ? (
@@ -213,18 +265,38 @@ const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdate
           )}
 
           {/* Replies List */}
-          {isParentComment && comment.replies && comment.replies.length > 0 && (
+          {isParentComment && showReplies && comment.replies && comment.replies.length > 0 && (
             <div className="mt-2 space-y-2">
-              {comment.replies.map((reply, index) => (
+              {(showAllReplies ? comment.replies : comment.replies.slice(0, 5)).map((reply, index) => (
                 <CommentItem
                   key={`reply-${reply.id}-${index}`}
                   comment={reply}
                   postId={postId}
                   isReply={true}
+                  isFeedMode={isFeedMode}
                   onDeleted={onDeleted}
                   onCommentUpdated={onCommentUpdated}
+                  onReplyAdded={(parentId, newReply) => {
+                    setShowReplies(true) // Auto expand on reply addition
+                    if (onReplyAdded) onReplyAdded(parentId, newReply)
+                  }}
                 />
               ))}
+              
+              {!showAllReplies && comment.replies.length > 5 && (
+                <button
+                  onClick={() => {
+                    if (isFeedMode) {
+                      navigate(`/posts/${postId}`)
+                    } else {
+                      setShowAllReplies(true)
+                    }
+                  }}
+                  className="ml-8 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-50 px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer border border-blue-100 flex items-center gap-1 shadow-sm mt-1"
+                >
+                  Lihat Selengkapnya
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -242,6 +314,26 @@ const CommentItem = ({ comment, postId, onDeleted, onReplyAdded, onCommentUpdate
             onCommentUpdated()
           }
         }}
+      />
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        isLoading={isDeleting}
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
       />
     </div>
   )

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import Card from '../components/common/Card'
+import Modal from '../components/common/Modal'
 
 import { GoogleLogin } from '@react-oauth/google'
 
@@ -19,6 +20,18 @@ const Login = () => {
   const [error, setError] = useState('')
   const [suspendInfo, setSuspendInfo] = useState(location.state?.suspendInfo || null) // { reason, date }
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('suspended') === 'true') {
+      const reason = params.get('reason') || 'Pelanggaran ketentuan layanan'
+      setSuspendInfo({
+        reason,
+        date: new Date().toISOString()
+      })
+      navigate('/login', { replace: true })
+    }
+  }, [location, navigate])
 
 
   const handleSubmit = async (e) => {
@@ -99,29 +112,6 @@ const Login = () => {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 <span>{error}</span>
-              </div>
-            )}
-
-            {/* Banner suspen khusus */}
-            {suspendInfo && (
-              <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                  </svg>
-                  <span className="font-bold text-red-700 text-base">Akun Ditangguhkan (Suspended)</span>
-                </div>
-                <p className="text-sm text-red-700 mb-1">
-                  Akun Anda tidak dapat mengakses sistem saat ini.
-                </p>
-                {suspendInfo.reason && (
-                  <p className="text-sm text-red-600">
-                    <span className="font-semibold">Alasan:</span> {suspendInfo.reason}
-                  </p>
-                )}
-                <p className="text-sm text-red-600 mt-2 font-medium">
-                  Harap hubungi admin untuk informasi lebih lanjut.
-                </p>
               </div>
             )}
 
@@ -211,7 +201,11 @@ const Login = () => {
                         navigate(from, { replace: true })
                       }
                     } else {
-                      setError(result.message)
+                      if (result.isSuspended) {
+                        setSuspendInfo({ reason: result.suspendReason, date: result.suspendedAt })
+                      } else {
+                        setError(result.message)
+                      }
                     }
                     setLoading(false)
                   }}
@@ -224,6 +218,49 @@ const Login = () => {
         </Card>
 
       </div>
+
+      <Modal
+        isOpen={!!suspendInfo}
+        onClose={() => setSuspendInfo(null)}
+        title="Status Akses Akun"
+        size="sm"
+      >
+        <div className="text-center py-2">
+          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-100">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          
+          <h3 className="text-lg font-bold text-gray-900 mb-2">Akun Ditangguhkan (Suspended)</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Mohon maaf, saat ini akun Anda tidak diizinkan untuk mengakses sistem UII Connect.
+          </p>
+
+          {suspendInfo?.reason && (
+            <div className="bg-red-50/80 border border-red-100 rounded-2xl p-4 mb-4 text-left shadow-sm">
+              <span className="block text-xs font-bold uppercase tracking-wider text-red-800 mb-1">Alasan Penangguhan:</span>
+              <p className="text-sm text-red-700 font-medium italic">"{suspendInfo.reason}"</p>
+            </div>
+          )}
+
+          <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 mb-6 text-left flex items-start gap-3">
+            <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-xs text-blue-700 leading-relaxed">
+              Jika Anda ingin mengajukan pemulihan akun, silakan hubungi administrator sekretariat IKA UII Jawa Tengah untuk informasi lebih lanjut.
+            </p>
+          </div>
+
+          <Button 
+            onClick={() => setSuspendInfo(null)}
+            className="w-full py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl shadow-lg shadow-red-600/20 transition-all duration-300"
+          >
+            Tutup
+          </Button>
+        </div>
+      </Modal>
 
       <style>{`
         @keyframes blob {

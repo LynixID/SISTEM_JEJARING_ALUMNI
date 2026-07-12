@@ -57,6 +57,20 @@ const Jobs = () => {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null })
   const [showTour, setShowTour] = useState(false)
   const { shouldShowTour, markTourComplete } = useTourStatus('lowongan')
+  const [activeImagePreview, setActiveImagePreview] = useState(null)
+  const [animateImage, setAnimateImage] = useState(false)
+
+  const handleOpenPreview = (imgUrl) => {
+    setActiveImagePreview(imgUrl)
+    setTimeout(() => setAnimateImage(true), 10)
+  }
+
+  const handleClosePreview = () => {
+    setAnimateImage(false)
+    setTimeout(() => {
+      setActiveImagePreview(null)
+    }, 200)
+  }
 
   useEffect(() => {
     const handleStartTour = () => {
@@ -73,7 +87,7 @@ const Jobs = () => {
     if (!shouldShowTour) return
     const timer = setTimeout(() => {
       setShowTour(true)
-    }, 1500)
+    }, 200)
     return () => clearTimeout(timer)
   }, [shouldShowTour])
 
@@ -609,8 +623,9 @@ const Jobs = () => {
               <img
                 src={getImageUrl(selectedJob.image, 'jobs')}
                 alt={selectedJob.title}
-                className="w-full max-h-64 object-cover rounded-xl border border-gray-200"
+                className="w-full max-h-64 object-cover rounded-xl border border-gray-200 cursor-zoom-in hover:brightness-95 transition-all"
                 loading="lazy"
+                onClick={() => handleOpenPreview(getImageUrl(selectedJob.image, 'jobs'))}
               />
             )}
 
@@ -785,6 +800,33 @@ const Jobs = () => {
         }}
         type="lowongan"
       />
+
+      {/* Image Preview Modal */}
+      {activeImagePreview && (
+        <div 
+          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[9999] flex items-center justify-center p-4 transition-all duration-200 ease-out ${
+            animateImage ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={handleClosePreview}
+        >
+          <button 
+            className={`absolute top-6 right-6 text-slate-800 hover:text-slate-900 bg-white/80 hover:bg-white p-2.5 rounded-xl transition-all shadow-md duration-200 ease-out ${
+              animateImage ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
+            }`}
+            onClick={handleClosePreview}
+          >
+            <X size={20} />
+          </button>
+          <img 
+            src={activeImagePreview} 
+            alt="Preview" 
+            className={`max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl transition-all duration-200 ease-out transform ${
+              animateImage ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
     </div>
   )

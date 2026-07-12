@@ -29,7 +29,7 @@ export const getComments = async (req, res) => {
         },
         skip,
         take,
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           author: {
             select: {

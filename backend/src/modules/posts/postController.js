@@ -607,7 +607,7 @@ export const updatePost = async (req, res) => {
     }
 
     const { id } = req.params
-    const { content, mentions: mentionsFromBody } = req.body
+    const { content, mentions: mentionsFromBody, visibility } = req.body
     const userId = req.user.userId
 
     // Cek apakah post ada dan user adalah author
@@ -651,10 +651,15 @@ export const updatePost = async (req, res) => {
       })
     }
 
+    const postVisibility = visibility === 'CONNECTIONS' || visibility === 'PUBLIC'
+      ? visibility
+      : undefined
+
     const updatedPost = await prisma.post.update({
       where: { id },
       data: {
-        content: content || existingPost.content
+        content: content || existingPost.content,
+        visibility: postVisibility
       },
       include: {
         author: {
@@ -681,8 +686,8 @@ export const updatePost = async (req, res) => {
       }
     })
 
-    // Handle mentions update jika content berubah
-    if (content && content !== existingPost.content) {
+    // Handle mentions update jika content atau mentionsFromBody berubah
+    if (content !== undefined || mentionsFromBody !== undefined) {
       try {
         // Hapus mentions lama
         await prisma.postMention.deleteMany({
@@ -690,7 +695,7 @@ export const updatePost = async (req, res) => {
         })
 
         // Parse dan proses mentions baru
-        const mentionedUserIds = await parseMentions(content, mentionsFromBody)
+        const mentionedUserIds = await parseMentions(content || existingPost.content, mentionsFromBody)
         
         // Hapus author dari mentions (tidak perlu mention diri sendiri)
         const filteredMentions = mentionedUserIds.filter(mentionedUserId => mentionedUserId !== userId)

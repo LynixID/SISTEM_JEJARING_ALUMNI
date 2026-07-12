@@ -1,22 +1,28 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getSocket } from '../config/socket'
 import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
-import { getConversations, getMessages, sendMessage, markMessagesAsRead, getConnections } from '../services/api'
+import { getConversations, getMessages, sendMessage, markMessagesAsRead, getConnections, deleteMessage } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
 import UserBadge from '../components/common/UserBadge'
-import { MessageCircle, Send, Image as ImageIcon, X, Reply, Loader, Plus, Search, ArrowLeft } from 'lucide-react'
+import { MessageCircle, Send, Image as ImageIcon, X, Reply, Loader, Plus, Search, ArrowLeft, Trash2 } from 'lucide-react'
 import Button from '../components/common/Button'
 import OnboardingTour from '../components/common/OnboardingTour'
 import useTourStatus from '../hooks/useTourStatus'
+import ConfirmModal from '../components/common/ConfirmModal'
 
 const Chat = () => {
   const { userId } = useParams()
   const { user: currentUser, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  
+  // Refs to prevent stale closures in socket handlers
+  const selectedConversationRef = useRef(null)
+  const currentUserRef = useRef(null)
+  
   const [conversations, setConversations] = useState([])
   const [selectedConversation, setSelectedConversation] = useState(null)
   const [messages, setMessages] = useState([])
@@ -41,6 +47,24 @@ const Chat = () => {
   const [isTourActive, setIsTourActive] = useState(false)
   const [activeTourStepSelector, setActiveTourStepSelector] = useState(null)
   const { shouldShowTour, markTourComplete } = useTourStatus('pesan')
+  const [messageToDelete, setMessageToDelete] = useState(null)
+  const [deletingMessage, setDeletingMessage] = useState(false)
+
+  // Update refs to avoid stale closures
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation
+  }, [selectedConversation])
+
+  useEffect(() => {
+    currentUserRef.current = currentUser
+  }, [currentUser])
+
+  // Join user room when currentUser id is available
+  useEffect(() => {
+    if (currentUser?.id) {
+      getSocket().emit('join-user-room', currentUser.id)
+    }
+  }, [currentUser?.id])
 
   const mockConversations = [
     {
@@ -84,7 +108,7 @@ const Chat = () => {
     const timer = setTimeout(() => {
       setShowTour(true)
       setIsTourActive(true)
-    }, 1500)
+    }, 200)
     return () => clearTimeout(timer)
   }, [shouldShowTour])
 
@@ -112,11 +136,6 @@ const Chat = () => {
     }
 
     fetchConversations()
-
-    // Join user room untuk real-time messages
-    if (currentUser?.id) {
-      socket.emit('join-user-room', currentUser.id)
-    }
 
     // Socket listeners
     socket.on('newMessage', handleNewMessage)
@@ -346,10 +365,13 @@ const Chat = () => {
   }
 
   const handleNewMessage = (message) => {
+    const currentSelectedConv = selectedConversationRef.current
+    const currentUsr = currentUserRef.current
+
     // Update messages jika conversation yang sama
     // Cek dulu apakah message sudah ada untuk prevent duplicate
-    if (selectedConversation?.partner?.id === message.senderId || 
-        selectedConversation?.partner?.id === message.receiverId) {
+    if (currentSelectedConv?.partner?.id === message.senderId || 
+        currentSelectedConv?.partner?.id === message.receiverId) {
       setMessages(prev => {
         // Cek apakah message sudah ada (by id atau by temp id)
         const exists = prev.find(m => {
@@ -379,7 +401,7 @@ const Chat = () => {
           return {
             ...conv,
             lastMessage: message,
-            unreadCount: message.receiverId === currentUser?.id ? (conv.unreadCount || 0) + 1 : 0,
+            unreadCount: message.receiverId === currentUsr?.id ? (conv.unreadCount || 0) + 1 : 0,
             updatedAt: message.createdAt
           }
         }
@@ -390,7 +412,7 @@ const Chat = () => {
       const exists = updated.some(conv => 
         conv.partner.id === message.senderId || conv.partner.id === message.receiverId
       )
-      if (!exists && message.senderId !== currentUser?.id) {
+      if (!exists && message.senderId !== currentUsr?.id) {
         updated.unshift({
           partner: {
             id: message.senderId,
@@ -411,16 +433,19 @@ const Chat = () => {
   }
 
   const handleMessageSent = (message) => {
+    const currentSelectedConv = selectedConversationRef.current
+    const currentUsr = currentUserRef.current
+
     // handleMessageSent hanya untuk pesan yang dikirim sendiri (senderId === currentUser.id)
     // Jika message ini dari user lain, abaikan (akan di-handle oleh handleNewMessage)
-    if (message.senderId !== currentUser?.id) {
+    if (message.senderId !== currentUsr?.id) {
       return
     }
     
     // Update messages jika conversation yang sama
     // Cek dulu apakah message sudah ada untuk prevent duplicate
-    if (selectedConversation?.partner?.id === message.receiverId || 
-        selectedConversation?.partner?.id === message.senderId) {
+    if (currentSelectedConv?.partner?.id === message.receiverId || 
+        currentSelectedConv?.partner?.id === message.senderId) {
       setMessages(prev => {
         // Cek apakah message sudah ada (by id atau temp message dengan content sama)
         const exists = prev.find(m => {
@@ -462,11 +487,11 @@ const Chat = () => {
       )
       if (!exists) {
         // Ambil partner info dari message
-        const partnerId = message.receiverId === currentUser?.id ? message.senderId : message.receiverId
-        const partner = message.receiverId === currentUser?.id ? message.sender : { 
+        const partnerId = message.receiverId === currentUsr?.id ? message.senderId : message.receiverId
+        const partner = message.receiverId === currentUsr?.id ? message.sender : { 
           id: message.receiverId,
-          nama: selectedConversation?.partner?.nama || 'User',
-          fotoProfil: selectedConversation?.partner?.fotoProfil || null
+          nama: currentSelectedConv?.partner?.nama || 'User',
+          fotoProfil: currentSelectedConv?.partner?.fotoProfil || null
         }
         
         updated.unshift({
@@ -490,7 +515,46 @@ const Chat = () => {
   }
 
   const handleMessageDeleted = ({ messageId }) => {
-    setMessages(prev => prev.filter(m => m.id !== messageId))
+    setMessages(prev => {
+      const updatedMessages = prev.filter(m => m.id !== messageId)
+      
+      // Update conversations list lastMessage
+      setConversations(convs => convs.map(conv => {
+        if (conv.lastMessage?.id === messageId) {
+          const partnerId = conv.partner.id
+          const remainingForConv = updatedMessages.filter(m => 
+            m.senderId === partnerId || m.receiverId === partnerId
+          )
+          const newLastMsg = remainingForConv[remainingForConv.length - 1] || null
+          return {
+            ...conv,
+            lastMessage: newLastMsg
+          }
+        }
+        return conv
+      }))
+      
+      return updatedMessages
+    })
+  }
+
+  const handleDeleteClick = (message) => {
+    setMessageToDelete(message)
+  }
+
+  const handleDeleteMessage = async () => {
+    if (!messageToDelete) return
+    setDeletingMessage(true)
+    try {
+      await deleteMessage(messageToDelete.id)
+      handleMessageDeleted({ messageId: messageToDelete.id })
+    } catch (error) {
+      console.error('Error deleting message:', error)
+      alert(error.response?.data?.error || 'Gagal menghapus pesan')
+    } finally {
+      setDeletingMessage(false)
+      setMessageToDelete(null)
+    }
   }
 
   const markAsRead = async (partnerId) => {
@@ -882,13 +946,13 @@ const Chat = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
         <Header />
-        <div className="flex">
+        <div className="flex flex-1 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 min-w-0">
-            <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 flex items-center justify-center h-[600px]">
+          <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+            <div className="flex-1 max-w-screen-2xl w-full mx-auto p-0 md:p-6 lg:p-8 flex flex-col overflow-hidden">
+              <div className="bg-white md:rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 flex items-center justify-center flex-1 h-full">
                 <div className="flex flex-col items-center gap-3">
                   <Loader className="animate-spin text-blue-600" size={32} />
                   <div className="text-gray-500 font-medium">Memuat percakapan...</div>
@@ -902,13 +966,13 @@ const Chat = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       <Header />
-      <div className="flex">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 min-w-0">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex h-[750px]">
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 max-w-screen-2xl w-full mx-auto p-0 md:p-6 lg:p-8 flex flex-col overflow-hidden">
+            <div className="bg-white md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-1 h-full">
           {/* Conversations List */}
           <div id="tour-chat-list" className={`${displaySelectedConversation?.partner ? 'hidden md:flex' : 'flex'} w-full md:w-80 bg-white border-r border-gray-200 flex flex-col`}>
             <div className="p-4 border-b border-gray-200">
@@ -993,38 +1057,75 @@ const Chat = () => {
           </div>
 
           {/* Chat Window */}
-          <div id="tour-chat-window" className={`${displaySelectedConversation?.partner ? 'flex' : 'hidden md:flex'} flex-1 flex flex-col bg-white`}>
+          <div id="tour-chat-window" className={`${displaySelectedConversation?.partner ? 'flex' : 'hidden md:flex'} flex-1 flex flex-col bg-white relative`}>
             {displaySelectedConversation?.partner ? (
               <>
                 {/* Chat Header */}
-                <div id="tour-chat-window-header" className="p-4 border-b border-gray-200 flex items-center gap-3 bg-white sticky top-16 md:static z-20 shadow-sm md:shadow-none">
+                <div id="tour-chat-window-header" className="p-4 border-b border-gray-200 flex items-center gap-3 bg-white sticky top-0 md:static z-20 shadow-sm md:shadow-none">
                   <button
                     onClick={handleBackToConversations}
                     className="md:hidden p-1 mr-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <ArrowLeft size={24} />
                   </button>
-                  {displaySelectedConversation.partner.fotoProfil ? (
-                    <img
-                      src={getImageUrl(displaySelectedConversation.partner.fotoProfil, 'profiles')}
-                      alt={displaySelectedConversation.partner.nama}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold">
-                      {displaySelectedConversation.partner.nama?.charAt(0) || 'U'}
+                  <Link 
+                    to={`/profil/${displaySelectedConversation.partner.id}`}
+                    className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+                  >
+                    {displaySelectedConversation.partner.fotoProfil ? (
+                      <img
+                        src={getImageUrl(displaySelectedConversation.partner.fotoProfil, 'profiles')}
+                        alt={displaySelectedConversation.partner.nama}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold">
+                        {displaySelectedConversation.partner.nama?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-semibold text-gray-900 flex items-center gap-1.5">
+                        {displaySelectedConversation.partner.nama}
+                        <UserBadge role={displaySelectedConversation.partner.role} size="sm" />
+                      </h3>
                     </div>
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {displaySelectedConversation.partner.nama}
-                      <UserBadge role={displaySelectedConversation.partner.role} size="sm" />
-                    </h3>
-                  </div>
+                  </Link>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-grow flex-shrink flex-1 min-h-0 relative flex flex-col">
+                  {messageToDelete && (
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-5 w-full max-w-sm transform scale-100 transition-all text-left">
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0 p-3 bg-red-100 rounded-xl text-red-600">
+                            <Trash2 size={24} />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Hapus Pesan</h3>
+                            <p className="text-gray-600 text-sm">Apakah Anda yakin ingin menghapus pesan ini? Tindakan ini tidak dapat dibatalkan.</p>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => setMessageToDelete(null)}
+                            disabled={deletingMessage}
+                          >
+                            Batal
+                          </Button>
+                          <Button
+                            variant="danger"
+                            onClick={handleDeleteMessage}
+                            disabled={deletingMessage}
+                          >
+                            {deletingMessage ? 'Memproses...' : 'Ya, Hapus'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {(loadingMessages && !isViewingMock) ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader className="animate-spin text-gray-400" size={24} />
@@ -1043,10 +1144,12 @@ const Chat = () => {
                         message={message}
                         isOwn={message.senderId === currentUser?.id}
                         onReply={() => setReplyingTo(message)}
+                        onDelete={isViewingMock ? null : handleDeleteClick}
                       />
                     ))
                   )}
                   <div ref={messagesEndRef} />
+                </div>
                 </div>
 
                 {/* Reply Preview */}
@@ -1247,15 +1350,18 @@ const Chat = () => {
 }
 
 // Message Bubble Component
-const MessageBubble = ({ message, isOwn, onReply }) => {
+const MessageBubble = ({ message, isOwn, onReply, onDelete }) => {
 
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
         {!isOwn && (
-          <div className="text-xs text-gray-500 mb-1 px-2">
+          <Link 
+            to={`/profil/${message.senderId}`}
+            className="text-xs text-gray-500 mb-1 px-2 hover:underline cursor-pointer block"
+          >
             {message.sender.nama}
-          </div>
+          </Link>
         )}
         
         {/* Reply Preview */}
@@ -1298,9 +1404,18 @@ const MessageBubble = ({ message, isOwn, onReply }) => {
               minute: '2-digit'
             })}
           </span>
+          {isOwn && onDelete && (
+            <button
+              onClick={() => onDelete(message)}
+              className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
+              title="Hapus"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
           <button
             onClick={onReply}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
             title="Balas"
           >
             <Reply size={14} />

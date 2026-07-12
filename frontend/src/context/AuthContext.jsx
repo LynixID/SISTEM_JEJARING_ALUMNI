@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api, { googleLogin as googleLoginApi } from '../services/api'
+import { initSocket, disconnectSocket } from '../config/socket'
 
 const AuthContext = createContext()
 
@@ -21,6 +22,26 @@ export const AuthProvider = ({ children }) => {
     checkAuth()
   }, [])
 
+  useEffect(() => {
+    const handleLogoutDeleted = () => {
+      clearAuth()
+      alert('Akun Anda telah dihapus secara permanen oleh administrator.')
+    }
+    const handleLogoutSuspended = (e) => {
+      clearAuth()
+      const reason = e.detail?.reason || 'Pelanggaran kebijakan komunitas'
+      alert(`Akun Anda telah ditangguhkan oleh administrator.\nAlasan: ${reason}`)
+    }
+
+    window.addEventListener('auth-logout-required-deleted', handleLogoutDeleted)
+    window.addEventListener('auth-logout-required-suspended', handleLogoutSuspended)
+
+    return () => {
+      window.removeEventListener('auth-logout-required-deleted', handleLogoutDeleted)
+      window.removeEventListener('auth-logout-required-suspended', handleLogoutSuspended)
+    }
+  }, [])
+
   // Cek apakah user sudah login saat app pertama kali load
   const checkAuth = async () => {
     try {
@@ -34,6 +55,7 @@ export const AuthProvider = ({ children }) => {
           setUser(response.data.user)
           setIsAuthenticated(true)
           localStorage.setItem('user', JSON.stringify(response.data.user))
+          initSocket()
         } catch (error) {
           console.error('Auth check failed:', error)
           clearAuth()
@@ -72,6 +94,7 @@ export const AuthProvider = ({ children }) => {
       
       setUser(user)
       setIsAuthenticated(true)
+      initSocket()
       
       return { success: true, user }
     } catch (error) {
@@ -100,10 +123,21 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(user))
       setUser(user)
       setIsAuthenticated(true)
-
+      initSocket()
+ 
       return { success: true, user }
     } catch (error) {
-      const message = error.response?.data?.error || 'Gagal login dengan Google'
+      const data = error.response?.data
+      if (data?.isSuspended) {
+        return {
+          success: false,
+          isSuspended: true,
+          suspendReason: data.suspendReason,
+          suspendedAt: data.suspendedAt,
+          message: data.error
+        }
+      }
+      const message = data?.error || 'Gagal login dengan Google'
       return { success: false, message }
     }
   }
@@ -132,6 +166,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(response.data.user))
         setUser(response.data.user)
         setIsAuthenticated(true)
+        initSocket()
       }
       
       return { 
@@ -185,6 +220,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user')
     setUser(null)
     setIsAuthenticated(false)
+    disconnectSocket()
   }
 
   const value = {

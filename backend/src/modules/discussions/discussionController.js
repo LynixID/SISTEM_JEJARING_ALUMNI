@@ -669,3 +669,52 @@ export const deleteMessage = async (req, res) => {
   }
 }
 
+export const deleteDiscussion = async (req, res) => {
+  try {
+    if (requireValidations(req, res)) return
+
+    const { id } = req.params
+    const currentUserId = getCurrentUserId(req)
+
+    const membership = await getMembership({ threadId: id, userId: currentUserId })
+    if (!membership || membership.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Hanya pemilik diskusi yang dapat menghapus diskusi ini' })
+    }
+
+    const thread = await prisma.discussionThread.findUnique({
+      where: { id },
+      include: {
+        messages: {
+          select: { media: true },
+        },
+      },
+    })
+
+    if (!thread) {
+      return res.status(404).json({ error: 'Diskusi tidak ditemukan' })
+    }
+
+    // 1. Hapus berkas gambar sampul diskusi dari disk
+    if (thread.image) {
+      deleteFileIfExists(discussionsUploadDir, extractFilename(thread.image))
+    }
+
+    // 2. Hapus semua berkas media pesan diskusi dari disk
+    thread.messages.forEach((m) => {
+      if (m.media) {
+        deleteFileIfExists(discussionMessagesUploadDir, extractFilename(m.media))
+      }
+    })
+
+    // 3. Hapus thread diskusi dari database (cascade delete akan menghapus members & messages otomatis)
+    await prisma.discussionThread.delete({
+      where: { id },
+    })
+
+    res.json({ message: 'Diskusi berhasil dihapus' })
+  } catch (error) {
+    console.error('Delete discussion error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat menghapus diskusi' })
+  }
+}
+

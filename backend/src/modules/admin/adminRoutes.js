@@ -1,7 +1,15 @@
 import express from 'express'
+import multer from 'multer'
+
+const uploadMemory = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // limit 5MB
+})
 import { 
   getAllUsers, 
   getUserById, 
+  createUserByAdmin,
+  updateUserByAdmin,
   verifyUser, 
   rejectUser, 
   updateUserRole, 
@@ -31,7 +39,13 @@ import {
   getAllJobsByAdmin,
   approveJobByAdmin,
   rejectJobByAdmin,
-  deleteJobByAdmin
+  deleteJobByAdmin,
+  getAllAdmins,
+  createAdminByAdmin,
+  deleteAdminById,
+  updateAdminById,
+  getImportTemplate,
+  importUsers
 } from './adminController.js'
 import { verifyToken, requireRole } from '../../middleware/auth.js'
 
@@ -43,9 +57,13 @@ router.use(requireRole('ADMIN'))
 
 // User Management
 router.get('/users/export', exportUsers)
+router.get('/users/import-template', getImportTemplate)
+router.post('/users/import', uploadMemory.single('file'), importUsers)
 router.get('/users/filter-options', getUserFilterOptions)
+router.post('/users', createUserByAdmin)
 router.get('/users', getAllUsers)
 router.get('/users/:id', getUserById)
+router.put('/users/:id', updateUserByAdmin)
 router.get('/statistics', getStatistics)
 router.get('/statistics/advanced', getAdvancedStatistics)
 router.patch('/users/:id/verify', verifyUser)
@@ -86,6 +104,12 @@ router.get('/files/trash', listTrash)
 router.post('/files/restore', restoreFromTrash)
 router.delete('/files/trash', emptyTrash)
 router.delete('/files/trash/single', deleteTrashFile)
+
+// Admin Management
+router.get('/admins', getAllAdmins)
+router.post('/admins', createAdminByAdmin)
+router.patch('/admins/:id', updateAdminById)
+router.delete('/admins/:id', deleteAdminById)
 
 
 export default router

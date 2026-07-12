@@ -188,6 +188,12 @@ https://templatemo.com/tm-565-onix-digital
         background-repeat: no-repeat !important;
         right: 50% !important;
         margin-right: -720px !important;
+        /* Initial loading skeleton style */
+        background-color: #f1f5f9;
+        background-image: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 24px;
       }
 
       @media (max-width: 1240px) {
@@ -562,8 +568,8 @@ https://templatemo.com/tm-565-onix-digital
     <div class="container">
       <div class="row">
         <div class="col-lg-6 align-self-center">
-          <div class="left-image">
-            <img src="/landing/assets/images/about-left-image.png" alt="Two Girls working together">
+          <div class="left-image" id="about-image-container" style="width: 100%; min-height: 350px;">
+            <div class="skeleton" style="width: 100%; height: 350px; border-radius: 12px;"></div>
           </div>
         </div>
         <div class="col-lg-6">
@@ -698,7 +704,26 @@ https://templatemo.com/tm-565-onix-digital
       <div class="row">
         <div class="col-lg-12">
           <div class="owl-carousel owl-portfolio" id="alumni-carousel">
-            <!-- Alumni cards akan dimuat dari API -->
+            <div class="item">
+              <div class="thumb">
+                <div class="skeleton" style="width: 100%; aspect-ratio: 1/1; border-radius: 12px;"></div>
+              </div>
+            </div>
+            <div class="item">
+              <div class="thumb">
+                <div class="skeleton" style="width: 100%; aspect-ratio: 1/1; border-radius: 12px;"></div>
+              </div>
+            </div>
+            <div class="item">
+              <div class="thumb">
+                <div class="skeleton" style="width: 100%; aspect-ratio: 1/1; border-radius: 12px;"></div>
+              </div>
+            </div>
+            <div class="item">
+              <div class="thumb">
+                <div class="skeleton" style="width: 100%; aspect-ratio: 1/1; border-radius: 12px;"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -723,7 +748,34 @@ https://templatemo.com/tm-565-onix-digital
         </div>
       </div>
       <div class="row" id="program-carousel">
-        <!-- Program cards akan dimuat dari API -->
+        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
+          <div class="item" style="background: #fff; padding: 25px 20px; border-radius: 20px; border: 1px solid #eee; height: 350px;">
+            <div class="skeleton" style="height: 180px; border-radius: 12px; margin-bottom: 20px; width: 100%;"></div>
+            <div class="skeleton" style="height: 20px; border-radius: 4px; margin-bottom: 10px; width: 40%;"></div>
+            <div class="skeleton" style="height: 30px; border-radius: 4px; margin-bottom: 10px; width: 80%;"></div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
+          <div class="item" style="background: #fff; padding: 25px 20px; border-radius: 20px; border: 1px solid #eee; height: 350px;">
+            <div class="skeleton" style="height: 180px; border-radius: 12px; margin-bottom: 20px; width: 100%;"></div>
+            <div class="skeleton" style="height: 20px; border-radius: 4px; margin-bottom: 10px; width: 40%;"></div>
+            <div class="skeleton" style="height: 30px; border-radius: 4px; margin-bottom: 10px; width: 80%;"></div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
+          <div class="item" style="background: #fff; padding: 25px 20px; border-radius: 20px; border: 1px solid #eee; height: 350px;">
+            <div class="skeleton" style="height: 180px; border-radius: 12px; margin-bottom: 20px; width: 100%;"></div>
+            <div class="skeleton" style="height: 20px; border-radius: 4px; margin-bottom: 10px; width: 40%;"></div>
+            <div class="skeleton" style="height: 30px; border-radius: 4px; margin-bottom: 10px; width: 80%;"></div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
+          <div class="item" style="background: #fff; padding: 25px 20px; border-radius: 20px; border: 1px solid #eee; height: 350px;">
+            <div class="skeleton" style="height: 180px; border-radius: 12px; margin-bottom: 20px; width: 100%;"></div>
+            <div class="skeleton" style="height: 20px; border-radius: 4px; margin-bottom: 10px; width: 40%;"></div>
+            <div class="skeleton" style="height: 30px; border-radius: 4px; margin-bottom: 10px; width: 80%;"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -744,7 +796,11 @@ https://templatemo.com/tm-565-onix-digital
               <div class="row">
                 <div class="col-lg-12">
                   <ul class="nacc" id="video-list">
-                    <!-- Video dari database -->
+                    <li class="active" style="width: 100%;">
+                      <div>
+                        <div class="skeleton" style="width: 100%; aspect-ratio: 16/9; border-radius: 23px; min-height: 320px;"></div>
+                      </div>
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -796,14 +852,18 @@ https://templatemo.com/tm-565-onix-digital
           <div class="contact-info text-center" style="margin-top: 40px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: #fff;">
             <div class="row">
               <div class="col-md-6" style="margin-bottom: 20px;">
-                <i class="fa fa-envelope" style="font-size: 24px; margin-bottom: 10px;"></i>
-                <h5 style="color: #fff; margin-bottom: 5px; font-size: 16px;">Email</h5>
-                <p style="margin: 0; font-size: 14px; opacity: 0.9;" id="contact-email-footer">Memuat...</p>
+                <a id="contact-email-link" href="#" style="color: #fff; text-decoration: none; display: block;" onclick="return false;">
+                  <i class="fa fa-envelope" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                  <h5 style="color: #fff; margin-bottom: 5px; font-size: 16px;">Email</h5>
+                  <p style="margin: 0; font-size: 14px; opacity: 0.9; transition: opacity 0.2s;" id="contact-email-footer">Memuat...</p>
+                </a>
               </div>
               <div class="col-md-6" style="margin-bottom: 20px;">
-                <i class="fa fa-phone" style="font-size: 24px; margin-bottom: 10px;"></i>
-                <h5 style="color: #fff; margin-bottom: 5px; font-size: 16px;">Telepon</h5>
-                <p style="margin: 0; font-size: 14px; opacity: 0.9;" id="contact-phone-footer">Memuat...</p>
+                <a id="contact-phone-link" href="#" style="color: #fff; text-decoration: none; display: block;" onclick="return false;">
+                  <i class="fa fa-phone" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                  <h5 style="color: #fff; margin-bottom: 5px; font-size: 16px;">Telepon</h5>
+                  <p style="margin: 0; font-size: 14px; opacity: 0.9; transition: opacity 0.2s;" id="contact-phone-footer">Memuat...</p>
+                </a>
               </div>
             </div>
           </div>
@@ -846,10 +906,10 @@ https://templatemo.com/tm-565-onix-digital
           <div class="services footer-item">
             <h4>Layanan</h4>
             <ul>
-              <li><a href="#">Jaringan Alumni</a></li>
-              <li><a href="#">Lowongan Kerja</a></li>
-              <li><a href="#">Event & Kegiatan</a></li>
-              <li><a href="#">Forum Diskusi</a></li>
+              <li><span style="cursor: default;">Jaringan Alumni</span></li>
+              <li><span style="cursor: default;">Lowongan Kerja</span></li>
+              <li><span style="cursor: default;">Event &amp; Kegiatan</span></li>
+              <li><span style="cursor: default;">Forum Diskusi</span></li>
             </ul>
           </div>
         </div>
@@ -857,10 +917,10 @@ https://templatemo.com/tm-565-onix-digital
           <div class="community footer-item">
             <h4>Komunitas</h4>
             <ul>
-              <li><a href="#">Berita & Pengumuman</a></li>
-              <li><a href="#">Diskusi Alumni</a></li>
-              <li><a href="#">Koneksi Profesional</a></li>
-              <li><a href="#">Kesempatan Karir</a></li>
+              <li><span style="cursor: default;">Berita &amp; Pengumuman</span></li>
+              <li><span style="cursor: default;">Diskusi Alumni</span></li>
+              <li><span style="cursor: default;">Koneksi Profesional</span></li>
+              <li><span style="cursor: default;">Kesempatan Karir</span></li>
             </ul>
           </div>
         </div>
@@ -1032,13 +1092,23 @@ https://templatemo.com/tm-565-onix-digital
             document.getElementById('footer-email').href = 'mailto:' + contactEmail;
             document.getElementById('footer-email').textContent = contactEmail;
             document.getElementById('contact-email-footer').textContent = contactEmail;
+            // Make email link in contact section clickable
+            const emailLink = document.getElementById('contact-email-link');
+            if (emailLink) {
+              emailLink.href = 'mailto:' + contactEmail;
+              emailLink.onclick = null; // remove the dummy onclick
+            }
           }
 
           // Update footer phone
-          if (contactPhone) {
-            document.getElementById('contact-phone-footer').textContent = contactPhone;
-          } else {
-            document.getElementById('contact-phone-footer').textContent = '+62 812-3456-7890';
+          const phoneVal = contactPhone || '+62 812-3456-7890';
+          document.getElementById('contact-phone-footer').textContent = phoneVal;
+          // Make phone link in contact section clickable
+          const phoneLink = document.getElementById('contact-phone-link');
+          if (phoneLink) {
+            const cleanPhone = phoneVal.replace(/[\s\-]/g, '');
+            phoneLink.href = 'tel:' + cleanPhone;
+            phoneLink.onclick = null; // remove the dummy onclick
           }
 
           // Update statistics
@@ -1059,17 +1129,31 @@ https://templatemo.com/tm-565-onix-digital
             style.innerHTML = `
               .main-banner::before {
                 background-image: url('${resolvedHero}') !important;
+                animation: none !important;
+                background-color: transparent !important;
+              }
+            `;
+            document.head.appendChild(style);
+          } else {
+            const style = document.createElement('style');
+            style.innerHTML = `
+              .main-banner::before {
+                background-image: none !important;
+                animation: none !important;
+                background-color: transparent !important;
               }
             `;
             document.head.appendChild(style);
           }
 
           // Update about us image
-          if (aboutImage) {
-            const resolvedAbout = resolveImageUrl(aboutImage);
-            const aboutImgElement = document.querySelector('.about-us .left-image img');
-            if (aboutImgElement) {
-              aboutImgElement.src = resolvedAbout;
+          const aboutImgContainer = document.getElementById('about-image-container');
+          if (aboutImgContainer) {
+            if (aboutImage) {
+              const resolvedAbout = resolveImageUrl(aboutImage);
+              aboutImgContainer.innerHTML = `<img src="${resolvedAbout}" alt="About IKA UII JATENG" style="max-width: 550px; width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 12px;">`;
+            } else {
+              aboutImgContainer.innerHTML = '';
             }
           }
 
@@ -1084,9 +1168,25 @@ https://templatemo.com/tm-565-onix-digital
         }
       } catch (error) {
         console.error('Error fetching landing data:', error);
-        // Fallback ke data default jika API gagal
-        loadDefaultAlumni();
-        loadDefaultPrograms();
+        // Tampilkan pesan kosong jika gagal load dari database, jangan pakai data default
+        renderAlumniCards([]);
+        renderProgramCards([]);
+        renderVideos([]);
+        
+        // Matikan skeleton hero
+        const style = document.createElement('style');
+        style.innerHTML = `
+          .main-banner::before {
+            background-image: none !important;
+            animation: none !important;
+            background-color: transparent !important;
+          }
+        `;
+        document.head.appendChild(style);
+        
+        // Hapus skeleton about
+        const aboutImgContainer = document.getElementById('about-image-container');
+        if (aboutImgContainer) aboutImgContainer.innerHTML = '';
       }
     }
 
@@ -1096,13 +1196,19 @@ https://templatemo.com/tm-565-onix-digital
       if ($carousel.length === 0) return;
 
       if (!alumni || alumni.length === 0) {
-        loadDefaultAlumni();
+        if ($carousel.hasClass('owl-loaded')) {
+          $carousel.trigger('destroy.owl.carousel');
+          $carousel.removeClass('owl-loaded owl-drag owl-refresh');
+        }
+        $carousel.html('<div class="text-center py-5 text-gray-500 w-100">Belum ada data alumni yang dipublikasikan.</div>');
         return;
       }
 
       let html = '';
       alumni.forEach(item => {
-        const imageUrl = item.fotoProfil ? resolveImageUrl(item.fotoProfil) : '/landing/assets/images/portfolio-01.jpg';
+        const imageUrl = item.fotoProfil 
+          ? resolveImageUrl(item.fotoProfil) 
+          : `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cbd5e1" width="100%25" height="100%25"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
         const infoText = item.profesi && item.perusahaan
           ? `${item.profesi} di ${item.perusahaan}`
           : (item.perusahaan || item.profesi || 'Alumni UII');
@@ -1150,33 +1256,106 @@ https://templatemo.com/tm-565-onix-digital
       });
     }
 
+    // ─── Event Detail Modal ────────────────────────────────────────────────────
+    function showEventModal(item) {
+      const existing = document.getElementById('event-detail-modal');
+      if (existing) existing.remove();
+
+      const categoryType = item.type === 'event' ? 'Event Alumni' : 'Program Kerja';
+      const categoryColor = item.type === 'event' ? '#f59e0b' : '#03a4ed';
+      const categoryBg = item.type === 'event' ? '#fef3c7' : '#e0f2fe';
+
+      const resolvedImage = item.image
+        ? resolveImageUrl(item.image)
+        : '';
+
+      const fullDescription = item.description || item.excerpt || 'Tidak ada deskripsi tersedia.';
+      const dateStr = item.date || item.eventDate || item.createdAt
+        ? new Date(item.date || item.eventDate || item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+        : '';
+      const locationStr = item.location || item.lokasi || '';
+
+      const modal = document.createElement('div');
+      modal.id = 'event-detail-modal';
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity 0.3s ease;';
+
+      modal.innerHTML = `
+        <div id="event-modal-inner" style="background:#fff;width:100%;max-width:600px;max-height:90vh;border-radius:24px;overflow-y:auto;overflow-x:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.25);transform:scale(0.88) translateY(20px);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);font-family:'Poppins',sans-serif;position:relative;">
+          <button id="close-event-modal" style="position:sticky;top:12px;float:right;margin-right:12px;margin-top:12px;z-index:10;background:rgba(255,255,255,0.92);backdrop-filter:blur(4px);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:#475569;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:all 0.2s;flex-shrink:0;" title="Tutup">&times;</button>
+          ${ resolvedImage ? `<div style="width:100%;aspect-ratio:1/1;background:#fff;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #f1f5f9;overflow:hidden;"><img src="${resolvedImage}" alt="${item.title}" style="width:100%;height:100%;object-fit:contain;background:#fff;"></div>` : '' }
+          <div style="padding:28px 30px;">
+            <div style="margin-bottom:14px;">
+              <span style="display:inline-block;background:${categoryBg};color:${categoryColor};font-size:11px;font-weight:700;padding:5px 14px;border-radius:20px;text-transform:uppercase;letter-spacing:0.7px;">${categoryType}</span>
+            </div>
+            <h3 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 14px 0;line-height:1.3;">${item.title}</h3>
+            ${ dateStr ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:#64748b;font-size:13px;"><i class="fa fa-calendar" style="color:#03a4ed;"></i><span>${dateStr}</span></div>` : '' }
+            ${ locationStr ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;color:#64748b;font-size:13px;"><i class="fa fa-map-marker" style="color:#f02027;"></i><span>${locationStr}</span></div>` : '' }
+            <div style="border-top:1px solid #f1f5f9;padding-top:16px;margin-top:6px;">
+              <p style="font-size:14px;color:#475569;line-height:1.75;margin:0;white-space:pre-line;">${fullDescription}</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+      document.body.style.overflow = 'hidden';
+
+      setTimeout(() => {
+        modal.style.opacity = '1';
+        document.getElementById('event-modal-inner').style.transform = 'scale(1) translateY(0)';
+      }, 30);
+
+      const closeModal = () => {
+        modal.style.opacity = '0';
+        document.getElementById('event-modal-inner').style.transform = 'scale(0.88) translateY(20px)';
+        document.body.style.overflow = '';
+        setTimeout(() => modal.remove(), 300);
+      };
+
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      document.getElementById('close-event-modal').addEventListener('click', closeModal);
+      document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escHandler); }
+      });
+    }
+
     // Render program cards
     function renderProgramCards(programs) {
       const container = document.getElementById('program-carousel');
       if (!container) return;
 
       if (!programs || programs.length === 0) {
-        loadDefaultPrograms();
+        container.innerHTML = '<div class="text-center py-5 text-gray-500 w-100">Belum ada event atau program kerja terbaru.</div>';
         return;
       }
 
+      // Store programs globally so onclick can access
+      window._landingPrograms = programs;
+
       let html = '';
-      programs.forEach((item) => {
+      programs.forEach((item, idx) => {
         const categoryType = item.type === 'event' ? 'Event Alumni' : 'Program Kerja';
         const excerptText = item.excerpt
-          ? (item.excerpt.length > 80 ? item.excerpt.substring(0, 80) + '...' : item.excerpt)
-          : (item.description ? (item.description.length > 80 ? item.description.substring(0, 80) + '...' : item.description) : 'Detail program dapat dilihat di halaman selengkapnya.');
+          ? (item.excerpt.length > 100 ? item.excerpt.substring(0, 100) + '...' : item.excerpt)
+          : (item.description ? (item.description.length > 100 ? item.description.substring(0, 100) + '...' : item.description) : 'Detail program dapat dilihat di halaman selengkapnya.');
 
-        const resolvedImage = item.image ? resolveImageUrl(item.image) : '/landing/assets/images/video-big-thumb-01.png';
+        const resolvedImage = item.image 
+          ? resolveImageUrl(item.image) 
+          : `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e2e8f0" width="100%25" height="100%25"><rect width="100%25" height="100%25" fill="%23f1f5f9"/><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.44-6.19l-2.35 3.02-1.56-1.88c-.2-.25-.58-.24-.77.01l-1.89 2.52c-.26.35-.01.85.42.85h11.19c.43 0 .68-.5.42-.85l-3.67-4.89c-.19-.27-.59-.27-.79.02z" fill="%2394a3b8"/></svg>`;
         html += `
           <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
-            <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
+            <div class="item" 
+              onclick="showEventModal(window._landingPrograms[${idx}])"
+              style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: pointer !important;"
+              onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.12)'; this.style.borderColor='#03a4ed40';"
+              onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)'; this.style.borderColor='#eee';">
               <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
                 <img src="${resolvedImage}" alt="${item.title}" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
               </div>
               <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">${categoryType}</span>
               <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">${item.title}</h4>
               <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">${excerptText}</p>
+              <div style="margin-top: 16px !important; display: flex !important; align-items: center !important; gap: 6px !important; color: #03a4ed !important; font-size: 12px !important; font-weight: 600 !important;"><i class="fa fa-info-circle"></i> Lihat Detail</div>
             </div>
           </div>
         `;
@@ -1190,28 +1369,30 @@ https://templatemo.com/tm-565-onix-digital
       const videoList = document.getElementById('video-list');
       if (!videoList) return;
 
-      let embedUrl = 'https://www.youtube.com/embed/a6XZ5cfIzr0?rel=0&modestbranding=1'; // Default video
+      if (!videos || videos.length === 0 || !videos[0].url) {
+        videoList.innerHTML = '<div class="text-center py-5 text-gray-500 w-100">Video profil belum tersedia.</div>';
+        return;
+      }
 
-      if (videos && videos.length > 0 && videos[0].url) {
-        const url = videos[0].url;
-        // Robust YouTube embed URL extractor
-        let videoId = '';
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        if (match && match[2].length === 11) {
-          videoId = match[2];
-        } else {
-          const shortsMatch = url.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
-          if (shortsMatch) {
-            videoId = shortsMatch[1];
-          }
+      let embedUrl = '';
+      const url = videos[0].url;
+      // Robust YouTube embed URL extractor
+      let videoId = '';
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      if (match && match[2].length === 11) {
+        videoId = match[2];
+      } else {
+        const shortsMatch = url.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+        if (shortsMatch) {
+          videoId = shortsMatch[1];
         }
+      }
 
-        if (videoId) {
-          embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
-        } else {
-          embedUrl = url.includes('?') ? `${url}&rel=0&modestbranding=1` : `${url}?rel=0&modestbranding=1`;
-        }
+      if (videoId) {
+        embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+      } else {
+        embedUrl = url.includes('?') ? `${url}&rel=0&modestbranding=1` : `${url}?rel=0&modestbranding=1`;
       }
 
       videoList.innerHTML = `
@@ -1239,54 +1420,15 @@ https://templatemo.com/tm-565-onix-digital
       ];
       renderAlumniCards(defaultAlumni);
     }
-
-    // Default program data
+    // Default program data — using default items, clickable with modal
     function loadDefaultPrograms() {
-      const container = document.getElementById('program-carousel');
-      if (!container) return;
-
-      container.innerHTML = `
-        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
-          <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
-            <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
-              <img src="/landing/assets/images/video-big-thumb-01.png" alt="Rapat Kerja Wilayah" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
-            </div>
-            <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">Event Alumni</span>
-            <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">Rapat Kerja Wilayah</h4>
-            <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">Rapat koordinasi tahunan pengurus wilayah IKA UII Jawa Tengah untuk membahas program kerja strategis.</p>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
-          <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
-            <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
-              <img src="/landing/assets/images/video-big-thumb-02.png" alt="Alumni Peduli Sosial" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
-            </div>
-            <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">Program Kerja</span>
-            <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">Alumni Peduli Sosial</h4>
-            <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">Aksi kepedulian sosial, santunan, dan bantuan darurat kebencanaan di wilayah Jawa Tengah.</p>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
-          <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
-            <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
-              <img src="/landing/assets/images/video-big-thumb-03.png" alt="Seminar & Networking" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
-            </div>
-            <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">Event Alumni</span>
-            <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">Seminar & Networking</h4>
-            <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">Temu bisnis dan sharing session bersama praktisi alumni sukses untuk memperkuat kolaborasi usaha.</p>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-12" style="margin-bottom: 30px;">
-          <div class="item" style="background: #fff !important; padding: 25px 20px !important; border-radius: 20px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important; border: 1px solid #eee !important; height: 100% !important; text-align: left !important; transition: all 0.3s !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; cursor: default !important;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.06)';">
-            <div class="program-image" style="height: 220px !important; border-radius: 12px !important; margin-bottom: 20px !important; overflow: hidden !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; width: 100% !important;">
-              <img src="/landing/assets/images/video-big-thumb-01.png" alt="Pembinaan UMKM Alumni" style="width: 100% !important; height: 100% !important; object-fit: cover !important;">
-            </div>
-            <span style="display: inline-block !important; background: #e0f2fe !important; color: #03a4ed !important; font-size: 11px !important; font-weight: 600 !important; padding: 5px 12px !important; border-radius: 20px !important; margin-bottom: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; border: none !important;">Program Kerja</span>
-            <h4 style="font-size: 18px !important; font-weight: 700 !important; color: #2a2a2a !important; line-height: 1.3 !important; margin: 0 0 10px 0 !important; text-align: left !important; min-height: 48px !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-transform: none !important;">Pembinaan UMKM Alumni</h4>
-            <p style="font-size: 13px !important; line-height: 1.5 !important; color: #666 !important; margin: 0 !important; text-align: left !important; display: -webkit-box !important; -webkit-line-clamp: 3 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; font-weight: 400 !important;">Pendampingan intensif bagi pelaku usaha kecil dan menengah dari alumni UII Jawa Tengah.</p>
-          </div>
-        </div>
-      `;
+      const defaultPrograms = [
+        { type: 'event', title: 'Rapat Kerja Wilayah', image: '/landing/assets/images/video-big-thumb-01.png', description: 'Rapat koordinasi tahunan pengurus wilayah IKA UII Jawa Tengah untuk membahas program kerja strategis dan evaluasi kegiatan yang telah berjalan selama setahun.' },
+        { type: 'program', title: 'Alumni Peduli Sosial', image: '/landing/assets/images/video-big-thumb-02.png', description: 'Aksi kepedulian sosial, santunan, dan bantuan darurat kebencanaan di wilayah Jawa Tengah oleh alumni UII.' },
+        { type: 'event', title: 'Seminar & Networking', image: '/landing/assets/images/video-big-thumb-03.png', description: 'Temu bisnis dan sharing session bersama praktisi alumni sukses untuk memperkuat kolaborasi usaha dan jaringan profesional.' },
+        { type: 'program', title: 'Pembinaan UMKM Alumni', image: '/landing/assets/images/video-big-thumb-01.png', description: 'Pendampingan intensif bagi pelaku usaha kecil dan menengah dari alumni UII Jawa Tengah, meliputi pelatihan manajemen, akses permodalan, dan pengembangan pasar.' }
+      ];
+      renderProgramCards(defaultPrograms);
     }
 
     // Handle contact form submission

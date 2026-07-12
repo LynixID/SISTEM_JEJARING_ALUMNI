@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { updatePost, deletePostImage } from '../../services/api'
+import { updatePost, deletePostImage, getConnections } from '../../services/api'
 import { getImageUrl } from '../../utils/imageUtils'
 import Button from '../common/Button'
-import { Image as ImageIcon, X, Loader, Plus, Trash2 } from 'lucide-react'
+import { Image as ImageIcon, X, Loader, Plus, Trash2, Globe, Lock, Users } from 'lucide-react'
 
 const EditPost = ({ isOpen, onClose, post, onPostUpdated }) => {
   const { user } = useAuth()
@@ -21,17 +21,79 @@ const EditPost = ({ isOpen, onClose, post, onPostUpdated }) => {
   const [error, setError] = useState('')
   const [imageDeleted, setImageDeleted] = useState(false)
 
+  // Visibility and mentions states
+  const [visibility, setVisibility] = useState('PUBLIC')
+  const [connectedUsers, setConnectedUsers] = useState([])
+  const [mentionSearch, setMentionSearch] = useState('')
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false)
+  const [selectedMentions, setSelectedMentions] = useState([])
+  
+  const mentionInputRef = useRef(null)
+  const mentionDropdownRef = useRef(null)
+
   // Initialize form saat modal dibuka
   useEffect(() => {
     if (post && isOpen) {
       setContent(post.content || '')
       setExistingImages(post.images || [])
+      setVisibility(post.visibility || 'PUBLIC')
+      setSelectedMentions(post.mentions || [])
       setNewFiles([])
       setNewPreviews([])
       setError('')
       setImageDeleted(false)
     }
   }, [post, isOpen])
+
+  // Fetch connected users untuk mention
+  useEffect(() => {
+    if (isOpen) {
+      const fetchConnectedUsers = async () => {
+        try {
+          const response = await getConnections()
+          setConnectedUsers(response.data.connections || [])
+        } catch (err) {
+          console.error('Error fetching connected users:', err)
+        }
+      }
+      fetchConnectedUsers()
+    }
+  }, [isOpen])
+
+  // Handle click outside untuk close mention dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        mentionDropdownRef.current &&
+        !mentionDropdownRef.current.contains(event.target) &&
+        mentionInputRef.current &&
+        !mentionInputRef.current.contains(event.target)
+      ) {
+        setShowMentionDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Handle mentions search
+  const filteredUsers = connectedUsers.filter(conn => 
+    conn.user?.nama?.toLowerCase().includes(mentionSearch.toLowerCase()) ||
+    conn.user?.email?.toLowerCase().includes(mentionSearch.toLowerCase())
+  )
+
+  const handleMentionSelect = (selectedUser) => {
+    if (!selectedMentions.find(m => m.id === selectedUser.id)) {
+      setSelectedMentions([...selectedMentions, selectedUser])
+    }
+    setMentionSearch('')
+    setShowMentionDropdown(false)
+  }
+
+  const handleRemoveMention = (userId) => {
+    setSelectedMentions(selectedMentions.filter(m => m.id !== userId))
+  }
 
   // Helper to handle closing the modal, calling onPostUpdated if any image was deleted
   const handleClose = () => {
@@ -152,9 +214,15 @@ const EditPost = ({ isOpen, onClose, post, onPostUpdated }) => {
     setLoading(true)
     setError('')
     try {
-      // Kirim content + gambar baru saja (existing tidak disentuh)
       const imagesToUpload = newFiles.length > 0 ? newFiles : undefined
-      await updatePost(post.id, { content: content.trim() }, imagesToUpload)
+      const mentions = selectedMentions.map(m => m.id)
+      
+      await updatePost(post.id, { 
+        content: content.trim(),
+        visibility,
+        mentions
+      }, imagesToUpload)
+      
       if (onPostUpdated) onPostUpdated()
       if (onClose) onClose()
     } catch (err) {
@@ -322,6 +390,149 @@ const EditPost = ({ isOpen, onClose, post, onPostUpdated }) => {
                 )}
               </div>
             )}
+
+            <div className="px-5 pb-4 border-t border-gray-100 pt-4">
+              {/* Visibility Selector */}
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Visibilitas Postingan
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setVisibility('PUBLIC')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl border-2 transition-all cursor-pointer ${
+                      visibility === 'PUBLIC'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Globe size={18} />
+                    <span className="text-sm">Publik</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibility('CONNECTIONS')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl border-2 transition-all cursor-pointer ${
+                      visibility === 'CONNECTIONS'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Lock size={18} />
+                    <span className="text-sm">Hanya Koneksi</span>
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {visibility === 'PUBLIC' 
+                    ? 'Semua orang dapat melihat postingan ini' 
+                    : 'Hanya koneksi Anda yang dapat melihat postingan ini'}
+                </p>
+              </div>
+
+              {/* Mention Input */}
+              <div className="relative">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Sebutkan Seseorang (Hanya Koneksi)
+                </label>
+                <div className="relative">
+                  <div className="flex items-center gap-2 flex-wrap min-h-[42px] p-2 border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent bg-gray-50 focus-within:bg-white transition-colors">
+                    {/* Selected Mentions */}
+                    {selectedMentions.map((mention) => (
+                      <div
+                        key={mention.id}
+                        className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold shadow-sm"
+                      >
+                        <span>{mention.nama || mention.user?.nama}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMention(mention.id)}
+                          className="hover:bg-blue-200 rounded-full p-0.5"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    {/* Mention Search Input */}
+                    <input
+                      ref={mentionInputRef}
+                      type="text"
+                      value={mentionSearch}
+                      onChange={(e) => {
+                        setMentionSearch(e.target.value)
+                        setShowMentionDropdown(true)
+                      }}
+                      onFocus={() => setShowMentionDropdown(true)}
+                      placeholder={selectedMentions.length === 0 ? "Cari koneksi untuk disebutkan..." : ""}
+                      className="flex-1 min-w-[150px] border-none outline-none text-sm bg-transparent"
+                    />
+                  </div>
+                  
+                  {/* Mention Dropdown */}
+                  {showMentionDropdown && mentionSearch && filteredUsers.length > 0 && (
+                    <div
+                      ref={mentionDropdownRef}
+                      className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto"
+                    >
+                      {filteredUsers.map((connection) => {
+                        const user = connection.user
+                        if (!user) return null
+                        const isSelected = selectedMentions.find(m => m.id === user.id)
+                        return (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => {
+                              if (!isSelected) {
+                                handleMentionSelect(user)
+                              }
+                            }}
+                            disabled={isSelected}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 text-left ${
+                              isSelected ? 'opacity-50 cursor-not-allowed bg-gray-50/50' : 'cursor-pointer'
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {user.fotoProfil ? (
+                                <img
+                                  src={getImageUrl(user.fotoProfil, 'profiles')}
+                                  alt={user.nama}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none'
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-blue-600 text-xs font-semibold">
+                                  {user.nama?.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-950 truncate">{user.nama}</p>
+                              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                            </div>
+                            {isSelected && (
+                              <span className="text-xs text-blue-600 font-semibold flex-shrink-0">✓ Dipilih</span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                  {showMentionDropdown && mentionSearch && filteredUsers.length === 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-4 text-center text-sm text-gray-500">
+                      Tidak ada koneksi ditemukan
+                    </div>
+                  )}
+                </div>
+                {connectedUsers.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Anda belum memiliki koneksi. Buat koneksi terlebih dahulu untuk bisa menyebutkan seseorang.
+                  </p>
+                )}
+              </div>
+            </div>
 
             {/* Footer Actions */}
             <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100 bg-gray-50">

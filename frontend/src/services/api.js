@@ -23,17 +23,27 @@ api.interceptors.request.use(
   }
 )
 
-// Jika token expired (401), logout dan redirect ke login
+// Jika token expired (401) atau user disuspen (403), logout dan redirect ke login
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status
+    const isSuspended = error.response?.data?.isSuspended
+
+    if (status === 401 || (status === 403 && isSuspended)) {
+      // Hapus token dan user dari storage
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      
       // Jangan redirect jika di landing page atau halaman public
       const publicPaths = ['/', '/login', '/register', '/verify-otp']
       if (!publicPaths.includes(window.location.pathname)) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        window.location.href = '/login'
+        if (status === 403 && isSuspended) {
+          const reason = error.response?.data?.suspendReason || 'Pelanggaran ketentuan layanan'
+          window.location.href = `/login?suspended=true&reason=${encodeURIComponent(reason)}`
+        } else {
+          window.location.href = '/login'
+        }
       }
     }
     return Promise.reject(error)
@@ -259,6 +269,10 @@ export const rejectConnection = (id) => {
   return api.put(`/connections/${id}/reject`)
 }
 
+export const cancelConnectionRequest = (id) => {
+  return api.delete(`/connections/${id}`)
+}
+
 // Reads API (untuk tracking announcement dan event yang sudah dibaca)
 export const getUnreadNewsCount = () => {
   return api.get('/reads/unread-count')
@@ -349,6 +363,10 @@ export const markMessagesAsRead = (userId) => {
   return api.put(`/messages/${userId}/read`)
 }
 
+export const deleteMessage = (id) => {
+  return api.delete(`/messages/${id}`)
+}
+
 // Auth (SSO + complete profile)
 export const googleLogin = (credential) => {
   return api.post('/auth/google', { credential })
@@ -416,6 +434,10 @@ export const updateDiscussion = (id, data, image = undefined) => {
       'Content-Type': 'multipart/form-data'
     }
   })
+}
+
+export const deleteDiscussion = (id) => {
+  return api.delete(`/discussions/${id}`)
 }
 
 export const joinDiscussion = (id) => {

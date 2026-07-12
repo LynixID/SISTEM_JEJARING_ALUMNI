@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { getImageUrl } from '../../utils/imageUtils'
 import { LogOut, User, Settings, Menu, Search, UserPlus, Compass } from 'lucide-react'
 import NotificationBell from '../common/NotificationBell'
+import TourProgressDropdown from '../common/TourProgressDropdown'
 import ConfirmModal from '../common/ConfirmModal'
 
 const Header = () => {
@@ -159,7 +160,8 @@ const Header = () => {
             
             {/* Notifications - hanya untuk user yang bukan admin */}
             {user?.role !== 'ADMIN' && (
-              <div id="tour-notifications" className="flex items-center">
+              <div id="tour-notifications" className="flex items-center gap-2">
+                <TourProgressDropdown />
                 <NotificationBell />
               </div>
             )}
@@ -239,8 +241,8 @@ const Header = () => {
                         onClick={handleStartTour}
                         className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                       >
-                        <Compass size={16} className="text-blue-500" />
-                        {getPageInfo().label}
+                        <Compass size={16} />
+                        <span>{getPageInfo().label}</span>
                       </button>
                     )}
                     

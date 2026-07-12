@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
@@ -32,6 +33,7 @@ import ManageFiles from './pages/admin/ManageFiles'
 import ManagePosts from './pages/admin/ManagePosts'
 import ManageForum from './pages/admin/ManageForum'
 import ManageJobs from './pages/admin/ManageJobs'
+import ManageAdmin from './pages/admin/ManageAdmin'
 import DisplayHomePage from './pages/admin/DisplayHomePage'
 import GlobalSuspendListener from './components/common/GlobalSuspendListener'
 import Crxs from './pages/Crxs'
@@ -122,10 +124,26 @@ const PublicRoute = ({ children }) => {
   return children
 }
 
+// Helper component to scroll to top on route changes
+const ScrollToTop = () => {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    // Skip scroll to top if navigating to dashboard and feed cache is available
+    if (pathname === '/dashboard' && window.__feedCache) {
+      return
+    }
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  return null
+}
+
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <GlobalSuspendListener />
         <Routes>
           <Route path="/crxs" element={<Crxs />} />
@@ -470,6 +488,14 @@ function App() {
             element={
               <ProtectedRoute requireAdmin={true}>
                 <ManageFiles />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/admins"
+            element={
+              <ProtectedRoute requireAdmin={true}>
+                <ManageAdmin />
               </ProtectedRoute>
             }
           />

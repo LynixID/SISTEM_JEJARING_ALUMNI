@@ -489,3 +489,48 @@ export const getConnections = async (req, res) => {
   }
 }
 
+// Cancel connection request
+export const cancelConnectionRequest = async (req, res) => {
+  try {
+    const { id } = req.params
+    const userId = req.user.userId
+
+    const connection = await prisma.connection.findUnique({
+      where: { id }
+    })
+
+    if (!connection) {
+      return res.status(404).json({ error: 'Request koneksi tidak ditemukan' })
+    }
+
+    if (connection.userId !== userId) {
+      return res.status(403).json({ error: 'Anda tidak memiliki akses untuk membatalkan request ini' })
+    }
+
+    if (connection.status !== 'PENDING') {
+      return res.status(400).json({ error: 'Request sudah diproses dan tidak dapat dibatalkan' })
+    }
+
+    // Hapus notifikasi dan connection secara bersamaan
+    await prisma.$transaction([
+      prisma.notification.deleteMany({
+        where: {
+          relatedId: id,
+          relatedType: 'connection',
+          type: 'CONNECTION_REQUEST'
+        }
+      }),
+      prisma.connection.delete({
+        where: { id }
+      })
+    ])
+
+    res.json({
+      message: 'Request koneksi berhasil dibatalkan'
+    })
+  } catch (error) {
+    console.error('Cancel connection error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat membatalkan request koneksi' })
+  }
+}
+

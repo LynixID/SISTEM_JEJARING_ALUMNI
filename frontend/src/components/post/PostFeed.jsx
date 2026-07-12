@@ -3,20 +3,99 @@ import { getPosts } from '../../services/api'
 import PostCard from './PostCard'
 import { Loader } from 'lucide-react'
 
+// Helper to manage cache globally on window
+const getFeedCache = () => {
+  if (typeof window !== 'undefined') {
+    return window.__feedCache || null
+  }
+  return null
+}
+
+const setFeedCache = (cache) => {
+  if (typeof window !== 'undefined') {
+    window.__feedCache = cache
+  }
+}
+
 const PostFeed = ({ userId, onPostDeleted, refreshKey = 0, searchQuery = '' }) => {
+  const isHomeFeed = !userId
+  const cache = getFeedCache()
+  const isCacheValid = isHomeFeed && cache && cache.searchQuery === searchQuery && cache.refreshKey === refreshKey
+
   // State management untuk posts dan pagination
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
+  const [posts, setPosts] = useState(() => isCacheValid ? cache.posts : [])
+  const [loading, setLoading] = useState(() => isCacheValid ? false : true)
+  const [page, setPage] = useState(() => isCacheValid ? cache.page : 1)
+  const [hasMore, setHasMore] = useState(() => isCacheValid ? cache.hasMore : true)
   const [loadingMore, setLoadingMore] = useState(false)
   
   // Refs untuk infinite scroll dan prevent duplicate requests
   const sentinelRef = useRef(null)
   const isLoadingRef = useRef(false)
 
+  // Real-time state cache sync
+  useEffect(() => {
+    if (isHomeFeed) {
+      const currentCache = getFeedCache() || {}
+      setFeedCache({
+        ...currentCache,
+        posts,
+        page,
+        hasMore,
+        searchQuery,
+        refreshKey
+      })
+    }
+  }, [isHomeFeed, posts, page, hasMore, searchQuery, refreshKey])
+
+  // Real-time scroll cache sync
+  useEffect(() => {
+    if (!isHomeFeed) return
+
+    const handleScroll = () => {
+      const currentScroll = window.scrollY || document.documentElement.scrollTop
+      // Only save if it's > 0 (to avoid capturing 0 during page transitions/resets)
+      if (currentScroll > 0) {
+        const currentCache = getFeedCache() || {}
+        currentCache.scrollTop = currentScroll
+        setFeedCache(currentCache)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isHomeFeed])
+
+  // Reset cache if invalid on initial load
+  useEffect(() => {
+    if (!isCacheValid && isHomeFeed) {
+      setFeedCache({
+        posts: [],
+        page: 1,
+        hasMore: true,
+        searchQuery,
+        refreshKey,
+        scrollTop: 0
+      })
+    }
+  }, [isCacheValid, isHomeFeed, searchQuery, refreshKey])
+
   // Load initial posts saat component mount atau userId/refreshKey/searchQuery berubah
   useEffect(() => {
+    if (isCacheValid) {
+      // Restore scroll position with multiple retries to handle image loads and rendering lag
+      const targetScroll = cache.scrollTop
+      let attempts = 0
+      const restore = () => {
+        window.scrollTo({ top: targetScroll, behavior: 'instant' })
+        attempts++
+        if (attempts < 5) {
+          setTimeout(restore, attempts * 50)
+        }
+      }
+      const timer = setTimeout(restore, 20)
+      return () => clearTimeout(timer)
+    }
     loadPosts(1, true)
   }, [userId, refreshKey, searchQuery])
 

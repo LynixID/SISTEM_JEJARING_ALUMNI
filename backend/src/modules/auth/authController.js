@@ -363,7 +363,8 @@ export const login = async (req, res) => {
     if (user.isSuspended) {
       return res.status(403).json({ 
         error: 'Akun Anda ditangguhkan (Suspended). Harap hubungi admin untuk informasi lebih lanjut.',
-        isSuspended: true
+        isSuspended: true,
+        suspendReason: user.suspendReason
       })
     }
 
@@ -472,7 +473,8 @@ export const googleLogin = async (req, res) => {
     if (existingUser && existingUser.isSuspended) {
       return res.status(403).json({ 
         error: 'Akun Anda ditangguhkan (Suspended). Harap hubungi admin untuk informasi lebih lanjut.',
-        isSuspended: true
+        isSuspended: true,
+        suspendReason: existingUser.suspendReason
       })
     }
 
@@ -621,7 +623,8 @@ export const getMe = async (req, res) => {
     if (user.isSuspended) {
       return res.status(403).json({
         error: 'Akun Anda ditangguhkan. Hubungi admin untuk informasi lebih lanjut.',
-        isSuspended: true
+        isSuspended: true,
+        suspendReason: user.suspendReason
       })
     }
 

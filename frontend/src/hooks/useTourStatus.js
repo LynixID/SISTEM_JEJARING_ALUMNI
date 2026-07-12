@@ -36,10 +36,20 @@ const useTourStatus = (tourKey, enabled = true) => {
 
     hasChecked.current = true
 
-    // 1. Cek cache localStorage dulu (fast path)
+    // Cek apakah ada trigger eksplisit dari pengalihan progress dropdown
+    if (localStorage.getItem('trigger_tour_on_mount') === tourKey) {
+      localStorage.removeItem('trigger_tour_on_mount')
+      setShouldShowTour(true)
+      setIsChecking(false)
+      return
+    }
+
+    // 1. Cek cache localStorage (format baru berbasis userId)
     const cacheKey = getCacheKey()
-    if (localStorage.getItem(cacheKey) === 'true') {
-      // Sudah selesai tur sebelumnya — tidak perlu hit API
+    const isCached = localStorage.getItem(cacheKey) === 'true'
+
+    if (isCached) {
+      // Sudah selesai tur sebelumnya
       setShouldShowTour(false)
       setIsChecking(false)
       return
@@ -83,6 +93,11 @@ const useTourStatus = (tourKey, enabled = true) => {
     const cacheKey = getCacheKey()
     localStorage.setItem(cacheKey, 'true')
     setShouldShowTour(false)
+
+    // Siarkan event perubahan status tur agar header/dropdown langsung sinkron
+    window.dispatchEvent(new CustomEvent('tourStatusUpdated', {
+      detail: { tourKey, completed: true }
+    }))
 
     // Kirim ke backend (fire-and-forget — tidak perlu await agar tidak blocking UI)
     try {

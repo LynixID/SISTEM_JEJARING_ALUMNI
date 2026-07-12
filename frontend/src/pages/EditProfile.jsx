@@ -141,7 +141,7 @@ const EditProfile = () => {
     const timer = setTimeout(() => {
       setShowTour(true)
       setIsTourActive(true)
-    }, 1500)
+    }, 200)
     return () => clearTimeout(timer)
   }, [shouldShowTour])
 

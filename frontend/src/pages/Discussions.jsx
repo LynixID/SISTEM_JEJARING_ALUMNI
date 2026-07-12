@@ -51,7 +51,7 @@ const Discussions = () => {
     if (!shouldShowTour) return
     const timer = setTimeout(() => {
       setShowTour(true)
-    }, 1500)
+    }, 200)
     return () => clearTimeout(timer)
   }, [shouldShowTour])
 
@@ -188,48 +188,58 @@ const Discussions = () => {
               <div className="space-y-4">
                 {threads.map((t) => (
                   <Card key={t.id} className="p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        {t.image && (
-                          <div className="mb-3">
-                            <img
-                              src={getImageUrl(t.image, 'discussions')}
-                              alt={t.title}
-                              className="w-full max-h-56 object-cover rounded-xl border border-gray-200"
-                              loading="lazy"
-                            />
-                          </div>
-                        )}
-                        <Link to={`/diskusi/${t.id}`} className="text-lg font-semibold text-gray-900 hover:text-blue-600">
-                          {t.title}
-                        </Link>
-                        <div className="text-sm text-gray-600 mt-1 line-clamp-2">
-                          {t.content}
+                    <div className="flex flex-col md:flex-row gap-5">
+                      {/* Sisi kiri: Gambar (jika ada) */}
+                      {t.image && (
+                        <div className="w-full md:w-56 h-48 md:h-32 flex-shrink-0 overflow-hidden rounded-xl border border-gray-200">
+                          <img
+                            src={getImageUrl(t.image, 'discussions')}
+                            alt={t.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
                         </div>
-                        <div className="text-xs text-gray-500 mt-2 flex flex-wrap gap-2">
-                          <span className="px-2 py-1 rounded-full bg-gray-100">
-                            {t.visibility === 'PRIVATE' ? 'Privat' : 'Publik'}
+                      )}
+                      
+                      {/* Sisi kanan: Keterangan */}
+                      <div className="flex-1 flex flex-col justify-between min-w-0">
+                        <div className="min-w-0">
+                          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <Link to={`/diskusi/${t.id}`} className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors block">
+                                {t.title}
+                              </Link>
+                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                {t.content}
+                              </p>
+                            </div>
+                            <div className="shrink-0 w-full md:w-auto mt-2 md:mt-0">
+                              <Link to={`/diskusi/${t.id}`} className="w-full md:w-auto block">
+                                <Button variant="primary" className="w-full md:w-auto text-center justify-center cursor-pointer">Buka</Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs text-gray-500 mt-3 flex flex-wrap gap-2">
+                          <span className="px-2.5 py-1 rounded-full bg-gray-100 font-medium">
+                            {t.visibility === 'PRIVATE' ? '🔒 Privat' : '🌐 Publik'}
                           </span>
-                          <span className="px-2 py-1 rounded-full bg-gray-100">
-                            {t.status === 'LOCKED' ? 'Dikunci' : 'Terbuka'}
+                          <span className="px-2.5 py-1 rounded-full bg-gray-100 font-medium">
+                            {t.status === 'LOCKED' ? '🚫 Dikunci' : '✅ Terbuka'}
                           </span>
-                          <span className="px-2 py-1 rounded-full bg-gray-100">
-                            {t.counts?.members || 0} anggota
+                          <span className="px-2.5 py-1 rounded-full bg-gray-100 font-medium">
+                            👥 {t.counts?.members || 0} anggota
                           </span>
-                          <span className="px-2 py-1 rounded-full bg-gray-100">
-                            {t.counts?.messages || 0} pesan
+                          <span className="px-2.5 py-1 rounded-full bg-gray-100 font-medium">
+                            💬 {t.counts?.messages || 0} pesan
                           </span>
                           {t.membership?.role && (
-                            <span className="px-2 py-1 rounded-full bg-blue-50 text-blue-700">
+                            <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-100">
                               Bergabung ({t.membership.role})
                             </span>
                           )}
                         </div>
-                      </div>
-                      <div className="shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
-                        <Link to={`/diskusi/${t.id}`} className="w-full sm:w-auto block">
-                          <Button variant="outline" className="w-full sm:w-auto text-center justify-center">Buka</Button>
-                        </Link>
                       </div>
                     </div>
                   </Card>

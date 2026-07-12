@@ -144,6 +144,7 @@ const ExportUserModal = ({ isOpen, onClose }) => {
                 <option value="all">Semua Status</option>
                 <option value="true">Terverifikasi</option>
                 <option value="false">Belum Verifikasi</option>
+                <option value="suspended">Ditangguhkan</option>
               </select>
             </div>
           </div>

@@ -33,12 +33,13 @@ const PostDetail = () => {
   const [showComments, setShowComments] = useState(true) // Auto show comments di detail
   const [showMenu, setShowMenu] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', variant: 'info' })
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', variant: 'info', onButtonClick: null })
   const [confirmModal, setConfirmModal] = useState({ 
     isOpen: false, 
     title: '', 
     message: '', 
     variant: 'warning',
+    isLoading: false,
     onConfirm: () => {}
   })
   const [reportModal, setReportModal] = useState(false)
@@ -228,6 +229,27 @@ const PostDetail = () => {
     }
   }, [post, user])
 
+  // Sync changes back to feedCache so they are kept when returning to Beranda
+  useEffect(() => {
+    if (post && window.__feedCache && Array.isArray(window.__feedCache.posts)) {
+      window.__feedCache.posts = window.__feedCache.posts.map(p => {
+        if (p.id === post.id) {
+          return {
+            ...p,
+            content: post.content,
+            images: post.images,
+            visibility: post.visibility,
+            mentions: post.mentions,
+            likesCount: likesCount,
+            commentsCount: commentsCount,
+            isLiked: isLiked
+          }
+        }
+        return p
+      })
+    }
+  }, [post, likesCount, commentsCount, isLiked])
+
 
   // Fetch post dari API
   const fetchPost = async () => {
@@ -286,30 +308,40 @@ const PostDetail = () => {
   }
 
   // Handler untuk delete post
-  const handleDelete = async () => {
+  const handleDelete = () => {
     setConfirmModal({
       isOpen: true,
       title: 'Hapus Post',
-      message: 'Apakah Anda yakin ingin menghapus post ini?',
+      message: 'Apakah Anda yakin ingin menghapus post ini? Postingan tidak dapat dikembalikan.',
       variant: 'danger',
+      isLoading: false,
       onConfirm: async () => {
+        // Set loading state
+        setConfirmModal(prev => ({ ...prev, isLoading: true }))
         try {
           await deletePost(post.id)
+          // Clear deleted post from feed cache if it exists
+          if (window.__feedCache && Array.isArray(window.__feedCache.posts)) {
+            window.__feedCache.posts = window.__feedCache.posts.filter(p => p.id !== post.id)
+          }
+          // Tutup confirm dulu, lalu tampilkan alert sukses
+          setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }))
           setAlertModal({
             isOpen: true,
-            title: 'Berhasil',
-            message: 'Post berhasil dihapus',
-            variant: 'success'
+            title: 'Postingan Dihapus',
+            message: 'Postingan Anda berhasil dihapus.',
+            variant: 'success',
+            // Navigasi dilakukan setelah user klik OK di alert
+            onButtonClick: () => navigate('/dashboard')
           })
-          setTimeout(() => {
-            navigate('/dashboard')
-          }, 1500)
         } catch (err) {
+          setConfirmModal(prev => ({ ...prev, isLoading: false }))
           setAlertModal({
             isOpen: true,
-            title: 'Error',
-            message: err.response?.data?.error || 'Gagal menghapus post',
-            variant: 'error'
+            title: 'Gagal Menghapus',
+            message: err.response?.data?.error || 'Terjadi kesalahan. Coba lagi.',
+            variant: 'error',
+            onButtonClick: null
           })
         }
       }
@@ -738,20 +770,24 @@ const PostDetail = () => {
       {/* Alert Modal */}
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
         title={alertModal.title}
         message={alertModal.message}
         variant={alertModal.variant}
+        buttonText="OK"
+        onButtonClick={alertModal.onButtonClick}
       />
 
       {/* Confirm Modal */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
         onConfirm={confirmModal.onConfirm}
         title={confirmModal.title}
         message={confirmModal.message}
         variant={confirmModal.variant}
+        isLoading={confirmModal.isLoading}
+        confirmText="Ya, Hapus"
       />
 
       {/* Report Modal */}

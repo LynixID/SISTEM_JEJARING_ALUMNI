@@ -4,6 +4,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { getIO } from '../../config/socket.js'
 import ExcelJS from 'exceljs'
+import bcrypt from 'bcryptjs'
 import { getImagePath, extractFilename } from '../../utils/fileUtils.js'
 import { sendUserApprovalEmail } from '../../services/emailService.js'
 
@@ -28,7 +29,12 @@ const buildUserFilter = (query) => {
   }
 
   if (verified !== undefined && verified !== 'all') {
-    where.verified = verified === 'true'
+    if (verified === 'suspended') {
+      where.isSuspended = true
+    } else {
+      where.verified = verified === 'true'
+      where.isSuspended = false
+    }
   }
 
   if (role && role !== 'all') {
@@ -77,6 +83,7 @@ export const getAllUsers = async (req, res) => {
           whatsapp: true,
           role: true,
           verified: true,
+          emailVerified: true,
           isSuspended: true,
           suspendReason: true,
           createdAt: true,
@@ -241,6 +248,14 @@ export const rejectUser = async (req, res) => {
 
     if (user.role === 'ADMIN') {
       return res.status(403).json({ error: 'Cannot reject admin' })
+    }
+
+    // Sinyal real-time logout paksa untuk user yang direject
+    try {
+      const io = getIO()
+      io.to(`user:${id}`).emit('ACCOUNT_DELETED')
+    } catch (socketErr) {
+      console.error('Socket emit reject user error:', socketErr)
     }
 
     // Delete user (atau bisa juga set flag rejected)
@@ -623,7 +638,7 @@ export const suspendUser = async (req, res) => {
     // Beri sinyal real-time agar user langsung terblokir meski sedang online
     try {
       const io = getIO()
-      io.to(`user:${id}`).emit('ACCOUNT_SUSPENDED')
+      io.to(`user:${id}`).emit('ACCOUNT_SUSPENDED', { reason: reason || 'Pelanggaran kebijakan komunitas' })
     } catch (err) {
       console.error('Socket emit suspend error:', err)
     }
@@ -695,6 +710,14 @@ export const deleteUser = async (req, res) => {
     // Safety check: Don't let admin delete other admins easily
     if (user.role === 'ADMIN') {
       return res.status(403).json({ error: 'Tidak dapat menghapus sesama akun Administrator' })
+    }
+
+    // Sinyal real-time logout paksa untuk user yang dihapus
+    try {
+      const io = getIO()
+      io.to(`user:${id}`).emit('ACCOUNT_DELETED')
+    } catch (socketErr) {
+      console.error('Socket emit delete user error:', socketErr)
     }
 
     await prisma.user.delete({
@@ -1575,4 +1598,670 @@ export const deleteJobByAdmin = async (req, res) => {
     res.status(500).json({ error: 'Terjadi kesalahan saat menghapus lowongan' })
   }
 }
+
+// Create user by admin
+export const createUserByAdmin = async (req, res) => {
+  try {
+    const { nama, nim, email, whatsapp, prodi, angkatan, domisili, password, role } = req.body
+
+    // 1. Validasi field wajib
+    if (!nama || nama.trim().length < 2) {
+      return res.status(400).json({ error: 'Nama harus diisi minimal 2 karakter' })
+    }
+
+    if (!nim || nim.trim().length < 8) {
+      return res.status(400).json({ error: 'NIM harus diisi minimal 8 karakter' })
+    }
+
+    if (!/^[0-9]+$/.test(nim)) {
+      return res.status(400).json({ error: 'NIM harus berupa angka' })
+    }
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email wajib diisi' })
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Format email tidak valid' })
+    }
+
+    if (!whatsapp) {
+      return res.status(400).json({ error: 'Nomor WhatsApp wajib diisi' })
+    }
+
+    if (!/^(08|628)[0-9]{9,12}$/.test(whatsapp.replace(/\s/g, ''))) {
+      return res.status(400).json({ error: 'Nomor WhatsApp tidak valid. Format: 08xxxxxxxxxx atau 628xxxxxxxxxx' })
+    }
+
+    if (!prodi) {
+      return res.status(400).json({ error: 'Program studi wajib diisi' })
+    }
+
+    if (!angkatan) {
+      return res.status(400).json({ error: 'Angkatan wajib diisi' })
+    }
+
+    const parsedAngkatan = parseInt(angkatan)
+    const currentYear = new Date().getFullYear()
+    if (isNaN(parsedAngkatan) || parsedAngkatan < 1945 || parsedAngkatan > currentYear + 1) {
+      return res.status(400).json({ error: `Angkatan harus antara 1945-${currentYear + 1}` })
+    }
+
+    if (!domisili) {
+      return res.status(400).json({ error: 'Domisili wajib diisi' })
+    }
+
+    // 2. Tentukan password default jika kosong
+    let passToUse = password
+    if (!passToUse || passToUse.trim() === '') {
+      passToUse = 'password123'
+    } else if (passToUse.length < 6) {
+      return res.status(400).json({ error: 'Password minimal 6 karakter' })
+    }
+
+    // 3. Cek duplikasi email
+    const existingEmail = await prisma.user.findUnique({
+      where: { email }
+    })
+    if (existingEmail) {
+      return res.status(400).json({ error: 'Email sudah terdaftar' })
+    }
+
+    // 4. Cek duplikasi NIM
+    const existingNIM = await prisma.user.findUnique({
+      where: { nim }
+    })
+    if (existingNIM) {
+      return res.status(400).json({ error: 'NIM sudah terdaftar' })
+    }
+
+    // 5. Hash password
+    const hashedPassword = await bcrypt.hash(passToUse, 10)
+
+    // 6. Buat user
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        nama,
+        nim,
+        prodi,
+        angkatan: parsedAngkatan,
+        domisili,
+        whatsapp,
+        role: role || 'ALUMNI',
+        verified: true,
+        emailVerified: true,
+        profile: {
+          create: {}
+        }
+      },
+      select: {
+        id: true,
+        email: true,
+        nama: true,
+        nim: true,
+        prodi: true,
+        angkatan: true,
+        domisili: true,
+        whatsapp: true,
+        role: true,
+        verified: true,
+        createdAt: true
+      }
+    })
+
+    res.status(201).json({
+      message: 'User berhasil dibuat',
+      user: newUser
+    })
+  } catch (error) {
+    console.error('Create user by admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat membuat user' })
+  }
+}
+
+// Update user details by admin
+export const updateUserByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { nama, nim, email, whatsapp, prodi, angkatan, domisili, role } = req.body
+
+    const user = await prisma.user.findUnique({
+      where: { id }
+    })
+
+    if (!user) {
+      return res.status(404).json({ error: 'User tidak ditemukan' })
+    }
+
+    if (user.role === 'ADMIN') {
+      return res.status(403).json({ error: 'Tidak dapat mengubah akun Admin' })
+    }
+
+    // 1. Validasi input
+    if (nama !== undefined && nama.trim().length < 2) {
+      return res.status(400).json({ error: 'Nama harus diisi minimal 2 karakter' })
+    }
+
+    if (nim !== undefined) {
+      if (nim.trim().length < 8) {
+        return res.status(400).json({ error: 'NIM harus diisi minimal 8 karakter' })
+      }
+      if (!/^[0-9]+$/.test(nim)) {
+        return res.status(400).json({ error: 'NIM harus berupa angka' })
+      }
+      // Cek duplikasi NIM
+      const existingNIM = await prisma.user.findFirst({
+        where: { nim, NOT: { id } }
+      })
+      if (existingNIM) {
+        return res.status(400).json({ error: 'NIM sudah terdaftar' })
+      }
+    }
+
+    if (email !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Format email tidak valid' })
+      }
+      // Cek duplikasi email
+      const existingEmail = await prisma.user.findFirst({
+        where: { email, NOT: { id } }
+      })
+      if (existingEmail) {
+        return res.status(400).json({ error: 'Email sudah terdaftar' })
+      }
+    }
+
+    if (whatsapp !== undefined && whatsapp) {
+      if (!/^(08|628)[0-9]{9,12}$/.test(whatsapp.replace(/\s/g, ''))) {
+        return res.status(400).json({ error: 'Nomor WhatsApp tidak valid. Format: 08xxxxxxxxxx atau 628xxxxxxxxxx' })
+      }
+    }
+
+    if (angkatan !== undefined && angkatan) {
+      const parsedAngkatan = parseInt(angkatan)
+      const currentYear = new Date().getFullYear()
+      if (isNaN(parsedAngkatan) || parsedAngkatan < 1945 || parsedAngkatan > currentYear + 1) {
+        return res.status(400).json({ error: `Angkatan harus antara 1945-${currentYear + 1}` })
+      }
+    }
+
+    if (role !== undefined && !['ALUMNI', 'PENGURUS'].includes(role)) {
+      return res.status(400).json({ error: 'Role tidak valid' })
+    }
+
+    // Build update data
+    const updateData = {}
+    if (nama !== undefined) updateData.nama = nama.trim()
+    if (nim !== undefined) updateData.nim = nim.trim()
+    if (email !== undefined) updateData.email = email.trim()
+    if (whatsapp !== undefined) updateData.whatsapp = whatsapp ? whatsapp.trim() : null
+    if (prodi !== undefined) updateData.prodi = prodi ? prodi.trim() : null
+    if (angkatan !== undefined) updateData.angkatan = angkatan ? parseInt(angkatan) : null
+    if (domisili !== undefined) updateData.domisili = domisili ? domisili.trim() : null
+    if (role !== undefined) updateData.role = role
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        nama: true,
+        nim: true,
+        prodi: true,
+        angkatan: true,
+        domisili: true,
+        whatsapp: true,
+        role: true,
+        verified: true,
+        createdAt: true
+      }
+    })
+
+    res.json({
+      message: 'User berhasil diperbarui',
+      user: updatedUser
+    })
+  } catch (error) {
+    console.error('Update user by admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat memperbarui user' })
+  }
+}
+
+
+// ─── ADMIN MANAGEMENT ────────────────────────────────────────────────────────
+
+// Get all admin accounts
+export const getAllAdmins = async (req, res) => {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: {
+        id: true,
+        email: true,
+        nama: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    res.json({ admins })
+  } catch (error) {
+    console.error('Get all admins error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data admin' })
+  }
+}
+
+// Create new admin account
+export const createAdminByAdmin = async (req, res) => {
+  try {
+    const { nama, email, password } = req.body
+
+    // Validasi input
+    if (!nama || nama.trim().length < 3) {
+      return res.status(400).json({ error: 'Nama harus diisi minimal 3 karakter' })
+    }
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email wajib diisi' })
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Format email tidak valid' })
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password minimal 6 karakter' })
+    }
+
+    // Cek duplikasi email
+    const existingEmail = await prisma.user.findUnique({ where: { email } })
+    if (existingEmail) {
+      return res.status(400).json({ error: 'Email sudah terdaftar' })
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    // Buat akun admin
+    const newAdmin = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        nama: nama.trim(),
+        role: 'ADMIN',
+        verified: true,
+        emailVerified: true,
+        profile: {
+          create: {}
+        }
+      },
+      select: {
+        id: true,
+        email: true,
+        nama: true,
+        role: true,
+        createdAt: true
+      }
+    })
+
+    res.status(201).json({
+      message: 'Akun admin berhasil dibuat',
+      admin: newAdmin
+    })
+  } catch (error) {
+    console.error('Create admin by admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat membuat akun admin' })
+  }
+}
+
+// Delete admin account
+export const deleteAdminById = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    // Cegah admin menghapus dirinya sendiri
+    if (req.user.userId === id) {
+      return res.status(400).json({ error: 'Anda tidak dapat menghapus akun Anda sendiri' })
+    }
+
+    const admin = await prisma.user.findUnique({ where: { id } })
+
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin tidak ditemukan' })
+    }
+
+    if (admin.role !== 'ADMIN') {
+      return res.status(400).json({ error: 'User bukan admin' })
+    }
+
+    await prisma.user.delete({ where: { id } })
+
+    res.json({ message: 'Akun admin berhasil dihapus' })
+  } catch (error) {
+    console.error('Delete admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat menghapus admin' })
+  }
+}
+
+// Update admin account (nama, email, password)
+export const updateAdminById = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { nama, email, password } = req.body
+
+    const admin = await prisma.user.findUnique({ where: { id } })
+
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin tidak ditemukan' })
+    }
+
+    if (admin.role !== 'ADMIN') {
+      return res.status(400).json({ error: 'User bukan admin' })
+    }
+
+    // Validasi nama
+    if (nama !== undefined) {
+      if (!nama.trim() || nama.trim().length < 3) {
+        return res.status(400).json({ error: 'Nama harus diisi minimal 3 karakter' })
+      }
+    }
+
+    // Validasi email
+    if (email !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Format email tidak valid' })
+      }
+      // Cek duplikasi email (kecuali milik admin itu sendiri)
+      const existingEmail = await prisma.user.findUnique({ where: { email } })
+      if (existingEmail && existingEmail.id !== id) {
+        return res.status(400).json({ error: 'Email sudah digunakan oleh akun lain' })
+      }
+    }
+
+    // Validasi password (opsional, hanya jika dikirim)
+    const updateData = {}
+    if (nama !== undefined) updateData.nama = nama.trim()
+    if (email !== undefined) updateData.email = email.trim()
+    if (password && password.trim() !== '') {
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Password minimal 6 karakter' })
+      }
+      updateData.password = await bcrypt.hash(password, 10)
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'Tidak ada data yang diubah' })
+    }
+
+    const updated = await prisma.user.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        nama: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    })
+
+    res.json({ message: 'Akun admin berhasil diperbarui', admin: updated })
+  } catch (error) {
+    console.error('Update admin error:', error)
+    res.status(500).json({ error: 'Terjadi kesalahan saat memperbarui admin' })
+  }
+}
+
+// Generate Excel Template for User Import
+export const getImportTemplate = async (req, res) => {
+  try {
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Template Import User')
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'Nama Lengkap', key: 'nama', width: 25 },
+      { header: 'NIM', key: 'nim', width: 15 },
+      { header: 'Email', key: 'email', width: 25 },
+      { header: 'WhatsApp', key: 'whatsapp', width: 15 },
+      { header: 'Program Studi', key: 'prodi', width: 35 },
+      { header: 'Angkatan', key: 'angkatan', width: 12 },
+      { header: 'Domisili', key: 'domisili', width: 30 },
+      { header: 'Role (ALUMNI / PENGURUS)', key: 'role', width: 25 }
+    ]
+
+    // Style header row
+    worksheet.getRow(1).font = { bold: true }
+    worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'left' }
+
+    // Add dummy row for instruction
+    worksheet.addRow({
+      nama: 'Budi Santoso',
+      nim: '202209180',
+      email: 'budi.santoso@example.com',
+      whatsapp: '081234567890',
+      prodi: 'Sarjana Komputer (Informatika)',
+      angkatan: '2022',
+      domisili: 'Sleman, D.I. Yogyakarta',
+      role: 'ALUMNI'
+    })
+
+    // Format NIM and WhatsApp columns as text (@) up to row 1000 to preserve leading zeros
+    for (let i = 1; i <= 1000; i++) {
+      worksheet.getCell(`B${i}`).numFmt = '@'
+      worksheet.getCell(`D${i}`).numFmt = '@'
+    }
+
+    const filename = 'Template_Import_User.xlsx'
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+
+    await workbook.xlsx.write(res)
+    res.end()
+  } catch (error) {
+    console.error('Get import template error:', error)
+    res.status(500).json({ error: 'Gagal membuat template import' })
+  }
+}
+
+// Helper to extract string value from ExcelJS cell value (handles text, numeric, hyperlinks, formulas, etc.)
+const getCellValueAsString = (cellValue) => {
+  if (cellValue === null || cellValue === undefined) {
+    return ''
+  }
+  if (typeof cellValue === 'object') {
+    // ExcelJS Hyperlink object: { text: '...', hyperlink: '...' }
+    if (cellValue.text !== undefined) {
+      return cellValue.text.toString().trim()
+    }
+    // ExcelJS Formula object: { formula: '...', result: '...' }
+    if (cellValue.result !== undefined) {
+      return cellValue.result.toString().trim()
+    }
+    // ExcelJS RichText object: { richText: [...] }
+    if (cellValue.richText !== undefined && Array.isArray(cellValue.richText)) {
+      return cellValue.richText.map(t => t.text).join('').trim()
+    }
+  }
+  return cellValue.toString().trim()
+}
+
+// Parse Excel and Import Users
+export const importUsers = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'File Excel wajib diunggah' })
+    }
+
+    const buffer = req.file.buffer
+    const workbook = new ExcelJS.Workbook()
+    await workbook.xlsx.load(buffer)
+
+    const worksheet = workbook.getWorksheet(1)
+    if (!worksheet) {
+      return res.status(400).json({ error: 'Sheet pertama tidak ditemukan di file Excel' })
+    }
+
+    const usersToCreate = []
+    const errors = []
+    const defaultPassword = 'password123'
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10)
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return // Skip header
+
+      // Access cell values via row.getCell(colIndex).value to be extremely safe
+      const nama = getCellValueAsString(row.getCell(1).value)
+      const nim = getCellValueAsString(row.getCell(2).value)
+      const email = getCellValueAsString(row.getCell(3).value)
+      const whatsapp = getCellValueAsString(row.getCell(4).value)
+      const prodi = getCellValueAsString(row.getCell(5).value)
+      const angkatanStr = getCellValueAsString(row.getCell(6).value)
+      const angkatan = angkatanStr ? parseInt(angkatanStr) : null
+      const domisili = getCellValueAsString(row.getCell(7).value)
+      const roleRaw = getCellValueAsString(row.getCell(8).value).toUpperCase()
+      const role = ['ALUMNI', 'PENGURUS'].includes(roleRaw) ? roleRaw : 'ALUMNI'
+
+      const rowErrors = []
+      if (!nama || nama.length < 2) {
+        rowErrors.push('Nama minimal 2 karakter')
+      }
+      if (!nim || nim.length < 8 || !/^[0-9]+$/.test(nim)) {
+        rowErrors.push('NIM harus minimal 8 karakter angka')
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        rowErrors.push('Format email tidak valid')
+      }
+      if (!whatsapp || !/^(08|628)[0-9]{9,12}$/.test(whatsapp.replace(/\s/g, ''))) {
+        rowErrors.push('Nomor WhatsApp tidak valid (contoh: 08xxxxxxxxxx)')
+      }
+      if (!prodi) {
+        rowErrors.push('Program studi wajib diisi')
+      }
+      if (!angkatan || isNaN(angkatan) || angkatan < 1945 || angkatan > new Date().getFullYear() + 1) {
+        rowErrors.push('Angkatan tidak valid')
+      }
+      if (!domisili) {
+        rowErrors.push('Domisili wajib diisi')
+      }
+
+      if (rowErrors.length > 0) {
+        errors.push({ row: rowNumber, errors: rowErrors })
+      } else {
+        usersToCreate.push({
+          rowNumber,
+          nama,
+          nim,
+          email,
+          whatsapp,
+          prodi,
+          angkatan,
+          domisili,
+          role
+        })
+      }
+    })
+
+    if (usersToCreate.length === 0 && errors.length === 0) {
+      return res.status(400).json({ error: 'File Excel kosong atau format tidak sesuai' })
+    }
+
+    // Check duplicates in database
+    const emailsToCheck = usersToCreate.map(u => u.email)
+    const nimsToCheck = usersToCreate.map(u => u.nim)
+
+    const [existingUsersEmail, existingUsersNIM] = await Promise.all([
+      prisma.user.findMany({
+        where: { email: { in: emailsToCheck } },
+        select: { email: true }
+      }),
+      prisma.user.findMany({
+        where: { nim: { in: nimsToCheck } },
+        select: { nim: true }
+      })
+    ])
+
+    const existingEmails = new Set(existingUsersEmail.map(u => u.email))
+    const existingNims = new Set(existingUsersNIM.map(u => u.nim))
+
+    const finalUsersToCreate = []
+    usersToCreate.forEach((u) => {
+      const rowErrors = []
+      if (existingEmails.has(u.email)) {
+        rowErrors.push(`Email '${u.email}' sudah terdaftar`)
+      }
+      if (existingNims.has(u.nim)) {
+        rowErrors.push(`NIM '${u.nim}' sudah terdaftar`)
+      }
+
+      if (rowErrors.length > 0) {
+        errors.push({ row: u.rowNumber, errors: rowErrors })
+      } else {
+        finalUsersToCreate.push(u)
+      }
+    })
+
+    // If there is even one error (either validation or duplicate in DB),
+    // abort the entire import and save NOTHING.
+    if (errors.length > 0) {
+      errors.sort((a, b) => a.row - b.row)
+      return res.json({
+        success: false,
+        message: `Import dibatalkan sepenuhnya karena terdapat ${errors.length} baris yang tidak valid.`,
+        createdCount: 0,
+        failedCount: errors.length,
+        errors
+      })
+    }
+
+    // Batch insert users using database transaction (all-or-nothing)
+    let createdCount = 0
+    if (finalUsersToCreate.length > 0) {
+      await prisma.$transaction(
+        finalUsersToCreate.map(u => {
+          return prisma.user.create({
+            data: {
+              email: u.email,
+              password: hashedPassword,
+              nama: u.nama,
+              nim: u.nim,
+              prodi: u.prodi,
+              angkatan: u.angkatan,
+              domisili: u.domisili,
+              role: u.role,
+              verified: true,
+              emailVerified: true,
+              profile: {
+                create: {}
+              }
+            }
+          })
+        })
+      )
+      createdCount = finalUsersToCreate.length
+    }
+
+    res.json({
+      success: true,
+      message: `${createdCount} user berhasil diimport.`,
+      createdCount,
+      failedCount: 0,
+      errors: []
+    })
+
+  } catch (error) {
+    console.error('Import users error:', error)
+    res.status(500).json({ error: 'Gagal memproses import data user' })
+  }
+}
+
 

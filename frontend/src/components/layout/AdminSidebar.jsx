@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, LogOut, User, Menu, X, Settings,
   Newspaper, Calendar, ChevronDown, ChevronRight, FileText,
-  CalendarCheck, ShieldAlert, MessageSquare, FolderOpen, Briefcase, Monitor
+  CalendarCheck, ShieldAlert, MessageSquare, FolderOpen, Briefcase, Monitor, ShieldCheck
 } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import ConfirmModal from '../common/ConfirmModal'
+import api from '../../services/api'
 
 const AdminSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -26,6 +27,45 @@ const AdminSidebar = () => {
   const location = useLocation()
   const { user, logout, isLoading } = useAuth()
   const navigate = useNavigate()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchPendingCount = async () => {
+      try {
+        const response = await api.get('/admin/statistics')
+        if (isMounted && response.data?.statistics) {
+          setPendingCount(response.data.statistics.pendingUsers || 0)
+        }
+      } catch (error) {
+        console.error('Error fetching pending users count:', error)
+      }
+    }
+
+    if (user && user.role === 'ADMIN') {
+      fetchPendingCount()
+    }
+
+    // Poll statistics every 30 seconds
+    const interval = setInterval(() => {
+      if (user && user.role === 'ADMIN') {
+        fetchPendingCount()
+      }
+    }, 30000)
+
+    // Listen for custom verification events
+    const handleVerificationChange = () => {
+      fetchPendingCount()
+    }
+    window.addEventListener('user-verification-changed', handleVerificationChange)
+
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+      window.removeEventListener('user-verification-changed', handleVerificationChange)
+    }
+  }, [user, location.pathname])
 
   const toggleCollapse = () => {
     setIsCollapsed(prev => {
@@ -65,6 +105,7 @@ const AdminSidebar = () => {
       title: 'DATA PENGGUNA',
       items: [
         { icon: Users, label: 'Manajemen User', path: '/admin/users' },
+        { icon: ShieldCheck, label: 'Manajemen Admin', path: '/admin/admins' },
         { icon: ShieldAlert, label: 'Laporan Konten', path: '/admin/laporan' },
         { icon: MessageSquare, label: 'Manajemen Komentar', path: '/admin/komentar' }
       ]
@@ -212,7 +253,15 @@ const AdminSidebar = () => {
                       }`}
                       title={isCollapsed ? item.label : ''}
                     >
-                      <Icon size={20} className={isActive ? 'text-white' : 'group-hover:text-blue-400 transition-colors'} />
+                      <div className="relative">
+                        <Icon size={20} className={isActive ? 'text-white' : 'group-hover:text-blue-400 transition-colors'} />
+                        {item.path === '/admin/users' && pendingCount > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 flex h-2.5 w-2.5 z-10">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-gray-900"></span>
+                          </span>
+                        )}
+                      </div>
                       {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
                       {isActive && !isCollapsed && (
                         <div className="absolute right-2 w-1.5 h-1.5 rounded-full bg-white shadow-glow" />

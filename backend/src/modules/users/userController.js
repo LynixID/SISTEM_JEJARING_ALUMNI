@@ -404,6 +404,7 @@ export const getUsers = async (req, res) => {
           nama: true,
           nim: true,
           role: true,
+          prodi: true,
           angkatan: true,
           domisili: true,
           createdAt: true,

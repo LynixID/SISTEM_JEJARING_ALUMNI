@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Header from '../components/layout/Header'
 import Sidebar from '../components/layout/Sidebar'
-import { getUserProfile, getConnectionStatus, acceptConnection, rejectConnection, getPosts } from '../services/api'
+import { getUserProfile, getConnectionStatus, acceptConnection, rejectConnection, cancelConnectionRequest, getPosts } from '../services/api'
 import { getImageUrl } from '../utils/imageUtils'
 import UserBadge from '../components/common/UserBadge'
 import { Edit, User, Briefcase, Award, GraduationCap, FileText, Globe, MapPin, Mail, Phone, Calendar, UserPlus, MessageCircle, Check, Clock, X, Newspaper, Flag } from 'lucide-react'
@@ -11,6 +11,7 @@ import Button from '../components/common/Button'
 import ConnectModal from '../components/connection/ConnectModal'
 import PostCard from '../components/post/PostCard'
 import ReportModal from '../components/common/ReportModal'
+import ConfirmModal from '../components/common/ConfirmModal'
 import OnboardingTour from '../components/common/OnboardingTour'
 import useTourStatus from '../hooks/useTourStatus'
 
@@ -23,6 +24,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('about')
   const [isOwnProfile, setIsOwnProfile] = useState(false)
   const [showConnectModal, setShowConnectModal] = useState(false)
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState(null)
   const [connectionInfo, setConnectionInfo] = useState(null)
   const [loadingConnection, setLoadingConnection] = useState(false)
@@ -38,6 +40,22 @@ const Profile = () => {
   })
   const [showTour, setShowTour] = useState(false)
   const { shouldShowTour, markTourComplete } = useTourStatus('profil', isOwnProfile)
+  const [activeImagePreview, setActiveImagePreview] = useState(null)
+  const [animateImage, setAnimateImage] = useState(false)
+
+  const handleOpenPreview = (url) => {
+    setActiveImagePreview(url)
+    setTimeout(() => {
+      setAnimateImage(true)
+    }, 50)
+  }
+
+  const handleClosePreview = () => {
+    setAnimateImage(false)
+    setTimeout(() => {
+      setActiveImagePreview(null)
+    }, 300)
+  }
 
   useEffect(() => {
     const handleStartTour = () => {
@@ -55,7 +73,7 @@ const Profile = () => {
     if (!shouldShowTour || !isOwnProfile) return
     const timer = setTimeout(() => {
       setShowTour(true)
-    }, 1500)
+    }, 200)
     return () => clearTimeout(timer)
   }, [shouldShowTour, isOwnProfile])
 
@@ -134,6 +152,24 @@ const Profile = () => {
       }
     } catch (error) {
       alert(error.response?.data?.error || 'Gagal menolak request koneksi')
+    } finally {
+      setProcessingConnection(false)
+    }
+  }
+
+  // Handle cancel connection request
+  const handleCancelRequest = async () => {
+    if (!connectionInfo?.id) return
+
+    try {
+      setProcessingConnection(true)
+      await cancelConnectionRequest(connectionInfo.id)
+      // Refresh connection status
+      if (user?.id) {
+        await fetchConnectionStatus(user.id)
+      }
+    } catch (error) {
+      alert(error.response?.data?.error || 'Gagal membatalkan permintaan koneksi')
     } finally {
       setProcessingConnection(false)
     }
@@ -276,7 +312,8 @@ const Profile = () => {
                 <img
                   src={getImageUrl(coverPhoto, 'profiles')}
                   alt="Cover"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover cursor-zoom-in hover:brightness-95 transition-all"
+                  onClick={() => handleOpenPreview(getImageUrl(coverPhoto, 'profiles'))}
                   onError={(e) => { e.target.style.display = 'none' }}
                 />
               ) : (
@@ -305,7 +342,8 @@ const Profile = () => {
                       <img
                         src={getImageUrl(fotoProfil, 'profiles')}
                         alt={user.nama}
-                        className="w-full h-full rounded-2xl border-4 border-white object-cover shadow-md"
+                        className="w-full h-full rounded-2xl border-4 border-white object-cover shadow-md cursor-zoom-in hover:brightness-95 transition-all"
+                        onClick={() => handleOpenPreview(getImageUrl(fotoProfil, 'profiles'))}
                         onError={(e) => { e.target.style.display = 'none' }}
                       />
                     ) : (
@@ -381,10 +419,15 @@ const Profile = () => {
                           </Button>
                         )}
                         {connectionStatus === 'PENDING' && connectionInfo?.isRequester && (
-                          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-50 text-yellow-700 rounded-xl border border-yellow-200 text-sm font-medium flex-1">
-                            <Clock size={18} />
-                            <span>Request Dikirim</span>
-                          </div>
+                          <Button
+                            variant="danger"
+                            className="flex items-center justify-center gap-2 rounded-xl flex-1 px-5 py-2.5 text-sm"
+                            onClick={() => setShowCancelConfirmModal(true)}
+                            disabled={processingConnection}
+                          >
+                            <X size={18} />
+                            Batalkan Request
+                          </Button>
                         )}
                         {connectionStatus === 'PENDING' && !connectionInfo?.isRequester && (
                           <div className="flex items-center gap-2 flex-1">
@@ -889,6 +932,21 @@ const Profile = () => {
         />
       )}
 
+      {/* Cancel Connection Confirm Modal */}
+      {!isOwnProfile && user && connectionInfo && (
+        <ConfirmModal
+          isOpen={showCancelConfirmModal}
+          onClose={() => setShowCancelConfirmModal(false)}
+          onConfirm={handleCancelRequest}
+          title="Batalkan Permintaan Koneksi"
+          message={`Apakah Anda yakin ingin membatalkan permintaan koneksi ke ${user.nama}?`}
+          confirmText="Ya, Batalkan"
+          cancelText="Batal"
+          variant="danger"
+          isLoading={processingConnection}
+        />
+      )}
+
       {isOwnProfile && (
         <OnboardingTour
           isOpen={showTour}
@@ -898,6 +956,33 @@ const Profile = () => {
           }}
           type="profile"
         />
+      )}
+
+      {/* Image Preview Modal */}
+      {activeImagePreview && (
+        <div 
+          className={`fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[9999] flex items-center justify-center p-4 transition-all duration-300 ease-out ${
+            animateImage ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={handleClosePreview}
+        >
+          <button 
+            className={`absolute top-6 right-6 text-slate-800 hover:text-slate-900 bg-white/80 hover:bg-white p-2.5 rounded-xl transition-all shadow-md duration-300 ease-out ${
+              animateImage ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
+            }`}
+            onClick={handleClosePreview}
+          >
+            <X size={20} />
+          </button>
+          <img 
+            src={activeImagePreview} 
+            alt="Preview" 
+            className={`max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl transition-all duration-300 ease-out transform ${
+              animateImage ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
 
     </div>

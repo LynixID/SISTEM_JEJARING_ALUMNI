@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
  */
 export const getTourStatus = async (req, res) => {
   try {
-    const userId = req.user.id
+    const userId = req.user.userId
     const keysParam = req.query.keys || ''
 
     if (!keysParam) {
@@ -56,7 +56,7 @@ export const getTourStatus = async (req, res) => {
  */
 export const completeTour = async (req, res) => {
   try {
-    const userId = req.user.id
+    const userId = req.user.userId
     const { tourKey } = req.body
 
     if (!tourKey || typeof tourKey !== 'string') {

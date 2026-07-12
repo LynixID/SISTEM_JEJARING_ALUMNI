@@ -5,7 +5,8 @@ import {
   acceptConnection,
   rejectConnection,
   getConnectionStatus,
-  getConnections
+  getConnections,
+  cancelConnectionRequest
 } from './connectionController.js'
 import { verifyToken } from '../../middleware/auth.js'
 
@@ -31,6 +32,9 @@ router.put('/:id/accept', acceptConnection)
 
 // Reject connection request
 router.put('/:id/reject', rejectConnection)
+
+// Cancel connection request (delete)
+router.delete('/:id', cancelConnectionRequest)
 
 export default router
 

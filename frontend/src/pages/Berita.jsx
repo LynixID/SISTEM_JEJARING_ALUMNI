@@ -45,7 +45,7 @@ const Berita = () => {
     if (!shouldShowTour) return
     const timer = setTimeout(() => {
       setShowTour(true)
-    }, 1500)
+    }, 200)
     return () => clearTimeout(timer)
   }, [shouldShowTour])
 
@@ -402,7 +402,7 @@ const Berita = () => {
                           </div>
                           {event.description && (
                             <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 sm:line-clamp-3 mb-3 sm:mb-4">
-                              {event.description.substring(0, 150)}...
+                              {event.description.replace(/<[^>]*>/g, '').substring(0, 150)}...
                             </p>
                           )}
                           <div className="mt-auto">
